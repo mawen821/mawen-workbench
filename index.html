@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>马雯的工作台 ✨</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="vendor/font-awesome/all.min.css">
+  <script src="js/chart.umd.min.js"></script>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#8A6CB0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <style>
+    .install-banner{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2000;display:flex;align-items:center;gap:10px;max-width:92vw;padding:10px 12px;background:#fff;border:1px solid #e6e8f0;border-radius:14px;box-shadow:0 8px 30px rgba(40,40,90,.18)}
+    .install-banner[hidden]{display:none}
+    .ib-icon img{width:38px;height:38px;border-radius:9px}
+    .ib-text{display:flex;flex-direction:column;line-height:1.25}
+    .ib-text strong{font-size:14px;color:#2b2f55}
+    .ib-text span{font-size:11px;color:#8a8fa8}
+    .ib-btn{border:none;background:var(--primary);color:#fff;font-size:13px;padding:8px 14px;border-radius:10px;cursor:pointer}
+    .ib-close{border:none;background:transparent;color:#b3b7c7;font-size:20px;cursor:pointer;line-height:1;padding:0 4px}
+    @media(max-width:768px){.install-banner{bottom:10px}}
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- ========== 左侧导航 ========== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="user-avatar">马雯</div>
+        <div class="user-info">
+          <h2>马雯的工作台</h2>
+          <p>格物致知 · 每日精进</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-item" data-module="overview">
+          <img class="nav-ico" src="assets/board-icons/overview.svg" alt="">
+          <span>总览</span>
+        </button>
+        <button class="nav-item active" data-module="checkin">
+          <img class="nav-ico" src="assets/board-icons/checkin.svg" alt="">
+          <span>每日打卡</span>
+          <span class="nav-badge" id="checkin-badge">0</span>
+        </button>
+        <button class="nav-item" data-module="ledger">
+          <img class="nav-ico" src="assets/board-icons/ledger.svg" alt="">
+          <span>记账</span>
+        </button>
+        <button class="nav-item" data-module="review">
+          <img class="nav-ico" src="assets/board-icons/review.svg" alt="">
+          <span>每日复盘</span>
+        </button>
+        <button class="nav-item" data-module="sport">
+          <img class="nav-ico" src="assets/board-icons/sport.svg" alt="">
+          <span>运动</span>
+        </button>
+        <button class="nav-item" data-module="english">
+          <img class="nav-ico" src="assets/board-icons/english.svg" alt="">
+          <span>英语角</span>
+        </button>
+        <button class="nav-item" data-module="finance">
+          <img class="nav-ico" src="assets/board-icons/finance.svg" alt="">
+          <span>基金投资</span>
+        </button>
+        <button class="nav-item" data-module="news">
+          <img class="nav-ico" src="assets/board-icons/news.svg" alt="">
+          <span>每日大事件</span>
+        </button>
+        <button class="nav-item" data-module="book">
+          <img class="nav-ico" src="assets/board-icons/book.svg" alt="">
+          <span>读书</span>
+        </button>
+        <button class="nav-item" data-module="zimeiti-pet">
+          <img class="nav-ico" src="assets/board-icons/zimeiti-pet.svg" alt="">
+          <span>宠物部</span>
+        </button>
+        <button class="nav-item" data-module="zimeiti-goods">
+          <img class="nav-ico" src="assets/board-icons/zimeiti-goods.svg" alt="">
+          <span>好物部</span>
+        </button>
+        <button class="nav-item" data-module="ai">
+          <img class="nav-ico" src="assets/board-icons/ai.svg" alt="">
+          <span>AI学习</span>
+        </button>
+        <button class="nav-item" data-module="common">
+          <img class="nav-ico" src="assets/board-icons/common.svg" alt="">
+          <span>常识积累</span>
+        </button>
+        <button class="nav-item" data-module="shenlun">
+          <img class="nav-ico" src="assets/board-icons/shenlun.svg" alt="">
+          <span>申论政治</span>
+        </button>
+        <button class="nav-item" data-module="search">
+          <img class="nav-ico" src="assets/board-icons/search.svg" alt="">
+          <span>智能搜索</span>
+        </button>
+        <button class="nav-item" data-module="misc">
+          <img class="nav-ico" src="assets/board-icons/misc.svg" alt="">
+          <span>杂学开眼</span>
+        </button>
+        <button class="nav-item" data-module="skill">
+          <img class="nav-ico" src="assets/board-icons/skill.svg" alt="">
+          <span>学习技能</span>
+        </button>
+        <button class="nav-item" data-module="tenmin">
+          <img class="nav-ico" src="assets/board-icons/tenmin.svg" alt="">
+          <span>每天的10分钟</span>
+        </button>
+        <button class="nav-item" data-module="beauty">
+          <img class="nav-ico" src="assets/board-icons/beauty.svg" alt="">
+          <span>美妆穿搭</span>
+        </button>
+        <button class="nav-item" data-module="pet">
+          <img class="nav-ico" src="assets/board-icons/pet.svg" alt="">
+          <span>宠物</span>
+        </button>
+        <button class="nav-item" data-module="country">
+          <img class="nav-ico" src="assets/board-icons/country.svg" alt="">
+          <span>国情与世界</span>
+        </button>
+        <button class="nav-item" data-module="travel">
+          <img class="nav-ico" src="assets/board-icons/travel.svg" alt="">
+          <span>旅行地图</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="streak-info">
+          <i class="far fa-fire"></i>
+          <span>连续打卡 <strong id="streak-days">0</strong> 天</span>
+        </div>
+        <div class="date-info" id="current-date"></div>
+        <div class="backup-row">
+          <button class="backup-btn" onclick="exportWorkbench()" title="导出全部数据到文件（换手机前用）"><i class="far fa-download"></i> 导出备份</button>
+          <button class="backup-btn" onclick="document.getElementById('import-file').click()" title="从备份文件恢复数据"><i class="far fa-upload"></i> 导入备份</button>
+          <input type="file" id="import-file" accept="application/json" hidden onchange="importWorkbench(this)">
+        </div>
+      </div>
+      </aside>
+
+      <!-- ========== 移动端顶栏 + 抽屉遮罩（仅手机显示） ========== -->
+      <div class="mobile-bar">
+        <button class="mb-btn" onclick="toggleMobileSidebar()" aria-label="打开菜单"><i class="far fa-bars"></i></button>
+        <span class="mb-title">马雯的工作台</span>
+        <span class="mb-date" id="mb-date"></span>
+      </div>
+      <div class="sidebar-overlay" onclick="closeMobileSidebar()"></div>
+
+    <!-- ========== 主内容区 ========== -->
+    <main class="main-content" id="main-content">
+      <!-- 各模块内容动态渲染 -->
+    </main>
+  </div>
+
+  <!-- 图片预览模态框 -->
+  <div class="modal-overlay" id="image-modal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeImageModal()">&times;</span>
+      <img id="modal-image" src="" alt="预览">
+    </div>
+  </div>
+
+  <!-- 数据文件 -->
+  <script src="js/data-english.js"></script>
+  <script src="js/data-finance.js"></script>
+  <script src="js/data-shenlun.js"></script>
+  <script src="js/data-news.js"></script>
+  <script src="js/data-reading.js"></script>
+  <script src="js/data-booktexts.js"></script>
+  <script src="js/data-misc.js"></script>
+  <script src="js/data-common.js"></script>
+  <script src="js/data-sport.js"></script>
+  <script src="js/data-skill.js"></script>
+  <script src="js/data-tenmin.js"></script>
+  <script src="js/data-beauty.js"></script>
+  <script src="js/data-pet.js"></script>
+  <script src="js/data-ledger.js"></script>
+  <script src="js/data-country.js"></script>
+  <script src="js/data-country-auto.js"></script>
+  <script src="js/data-country-track.js"></script>
+  <script src="js/data-country-deep.js"></script>
+  <!-- 自媒体部 -->
+  <script src="js/zimeiti.js"></script>
+  <!-- AI 学习部 -->
+  <script src="js/ai.js"></script>
+  <!-- 应用逻辑 -->
+  <script src="js/app.js"></script>
+
+  <!-- 安装到主屏幕引导 -->
+  <div class="install-banner" id="install-banner" hidden>
+    <div class="ib-icon"><img src="assets/icon-192.png" alt=""></div>
+    <div class="ib-text">
+      <strong>安装到手机</strong>
+      <span>添加到主屏幕，像 App 一样随时打开</span>
+    </div>
+    <button class="ib-btn" id="ib-install">安装</button>
+    <button class="ib-close" onclick="document.getElementById('install-banner').hidden=true" aria-label="关闭">×</button>
+  </div>
+
+  <script>
+    // ===== PWA：安装引导 + Service Worker =====
+    let deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      const isMobile = window.matchMedia('(pointer: coarse)').matches || /Mobi|Android/i.test(navigator.userAgent);
+      if (isMobile && window.matchMedia('(display-mode: browser)').matches) {
+        const b = document.getElementById('install-banner');
+        if (b) setTimeout(function () { b.hidden = false; }, 1500);
+      }
+    });
+    var ibBtn = document.getElementById('ib-install');
+    if (ibBtn) ibBtn.addEventListener('click', function () {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      try { deferredInstallPrompt.userChoice; } catch (_) {}
+      deferredInstallPrompt = null;
+      var b = document.getElementById('install-banner');
+      if (b) b.hidden = true;
+    });
+    window.addEventListener('appinstalled', function () {
+      var b = document.getElementById('install-banner');
+      if (b) b.hidden = true;
+    });
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').then(function (reg) {
+          reg.addEventListener('updatefound', function () {
+            var installing = reg.installing;
+            if (!installing) return;
+            installing.addEventListener('statechange', function () {
+              if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+                if (window.showToast) window.showToast('已更新到最新版本，正在刷新…');
+                setTimeout(function () { location.reload(); }, 1200);
+              }
+            });
+          });
+        }).catch(function () {});
+      });
+    }
+  </script>
+</body>
+</html>

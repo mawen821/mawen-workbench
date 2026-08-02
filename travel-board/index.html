@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的旅行地图 · 旅行足迹板</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🗺️</span>
+    <div>
+      <h1>我的旅行地图</h1>
+      <p class="subtitle">记录每一座点亮过的城市 · 计划 · 心情 · 回忆</p>
+    </div>
+  </div>
+  <div class="stats" id="stats">
+    <div class="stat"><b id="stat-visited">0</b><span>已点亮城市</span></div>
+    <div class="stat"><b id="stat-planned">0</b><span>计划中</span></div>
+    <div class="stat"><b id="stat-future">0</b><span>未来去</span></div>
+    <div class="stat"><b id="stat-spots">0</b><span>打卡景点</span></div>
+    <div class="stat"><b id="stat-trips">0</b><span>旅行记录</span></div>
+  </div>
+  <div class="actions">
+    <button class="btn primary" id="btn-add">＋ 添加旅行</button>
+    <button class="btn ghost" id="btn-review">📖 回顾</button>
+    <button class="btn ghost" id="btn-import">⬆ 导入</button>
+    <button class="btn ghost" id="btn-export">⬇ 导出</button>
+    <input type="file" id="file-import" accept="application/json" hidden>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="filters" id="filters">
+    <button class="chip active" data-filter="all">全部</button>
+    <button class="chip" data-filter="visited">✨ 已去过</button>
+    <button class="chip" data-filter="planned">📌 计划去</button>
+    <button class="chip" data-filter="future">🔮 未来去</button>
+  </div>
+  <input type="search" id="search" class="search" placeholder="搜索城市 / 景点 / 朋友 / 留言…">
+  <span class="storage" id="storage-info" title="本地存储占用"></span>
+</div>
+
+<main class="layout">
+  <section class="map-wrap">
+    <div class="map-ctrl">
+      <button class="mc active" onclick="resetMapView()">🔍 复位</button>
+    </div>
+    <div id="map"></div>
+    <div class="map-legend">
+      <span><i class="dot visited"></i>已去过（点亮）</span>
+      <span><i class="dot planned"></i>计划中 / 未来去</span>
+      <span class="hint">点亮点查看城市详情，鼠标悬停看状态与心情</span>
+    </div>
+  </section>
+
+  <section class="cards" id="cards"></section>
+</main>
+
+<!-- 添加 / 编辑 弹窗 -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h2 id="modal-title">添加一次旅行</h2>
+      <button class="icon-btn" id="modal-close">✕</button>
+    </div>
+    <form id="trip-form" class="form">
+      <input type="hidden" id="f-id">
+      <div class="row">
+        <label>城市 *</label>
+        <input type="text" id="f-city" list="city-list" placeholder="如：成都 / 丽江 / 北海道" autocomplete="off" required>
+        <datalist id="city-list"></datalist>
+      </div>
+      <div class="row">
+        <label>状态</label>
+        <div class="segmented" id="f-status">
+        <button type="button" class="seg active" data-val="visited">✨ 已经去过</button>
+        <button type="button" class="seg" data-val="planned">📌 计划去</button>
+        <button type="button" class="seg" data-val="future">🔮 未来去</button>
+        </div>
+      </div>
+      <div class="row two">
+        <div>
+          <label>日期</label>
+          <input type="date" id="f-date">
+        </div>
+        <div>
+          <label>当时心情</label>
+          <div class="moods" id="f-mood"></div>
+        </div>
+      </div>
+      <div class="row">
+        <label>同行的朋友</label>
+        <input type="text" id="f-companions" placeholder="如：和闺蜜小雨、家人…（可留空）">
+      </div>
+      <div class="row">
+        <label>打卡景点</label>
+        <div class="tag-input" id="f-attractions-wrap">
+          <input type="text" id="f-attraction-input" placeholder="输入景点后回车添加，如：宽窄巷子">
+          <div class="tags" id="f-attractions"></div>
+        </div>
+      </div>
+      <div class="row">
+        <label>留言 / 日记</label>
+        <textarea id="f-note" rows="3" placeholder="写下那天的小故事、感受或想对未来的自己说的话…"></textarea>
+      </div>
+      <div class="row">
+        <label>照片</label>
+        <div class="photos" id="f-photos"></div>
+        <label class="upload-btn">📷 选择照片
+          <input type="file" id="f-photo-input" accept="image/*" multiple hidden>
+        </label>
+        <small class="tip">照片会压缩后仅保存在你本机浏览器中，不会上传任何服务器。</small>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn ghost" id="modal-cancel">取消</button>
+        <button type="submit" class="btn primary" id="modal-save">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 城市详情 弹窗 -->
+<div class="modal" id="detail" hidden>
+  <div class="modal-card wide">
+    <div class="modal-head">
+      <h2 id="detail-title">城市</h2>
+      <button class="icon-btn" id="detail-close">✕</button>
+    </div>
+    <div class="detail-body" id="detail-body"></div>
+  </div>
+</div>
+
+<!-- 回顾 弹窗 -->
+<div class="modal" id="review" hidden>
+  <div class="modal-card wide">
+    <div class="modal-head">
+      <h2>📖 旅行回顾</h2>
+      <button class="icon-btn" id="review-close">✕</button>
+    </div>
+    <div class="review-body" id="review-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="js/echarts.min.js"></script>
+<script src="js/cities.js"></script>
+<script src="data/china.geo.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
