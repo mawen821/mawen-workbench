@@ -4,6 +4,7 @@
 
 /* ---- CSS 变量 ---- */
 :root {
+  color-scheme: light;
   /* 国风紫调色板：青莲紫主色 + 胭脂粉强调 + 朱砂/黛蓝/竹青/赭金辅助 */
   --primary: #8A6CB0;          /* 青莲紫（主色） */
   --primary-light: #B79BD6;   /* 浅青莲 */
@@ -46,6 +47,7 @@
 body {
   font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   background: var(--bg-main);
+  background-color: #FAF5EE;
   color: var(--text-primary);
   height: 100vh;
   overflow: hidden;
@@ -5747,11 +5749,15 @@ body {
    ============================================================ */
 
 /* 宣纸底色 + 角落晕染 + 点纹肌理，国风温润 */
+html {
+  color-scheme: light;
+}
 body {
+  background-color: #FAF5EE !important;
   background:
     radial-gradient(circle at 10% 6%, rgba(201,155,181,0.16) 0%, transparent 38%),
     radial-gradient(circle at 90% 94%, rgba(123,155,196,0.16) 0%, transparent 42%),
-    linear-gradient(135deg, #FAF5EE 0%, #F4ECF3 55%, #EFEAF4 100%);
+    linear-gradient(135deg, #FAF5EE 0%, #F4ECF3 55%, #EFEAF4 100%) !important;
   background-attachment: fixed;
   color: var(--text-primary);
 }
@@ -5763,7 +5769,8 @@ body::before {
   background-image: radial-gradient(rgba(138,108,176,0.05) 1px, transparent 1.4px);
   background-size: 22px 22px;
 }
-.main-content, .sidebar { position: relative; z-index: 1; }
+.main-content { position: relative; z-index: 1; }
+/* 注意：.sidebar 的 position 不在此处覆盖，保留原媒体查询的 fixed/translateX 行为 */
 
 /* 左侧导航：米色玻璃 + 回纹顶饰（替换原深色栏） */
 .sidebar {
@@ -5942,8 +5949,152 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary); outlin
 .ib-text span { color: var(--text-secondary); }
 .ib-close { color: var(--text-light); }
 
-/* 小屏：导航与按钮间距更舒服 */
-@media (max-width: 768px) {
-  .main-content { padding: 14px; }
-  .nav-item { margin: 2px 4px; padding: 10px 12px; }
-}
+/* ============================================================
+   移动端国风适配（必须在国风覆盖块之后，确保优先级最高）
+   修复：侧栏改为抽屉式（默认隐藏左侧，点汉堡弹出）
+   ============================================================ */
+@media screen and (max-width: 768px) {
+
+  /* ===== 强制亮色：禁止暗色模式覆盖 ===== */
+  html, body, #app, .main-content, .sidebar, .mobile-bar {
+    color-scheme: light !important;
+    forced-color-adjust: none !important;
+  }
+
+  /* ===== 侧栏：固定定位 + 默认滑出屏幕左侧（三重保障） ===== */
+  #sidebar,
+  aside.sidebar,
+  .sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 78vw !important;
+    max-width: 300px !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    transform: translateX(-100%) !important;
+    transition: transform .3s cubic-bezier(.4,0,.2,1) !important;
+    z-index: 1000 !important;
+    overflow-y: auto !important;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    pointer-events: none !important;
+  }
+  /* 侧栏打开状态 */
+  #sidebar.open,
+  aside.sidebar.open,
+  .sidebar.open {
+    transform: translateX(0) !important;
+    box-shadow: 4px 0 40px rgba(138,108,176,0.25) !important;
+    pointer-events: auto !important;
+  }
+
+  /* 遮罩层 */
+  .sidebar-overlay {
+    display: none !important;
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(62,53,80,0.4) !important;
+    backdrop-filter: blur(3px) !important;
+    -webkit-backdrop-filter: blur(3px) !important;
+    z-index: 999 !important;
+    pointer-events: none !important;
+  }
+  .sidebar-overlay.show {
+    display: block !important;
+    pointer-events: auto !important;
+  }
+
+  /* ===== 顶栏：国风紫 + 毛玻璃（始终可见） ===== */
+  .mobile-bar {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 10px 14px !important;
+    background: rgba(245,239,230,0.92) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    backdrop-filter: blur(14px) !important;
+    border-bottom: 1px solid rgba(138,108,176,0.2) !important;
+    color: #4A3740 !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
+    box-shadow: 0 2px 12px rgba(138,108,176,0.10) !important;
+    min-height: 48px !important;
+  }
+  .mobile-bar .mb-btn {
+    background: linear-gradient(135deg, #8A6CB0, #C99BB5) !important;
+    border: none !important;
+    color: #fff !important;
+    font-size: 18px !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 3px 10px rgba(138,108,176,0.22) !important;
+    flex-shrink: 0 !important;
+  }
+  .mobile-bar .mb-title {
+    font-weight: 800 !important;
+    font-size: 15px !important;
+    font-family: 'SimSun', 'STSong', serif !important;
+    letter-spacing: 1px !important;
+    color: #4A3740 !important;
+  }
+  .mobile-bar .mb-date {
+    margin-left: auto !important;
+    font-size: 12px !important;
+    color: #7A6872 !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* ===== 主内容区：全宽 ===== */
+  .main-content,
+  main.main-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding: 14px 12px 90px !important;
+    min-height: calc(100vh - 52px) !important;
+    background: transparent !important;
+    box-sizing: border-box !important;
+  }
+
+  /* #app 容器：单列流式（覆盖桌面端 display:flex） */
+  #app {
+    display: block !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    flex-direction: unset !important;
+    flex-wrap: unset !important;
+  }
+
+  /* 卡片在手机上更大圆角、更好间距 */
+  .card, .dash-card, .overview-card, .zm-card, .ai-stage, .ai-step {
+    margin-bottom: 14px !important;
+    border-radius: 16px !important;
+  }
+
+  /* 导航项在抽屉里：图标稍大 + 更好触控 */
+  .nav-item {
+    margin: 2px 6px !important;
+    padding: 11px 14px !important;
+    font-size: 14.5px !important;
+    border-radius: 12px !important;
+    color: #4A3740 !important;
+  }
+  .nav-item img.nav-ico {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  .nav-item.active {
+    background: linear-gradient(135deg, #B79BD6, #DCC9F0) !important;
+    color: #6B4E8A !important;
+    font-weight: 700 !important;
+  }
+} /* end @media mobile */
