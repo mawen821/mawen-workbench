@@ -43,6 +43,16 @@
     var t = $("toast"); t.textContent = msg; t.hidden = false;
     clearTimeout(t._t); t._t = setTimeout(function(){ t.hidden = true; }, 2600);
   }
+  // 旅行照片渲染：旧数据可能是 base64（直接 src），新数据为 "IMG:<id>"（异步取图）
+  function tbPhoto(p){
+    if(typeof p === "string" && p.indexOf("data:") === 0) return '<img src="'+p+'" onclick="openLightbox(\''+encodeURIComponent(p)+'\')">';
+    if(typeof p === "string" && p.indexOf(MWImg.PREFIX) === 0) return '<img data-imgid="'+p.slice(MWImg.PREFIX.length)+'" onclick="tbOpenImg(\''+p+'\')">';
+    return "";
+  }
+  window.tbOpenImg = function(ref){
+    var id = ref.slice(MWImg.PREFIX.length);
+    MWImg.get(id).then(function(src){ if(src) openLightbox(encodeURIComponent(src)); });
+  };
   function coordOf(city){ return window.CITY_COORDS && window.CITY_COORDS[city]; }
 
   // 照片压缩（仅存本机）
@@ -222,7 +232,7 @@
       var chips = (r.attractions||[]).length
         ? '<div class="chips">'+r.attractions.map(function(a){return '<span class="chip-sm">📍 '+esc(a)+'</span>';}).join("")+'</div>' : "";
       var note = r.note ? '<div class="c-note">'+esc(r.note)+'</div>' : "";
-      var thumbs = (r.photos||[]).slice(0,4).map(function(p){return '<img src="'+p+'" onclick="openLightbox(\''+encodeURIComponent(p)+'\')">';}).join("");
+      var thumbs = (r.photos||[]).slice(0,4).map(function(p){return tbPhoto(p);}).join("");
       thumbs = thumbs ? '<div class="thumbs">'+thumbs+'</div>' : "";
       var date = r.date ? '<span class="c-date">📅 '+esc(r.date)+'</span>' : '<span class="c-date">未填日期</span>';
       return ''+
@@ -236,6 +246,7 @@
           '</div>'+
         '</div>';
     }).join("");
+    MWImg.fill(box);
   }
 
   function renderAll(){ updateStats(); renderMap(); renderCards(); }
@@ -269,10 +280,15 @@
 
   function renderFormPhotos(){
     $("f-photos").innerHTML = formPhotos.map(function(p,i){
-      return '<div class="photo-x"><img src="'+p+'"><span onclick="removePhoto('+i+')">✕</span></div>';
+      return '<div class="photo-x">'+tbPhoto(p)+'<span onclick="removePhoto('+i+')">✕</span></div>';
     }).join("");
+    MWImg.fill($("f-photos"));
   }
-  window.removePhoto = function(i){ formPhotos.splice(i,1); renderFormPhotos(); };
+  window.removePhoto = function(i){
+    var p = formPhotos[i];
+    if(typeof p === "string" && p.indexOf(MWImg.PREFIX) === 0) MWImg.delete(p.slice(MWImg.PREFIX.length));
+    formPhotos.splice(i,1); renderFormPhotos();
+  };
 
   function openModal(rec){
     editingId = rec ? rec.id : null;
@@ -309,7 +325,7 @@
       var chips = (r.attractions||[]).length ? '<div class="chips">'+r.attractions.map(function(a){return '<span class="chip-sm">📍 '+esc(a)+'</span>';}).join("")+'</div>' : "";
       var note = r.note ? '<div class="t-note">'+esc(r.note)+'</div>' : "";
       var gal = (r.photos||[]).length
-        ? '<div class="gallery">'+r.photos.map(function(p){return '<img src="'+p+'" onclick="openLightbox(\''+encodeURIComponent(p)+'\')">';}).join("")+'</div>' : "";
+        ? '<div class="gallery">'+r.photos.map(function(p){return tbPhoto(p);}).join("")+'</div>' : "";
       return '<div class="trip">'+
         '<div class="t-head">'+mood+'<div><div style="font-weight:700">'+esc(r.city)+'</div>'+badge+'</div>'+date+'</div>'+
         comp+chips+note+gal+
@@ -318,6 +334,7 @@
     }).join("");
     $("detail-title").textContent = city;
     $("detail-body").innerHTML = html;
+    MWImg.fill($("detail-body"));
     $("detail").hidden = false;
   }
   window.openDetail = openDetail;
@@ -330,6 +347,8 @@
   };
   window.deleteTrip = function(id){
     if(!confirm("确定删除这条旅行记录吗？此操作不可撤销。")) return;
+    var r = records.find(function(x){ return x.id === id; });
+    if(r && r.photos){ r.photos.forEach(function(p){ if(typeof p==="string" && p.indexOf(MWImg.PREFIX)===0) MWImg.delete(p.slice(MWImg.PREFIX.length)); }); }
     records = records.filter(function(x){ return x.id !== id; });
     save(); renderAll();
     toast("已删除");
@@ -373,10 +392,11 @@
     records.forEach(function(r){ (r.photos||[]).forEach(function(p){ allPhotos.push(p); }); });
     html += "<h3>🖼️ 回忆照片墙（"+allPhotos.length+" 张）</h3>";
     html += allPhotos.length
-      ? '<div class="rev-gallery">'+allPhotos.map(function(p){return '<img src="'+p+'" onclick="openLightbox(\''+encodeURIComponent(p)+'\')">';}).join("")+'</div>'
+      ? '<div class="rev-gallery">'+allPhotos.map(function(p){return tbPhoto(p);}).join("")+'</div>'
       : '<div class="empty">还没有上传照片。</div>';
 
     $("review-body").innerHTML = html;
+    MWImg.fill($("review-body"));
     $("review").hidden = false;
   }
 
@@ -392,13 +412,16 @@
   // ---------- 导入导出 ----------
   function exportData(){
     if(records.length === 0){ toast("还没有数据可导出"); return; }
-    var blob = new Blob([JSON.stringify(records, null, 2)], {type:"application/json"});
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "我的旅行地图-备份-"+new Date().toISOString().slice(0,10)+".json";
-    a.click();
-    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
-    toast("已导出备份文件");
+    // 深拷贝后把图片引用内联进备份（换手机图片不丢）
+    MWImg.packForExport(JSON.parse(JSON.stringify(records))).then(function(data){
+      var blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "我的旅行地图-备份-"+new Date().toISOString().slice(0,10)+".json";
+      a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+      toast("已导出备份文件");
+    }).catch(function(){ toast("⚠️ 导出失败"); });
   }
   function importData(file){
     var fr = new FileReader();
@@ -407,13 +430,16 @@
         var data = JSON.parse(fr.result);
         if(!Array.isArray(data)) throw 0;
         if(!confirm("导入将【合并】到当前数据（相同 id 会覆盖）。继续？")) return;
-        data.forEach(function(r){
-          if(!r.id) r.id = uid();
-          var i = records.findIndex(function(x){ return x.id === r.id; });
-          if(i >= 0) records[i] = r; else records.push(r);
-        });
-        save(); renderAll();
-        toast("导入成功，共 "+data.length+" 条");
+        // 把内联图片还原回 IndexedDB，记录只留 "IMG:<id>" 引用
+        MWImg.unpackFromImport(data).then(function(real){
+          real.forEach(function(r){
+            if(!r.id) r.id = uid();
+            var i = records.findIndex(function(x){ return x.id === r.id; });
+            if(i >= 0) records[i] = r; else records.push(r);
+          });
+          save(); renderAll();
+          toast("导入成功，共 "+real.length+" 条");
+        }).catch(function(){ toast("⚠️ 文件格式不正确"); });
       }catch(e){ toast("⚠️ 文件格式不正确"); }
     };
     fr.readAsText(file);
@@ -449,14 +475,16 @@
       }
     });
 
-    // 照片上传（压缩）
+    // 照片上传（压缩后存入 IndexedDB，记录只留 "IMG:<id>" 引用）
     $("f-photo-input").addEventListener("change", function(e){
       var files = Array.prototype.slice.call(e.target.files || []);
       if(files.length === 0) return;
       Promise.all(files.map(compressImage)).then(function(arr){
-        arr.forEach(function(d){ formPhotos.push(d); });
+        return Promise.all(arr.map(function(d){ return MWImg.put(d).then(function(id){ return MWImg.PREFIX + id; }); }));
+      }).then(function(ids){
+        ids.forEach(function(id){ formPhotos.push(id); });
         renderFormPhotos();
-        toast("已添加 "+arr.length+" 张照片（已压缩）");
+        toast("已添加 "+ids.length+" 张照片（已压缩）");
       }).catch(function(){ toast("部分照片处理失败"); });
       e.target.value = "";
     });
