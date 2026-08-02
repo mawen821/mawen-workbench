@@ -29,6 +29,7 @@
   // ---------- 工具 ----------
   function $(id){ return document.getElementById(id); }
   function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function today(){ var d = new Date(); var m = ("0"+(d.getMonth()+1)).slice(-2); var day = ("0"+d.getDate()).slice(-2); return d.getFullYear()+"-"+m+"-"+day; }
   function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m];}); }
   function load(){ try{ return JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ return []; } }
   function save(){
@@ -127,18 +128,15 @@
   function renderMap(){
     if(!chart) return;
     var agg = aggregate();
-    var visitedData = [], plannedData = [];
+    var visitedData = [], plannedData = [], futureData = [];
     Object.keys(agg).forEach(function(city){
       var c = coordOf(city);
       if(!c) return; // 无坐标则不在地图点亮
       var g = agg[city];
-      var isVisited = g.visited > 0;
-      var item = {
-        name: city,
-        value: c.concat(isVisited ? g.visited : (g.future>0 ? g.future : g.planned)),
-        city: city
-      };
-      (isVisited ? visitedData : plannedData).push(item);
+      // 三种状态各自独立成序列，确保都显示在地图上
+      if(g.visited > 0) visitedData.push({ name:city, value: c.concat(g.visited), city:city });
+      if(g.planned > 0) plannedData.push({ name:city, value: c.concat(g.planned), city:city });
+      if(g.future  > 0) futureData.push({ name:city, value: c.concat(g.future),  city:city });
     });
 
     chart.setOption({
@@ -148,7 +146,11 @@
         formatter: function(p){
           if(p.data && p.data.city){
             var g = agg[p.data.city]; if(!g) return p.name;
-            var st = g.visited>0 ? "✨ 已去过 " + g.visited + " 次" : (g.future>0 ? "🔮 未来去" : "📌 计划中");
+            var tags = [];
+            if(g.visited > 0) tags.push("✨ 已去过 " + g.visited + " 次");
+            if(g.planned > 0) tags.push("📌 计划去 " + g.planned + " 次");
+            if(g.future  > 0) tags.push("🔮 未来去 " + g.future + " 次");
+            var st = tags.join("　");
             var mood = "";
             if(g.visited>0){ var top = Object.keys(g.moods).sort(function(a,b){return g.moods[b]-g.moods[a];})[0]; if(top) mood = "　心情 " + top; }
             return "<b>" + p.name + "</b><br>" + st + mood + (g.latest? "<br>最近：" + g.latest : "");
@@ -168,21 +170,27 @@
       },
       series: [
         {
-          name:"计划中/未来去", type:"scatter", coordinateSystem:"geo", data: plannedData,
-          symbol:"circle", symbolSize: 11,
+          name:"未来去", type:"scatter", coordinateSystem:"geo", data: futureData,
+          symbol:"circle", symbolSize: 12,
+          itemStyle:{ color:"#9b7fd4", borderColor:"#fff", borderWidth:1.5 },
+          label:{ show:true, formatter:"{b}", position:"right", color:"#6a4ca0", fontSize:10, fontWeight:"bold" },
+          emphasis:{ scale:1.4 },
+          z: 4
+        },
+        {
+          name:"计划去", type:"scatter", coordinateSystem:"geo", data: plannedData,
+          symbol:"circle", symbolSize: 12,
           itemStyle:{ color:"#5b8def", borderColor:"#fff", borderWidth:1.5 },
           label:{ show:true, formatter:"{b}", position:"right", color:"#3a5a8f", fontSize:10, fontWeight:"bold" },
           emphasis:{ scale:1.4 },
           z: 5
         },
         {
-          name:"已去过", type:"effectScatter", coordinateSystem:"geo", data: visitedData,
-          symbol:"pin", symbolSize: 24,
-          showEffectOn:"render",
-          rippleEffect:{ brushType:"stroke", scale: 3, period: 4 },
+          name:"已去过", type:"scatter", coordinateSystem:"geo", data: visitedData,
+          symbol:"pin", symbolSize: 26,
           itemStyle:{ color:"#ffb02e", shadowBlur:8, shadowColor:"rgba(255,176,46,.6)" },
           label:{ show:true, formatter:"{b}", position:"top", color:"#7a4d00", fontSize:11, fontWeight:"bold" },
-          emphasis:{ label:{ show:true } },
+          emphasis:{ scale:1.2 },
           z: 10
         }
       ]
@@ -307,6 +315,28 @@
     $("modal").hidden = false;
   }
   function closeModal(){ $("modal").hidden = true; }
+
+  function buildDateQuick(){
+    var box = $("date-quick");
+    if(!box) return;
+    var y = new Date().getFullYear();
+    var years = [];
+    for(var i = 0; i < 9; i++) years.push(y - i);
+    box.innerHTML = '<button type="button" class="dq" data-d="today">今天</button>' +
+      years.map(function(yr){ return '<button type="button" class="dq" data-y="'+yr+'">'+yr+'</button>'; }).join("");
+    Array.prototype.forEach.call(box.children, function(b){
+      b.onclick = function(){
+        if(b.dataset.d === "today"){ $("f-date").value = today(); return; }
+        var yr = b.dataset.y;
+        var cur = $("f-date").value || today();
+        var parts = cur.split("-");
+        parts[0] = yr;
+        if(!parts[1]) parts[1] = "01";
+        if(!parts[2]) parts[2] = "01";
+        $("f-date").value = parts.join("-");
+      };
+    });
+  }
 
   // ---------- 弹窗：城市详情 ----------
   function openDetail(city){
@@ -534,6 +564,7 @@
 
   // ---------- 启动 ----------
   buildMoodPicker();
+  buildDateQuick();
   bind();
   initMap();
   renderAll();
