@@ -5,6 +5,7 @@
   --ink:#2b2b33;
   --muted:#8a8694;
   --line:#ece8e1;
+  --future:#9b7fd4;
   --accent:#ff7a59;
   --accent-2:#ffb347;
   --gold:#ffb02e;
@@ -48,6 +49,7 @@ body{
 .map-legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
 .dot.visited{background:var(--gold);box-shadow:0 0 0 3px rgba(255,176,46,.3)}
 .dot.planned{background:var(--blue)}
+.dot.future{background:var(--future);box-shadow:0 0 0 3px rgba(155,127,212,.3)}
 .map-legend .hint{margin-left:auto;font-style:italic}
 .map-ctrl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
 .map-ctrl .mc{font-size:13px;padding:6px 12px;border:1px solid var(--line);background:var(--panel);border-radius:20px;cursor:pointer;color:var(--text);transition:.15s}
@@ -87,6 +89,9 @@ body{
 .form .row{margin-bottom:14px}
 .form label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:#4a4654}
 .form input[type=text],.form input[type=date],.form textarea{width:100%;border:1px solid var(--line);border-radius:11px;padding:10px 12px;font-size:14px;font-family:inherit;outline:none;background:#fff}
+.date-quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.date-quick .dq{border:1px solid var(--line);background:#faf7f2;color:var(--muted);border-radius:999px;padding:4px 11px;font-size:12px;cursor:pointer;font-family:inherit;transition:.15s}
+.date-quick .dq:hover{border-color:var(--future);color:var(--future)}
 .form input:focus,.form textarea:focus{border-color:var(--accent)}
 .form .row.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .segmented{display:flex;gap:8px}
