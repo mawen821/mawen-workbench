@@ -1,7 +1,7 @@
-// 马雯的工作台 · Service Worker（v6 · 离线可用版）
+// 马雯的工作台 · Service Worker（v7 · 离线可用 + 更新必达版）
 // 目标：手机只要成功加载过一次，之后云端休眠 / 电脑关机也能离线秒开；
-//       联网时后台静默更新，保证内容不断更。
-const CACHE = 'mw-workbench-v6';
+//       联网时后台静默更新，保证内容不断更；新版本部署后强制重新缓存，更新必达。
+const CACHE = 'mw-workbench-v7';
 
 // 应用外壳：全部需要离线打开的同源资源
 const CORE = [
@@ -32,10 +32,10 @@ const CORE = [
   './js/data-skill.js',
   './js/data-sport.js',
   './js/data-tenmin.js',
-  './assets/icon.svg',
-  './assets/icon-192.png',
-  './assets/icon-512.png',
-  './assets/icon-maskable-512.png',
+  './assets/icon-girl.svg',
+  './assets/icon-girl-192.png',
+  './assets/icon-girl-512.png',
+  './assets/icon-girl-maskable-512.png',
   './assets/board-icons/overview.svg',
   './assets/board-icons/checkin.svg',
   './assets/board-icons/ledger.svg',
@@ -101,9 +101,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 静态资源：缓存优先（离线秒开），同时后台静默更新
+  // 静态资源：stale-while-revalidate（先秒开缓存，后台静默刷新缓存 → 更新必达且离线可用）
   event.respondWith(
-    caches.match(req).then((cached) => {
+    (async () => {
+      const cached = await caches.match(req);
       const network = fetch(req)
         .then((res) => {
           if (res && res.status === 200 && (res.type === 'basic' || res.type === 'default')) {
@@ -113,7 +114,8 @@ self.addEventListener('fetch', (event) => {
           return res;
         })
         .catch(() => cached);
+      // 有缓存先返回（秒开），没缓存等网络
       return cached || network;
-    })
+    })()
   );
 });
