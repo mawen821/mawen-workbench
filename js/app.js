@@ -49,11 +49,13 @@ function showToast(msg, type = 'success') {
 }
 
 /* ===== 数据备份：导出/导入，保证换手机可一键转移全部手动数据 ===== */
+// 主数据使用 mw_ 前缀；少数独立子应用（如旅行地图）用专属 key，也要一并备份
+const EXTRA_BACKUP_KEYS = ['travelBoard.v1'];
 function exportWorkbench() {
   const data = {};
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k && k.indexOf('mw_') === 0) data[k] = localStorage.getItem(k);
+    if (k && (k.indexOf('mw_') === 0 || EXTRA_BACKUP_KEYS.indexOf(k) > -1)) data[k] = localStorage.getItem(k);
   }
   const payload = {
     app: 'mawen-workbench', version: 1,
@@ -79,7 +81,7 @@ function importWorkbench(input) {
       const src = parsed && parsed.data ? parsed.data : parsed;
       let n = 0;
       for (const k in src) {
-        if (k.indexOf('mw_') === 0 && typeof src[k] === 'string') { localStorage.setItem(k, src[k]); n++; }
+        if ((k.indexOf('mw_') === 0 || EXTRA_BACKUP_KEYS.indexOf(k) > -1) && typeof src[k] === 'string') { localStorage.setItem(k, src[k]); n++; }
       }
       showToast('已导入 ' + n + ' 项数据，即将刷新…');
       setTimeout(() => location.reload(), 900);
