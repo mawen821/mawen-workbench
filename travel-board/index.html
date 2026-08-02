@@ -74,11 +74,12 @@
       <button class="mc active" onclick="resetMapView()">🔍 复位</button>
     </div>
     <div id="map"></div>
-    <div class="map-legend">
-      <span><i class="dot visited"></i>已去过（点亮）</span>
-      <span><i class="dot planned"></i>计划中 / 未来去</span>
-      <span class="hint">点亮点查看城市详情，鼠标悬停看状态与心情</span>
-    </div>
+      <div class="map-legend">
+        <span><i class="dot visited"></i>已去过（点亮）</span>
+        <span><i class="dot planned"></i>计划去</span>
+        <span><i class="dot future"></i>未来去</span>
+        <span class="hint">点亮点查看城市详情，鼠标悬停看状态与心情</span>
+      </div>
   </section>
 
   <section class="cards" id="cards"></section>
@@ -110,6 +111,7 @@
         <div>
           <label>日期</label>
           <input type="date" id="f-date">
+          <div class="date-quick" id="date-quick"></div>
         </div>
         <div>
           <label>当时心情</label>
