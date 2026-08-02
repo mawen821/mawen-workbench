@@ -62,13 +62,19 @@ function exportWorkbench() {
     exportedAt: new Date().toISOString(),
     count: Object.keys(data).length, data
   };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = '马雯工作台-备份-' + today() + '.json';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  showToast('已导出 ' + payload.count + ' 项数据，请存到云盘/微信文件传输');
+  // 深拷贝后把图片引用内联进备份文件（换手机图片不丢），再下载
+  const clone = JSON.parse(JSON.stringify(payload));
+  MWImg.packForExport(clone.data).then(function () {
+    const blob = new Blob([JSON.stringify(clone, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '马雯工作台-备份-' + today() + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    showToast('已导出 ' + payload.count + ' 项数据（含图片），请存到云盘/微信文件传输');
+  }).catch(function () {
+    showToast('导出失败：图片处理出错', 'error');
+  });
 }
 
 function importWorkbench(input) {
@@ -79,12 +85,19 @@ function importWorkbench(input) {
     try {
       const parsed = JSON.parse(reader.result);
       const src = parsed && parsed.data ? parsed.data : parsed;
-      let n = 0;
-      for (const k in src) {
-        if ((k.indexOf('mw_') === 0 || EXTRA_BACKUP_KEYS.indexOf(k) > -1) && typeof src[k] === 'string') { localStorage.setItem(k, src[k]); n++; }
-      }
-      showToast('已导入 ' + n + ' 项数据，即将刷新…');
-      setTimeout(() => location.reload(), 900);
+      // 把备份里内联的图片还原回 IndexedDB，记录里只留 "IMG:<id>" 引用
+      MWImg.unpackFromImport(src).then(function (real) {
+        try {
+          let n = 0;
+          for (const k in real) {
+            if ((k.indexOf('mw_') === 0 || EXTRA_BACKUP_KEYS.indexOf(k) > -1) && typeof real[k] === 'string') { localStorage.setItem(k, real[k]); n++; }
+          }
+          showToast('已导入 ' + n + ' 项数据，即将刷新…');
+          setTimeout(() => location.reload(), 900);
+        } catch (e) {
+          showToast('导入失败：本地空间可能已满（可先删除部分图片）', 'error');
+        }
+      }).catch(function () { showToast('备份文件无法识别', 'error'); });
     } catch (e) {
       showToast('备份文件无法识别', 'error');
     }
@@ -976,6 +989,7 @@ function renderCheckin(c) {
         <button class="checkin-tab" data-tab="quick">快速打卡</button>
         <button class="checkin-tab" data-tab="habit">习惯打卡</button>
         <button class="checkin-tab" data-tab="plan">今日计划</button>
+        <button class="checkin-tab" data-tab="diary">打卡日记</button>
         <button class="checkin-tab" data-tab="stats">数据统计</button>
       </div>
 
@@ -1001,6 +1015,7 @@ function renderCheckinTab() {
   else if (currentCheckinTab === 'habit') renderHabitTab(c);
   else if (currentCheckinTab === 'plan') renderTodayPlanTab(c);
   else if (currentCheckinTab === 'stats') renderStatsTab(c);
+  else if (currentCheckinTab === 'diary') renderCheckinDiary(c);
 }
 
 function renderTasksTab(c) {
@@ -1576,6 +1591,125 @@ function chartOptions(label, color) {
 }
 
 /* ============================================
+   打卡日记（带图，图片存 IndexedDB，绕开 localStorage 5MB 限制）
+   ============================================ */
+let checkinDiaryImages = [];
+
+function renderCheckinDiary(c) {
+  c.innerHTML = `
+    <div class="review-card">
+      <div class="review-date"><i class="fas fa-camera"></i> 今日打卡日记 — ${new Date().toLocaleDateString('zh-CN', {year:'numeric',month:'long',day:'numeric'})}</div>
+      <h3 style="margin-bottom:10px;font-size:15px;">记一句今天，配张图</h3>
+      <textarea class="review-textarea" id="diary-text" placeholder="今天过得怎么样？配一张照片留念～" style="min-height:80px;"></textarea>
+      <div class="image-upload-area">
+        <h4><i class="fas fa-images"></i> 添加图片（最多6张）</h4>
+        <label class="btn-upload">
+          <i class="fas fa-cloud-upload-alt"></i> 选择图片
+          <input type="file" accept="image/*" multiple style="display:none" id="diary-img-input">
+        </label>
+        <div class="image-preview-grid" id="diary-img-preview"></div>
+      </div>
+      <button class="btn-save" onclick="saveCheckinDiary()"><i class="fas fa-save"></i> 保存今日日记</button>
+    </div>
+    <div class="review-history" id="diary-history">
+      <h3 style="font-size:18px;margin:18px 0 10px;"><i class="fas fa-history"></i> 历史日记</h3>
+      <div id="diary-history-list"></div>
+    </div>
+  `;
+  checkinDiaryImages = [];
+  $('#diary-img-input').addEventListener('change', handleDiaryUpload);
+  renderDiaryHistory();
+}
+
+function handleDiaryUpload(e) {
+  const files = e.target.files;
+  const maxImages = 6;
+  if (checkinDiaryImages.length + files.length > maxImages) { showToast(`最多上传${maxImages}张图片`, 'error'); return; }
+  Promise.all(Array.from(files).map(reviewCompress))
+    .then(function (dataUrls) {
+      return Promise.all(dataUrls.map(function (d) { return MWImg.put(d).then(function (id) { return MWImg.PREFIX + id; }); }));
+    })
+    .then(function (ids) {
+      ids.forEach(function (id) { checkinDiaryImages.push(id); });
+      renderDiaryImages();
+    })
+    .catch(function () { showToast('部分图片处理失败', 'error'); });
+  e.target.value = '';
+}
+
+function renderDiaryImages() {
+  const grid = $('#diary-img-preview');
+  if (!grid) return;
+  grid.innerHTML = checkinDiaryImages.map(function (ref, i) {
+    const idAttr = ref.indexOf(MWImg.PREFIX) === 0 ? ' data-imgid="' + ref.slice(MWImg.PREFIX.length) + '"' : '';
+    const srcAttr = ref.indexOf('data:') === 0 ? ' src="' + ref + '"' : '';
+    return '<div class="image-preview-item"><img' + srcAttr + idAttr + ' onclick="previewImage(this.src)"><button class="remove-img" onclick="removeDiaryImage(' + i + ')">&times;</button></div>';
+  }).join('');
+  MWImg.fill(grid);
+}
+
+function removeDiaryImage(idx) {
+  const ref = checkinDiaryImages[idx];
+  if (typeof ref === 'string' && ref.indexOf(MWImg.PREFIX) === 0) MWImg.delete(ref.slice(MWImg.PREFIX.length));
+  checkinDiaryImages.splice(idx, 1);
+  renderDiaryImages();
+}
+
+function saveCheckinDiary() {
+  const text = $('#diary-text').value.trim();
+  if (!text && checkinDiaryImages.length === 0) { showToast('写点什么或加张图再保存吧', 'error'); return; }
+  const diaries = loadData('checkin_diary', []);
+  const todayStr = today();
+  const entry = { id: uid(), date: todayStr, datetime: new Date().toISOString(), text: text, images: checkinDiaryImages.slice() };
+  const idx = diaries.findIndex(d => d.date === todayStr);
+  if (idx > -1) diaries[idx] = entry; else diaries.unshift(entry);
+  saveData('checkin_diary', diaries);
+  showToast(idx > -1 ? '今日日记已更新' : '日记已保存');
+  renderCheckinDiary($('#checkin-content'));
+}
+
+function renderDiaryHistory() {
+  const diaries = loadData('checkin_diary', []);
+  const list = $('#diary-history-list');
+  if (!list) return;
+  if (diaries.length === 0) { list.innerHTML = '<div class="empty-state"><i class="fas fa-camera"></i><p>还没有日记，今天写第一篇吧～</p></div>'; return; }
+  list.innerHTML = diaries.map(function (d) {
+    const dt = new Date(d.datetime || d.date);
+    const dateStr = (dt.getMonth() + 1) + '月' + dt.getDate() + '日';
+    return `
+      <div class="review-day-group open">
+        <div class="review-day-header">
+          <div class="review-day-title"><span>${dateStr}</span>${d.date === today() ? '<span class="review-today-badge">今天</span>' : ''}</div>
+          <span class="review-day-count">${(d.text || '').length}字${(d.images && d.images.length) ? ' · ' + d.images.length + '图' : ''}</span>
+        </div>
+        <div class="review-day-body">
+          ${d.text ? `<p class="review-text-content">${d.text}</p>` : ''}
+          ${d.images && d.images.length ? `
+            <div class="review-images">
+              ${d.images.map(function (img) {
+                if (typeof img === 'string' && img.indexOf(MWImg.PREFIX) === 0) return '<img class="review-thumb" data-imgid="' + img.slice(MWImg.PREFIX.length) + '" onclick="previewImage(this.src)">';
+                return '<img class="review-thumb" src="' + img + '" onclick="previewImage(this.src)">';
+              }).join('')}
+            </div>` : ''}
+          <div class="review-day-actions"><button class="review-del" onclick="deleteCheckinDiary('${d.id}')"><i class="fas fa-trash"></i> 删除</button></div>
+        </div>
+      </div>`;
+  }).join('');
+  MWImg.fill(list);
+}
+
+function deleteCheckinDiary(id) {
+  if (!confirm('确定删除这篇日记吗？')) return;
+  let diaries = loadData('checkin_diary', []);
+  const d = diaries.find(x => x.id === id);
+  if (d && d.images) d.images.forEach(function (img) { if (typeof img === 'string' && img.indexOf(MWImg.PREFIX) === 0) MWImg.delete(img.slice(MWImg.PREFIX.length)); });
+  diaries = diaries.filter(x => x.id !== id);
+  saveData('checkin_diary', diaries);
+  renderCheckinDiary($('#checkin-content'));
+  showToast('已删除');
+}
+
+/* ============================================
    每日复盘板块
    ============================================ */
 function renderReview(c) {
@@ -1669,6 +1803,32 @@ function renderReview(c) {
   renderReviewHistory();
 }
 
+function reviewCompress(file) {
+  return new Promise(function (resolve, reject) {
+    if (!file.type || !file.type.startsWith('image/')) { reject(); return; }
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        const maxSize = 800;
+        let w = img.width, h = img.height;
+        if (w > maxSize || h > maxSize) {
+          if (w > h) { h = h * maxSize / w; w = maxSize; }
+          else { w = w * maxSize / h; h = maxSize; }
+        }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.onerror = reject;
+      img.src = ev.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 function handleImageUpload(e) {
   const files = e.target.files;
   const maxImages = 6;
@@ -1676,51 +1836,33 @@ function handleImageUpload(e) {
     showToast(`最多上传${maxImages}张图片`, 'error');
     return;
   }
-
-  Array.from(files).forEach(file => {
-    if (!file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      // 压缩图片
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const maxSize = 800;
-        let { width, height } = img;
-        if (width > maxSize || height > maxSize) {
-          if (width > height) {
-            height = height * maxSize / width;
-            width = maxSize;
-          } else {
-            width = width * maxSize / height;
-            height = maxSize;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        reviewImages.push(canvas.toDataURL('image/jpeg', 0.7));
-        renderReviewImages();
-      };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
+  // 压缩后存入 IndexedDB（绕开 localStorage 5MB 限制），记录里只留 "IMG:<id>" 引用
+  Promise.all(Array.from(files).map(reviewCompress))
+    .then(function (dataUrls) {
+      return Promise.all(dataUrls.map(function (d) { return MWImg.put(d).then(function (id) { return MWImg.PREFIX + id; }); }));
+    })
+    .then(function (ids) {
+      ids.forEach(function (id) { reviewImages.push(id); });
+      renderReviewImages();
+    })
+    .catch(function () { showToast('部分图片处理失败', 'error'); });
   e.target.value = '';
 }
 
 function renderReviewImages() {
   const grid = $('#review-img-preview');
   if (!grid) return;
-  grid.innerHTML = reviewImages.map((src, i) => `
-    <div class="image-preview-item">
-      <img src="${src}" onclick="previewImage('${src}')">
-      <button class="remove-img" onclick="removeReviewImage(${i})">&times;</button>
-    </div>
-  `).join('');
+  grid.innerHTML = reviewImages.map(function (ref, i) {
+    const idAttr = ref.indexOf(MWImg.PREFIX) === 0 ? ' data-imgid="' + ref.slice(MWImg.PREFIX.length) + '"' : '';
+    const srcAttr = ref.indexOf('data:') === 0 ? ' src="' + ref + '"' : '';
+    return '<div class="image-preview-item"><img' + srcAttr + idAttr + ' onclick="previewImage(this.src)"><button class="remove-img" onclick="removeReviewImage(' + i + ')">&times;</button></div>';
+  }).join('');
+  MWImg.fill(grid);
 }
 
 function removeReviewImage(idx) {
+  const ref = reviewImages[idx];
+  if (typeof ref === 'string' && ref.indexOf(MWImg.PREFIX) === 0) MWImg.delete(ref.slice(MWImg.PREFIX.length));
   reviewImages.splice(idx, 1);
   renderReviewImages();
 }
@@ -1862,7 +2004,12 @@ function renderReviewHistory() {
           ${text ? `<p class="review-text-content">${text}</p>` : '<p style="color:var(--text-light);font-size:13px;">（当天只记了心情/图片）</p>'}
           ${r.images && r.images.length > 0 ? `
             <div class="review-images">
-              ${r.images.map(img => `<img src="${img}" onclick="previewImage('${img}')">`).join('')}
+              ${r.images.map(function (img) {
+                if (typeof img === 'string' && img.indexOf(MWImg.PREFIX) === 0) {
+                  return '<img class="review-thumb" data-imgid="' + img.slice(MWImg.PREFIX.length) + '" onclick="previewImage(this.src)">';
+                }
+                return '<img class="review-thumb" src="' + img + '" onclick="previewImage(this.src)">';
+              }).join('')}
             </div>
           ` : ''}
           <div class="review-day-actions">
@@ -1873,6 +2020,7 @@ function renderReviewHistory() {
     `;
   });
   list.innerHTML = html;
+  MWImg.fill(list);
 }
 
 function toggleReviewDay(day) {
