@@ -5762,7 +5762,7 @@ body {
   background-attachment: fixed;
   color: var(--text-primary);
 }
-#app { background: transparent; }
+#app { background: #FAF5EE; }
 /* 宣纸点纹肌理（淡彩） */
 body::before {
   content: "";
@@ -5961,11 +5961,20 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary); outlin
     color-scheme: light !important;
     forced-color-adjust: none !important;
   }
-  /* 强制背景色：覆盖系统暗色模式 */
-  html { background: #FAF5EE !important; }
-  body { background-color: #FAF5EE !important; color: #3E3550 !important; }
+  /* 强制背景色：覆盖系统暗色模式（核弹级：所有层都写死亮色） */
+  html { background: #FAF5EE !important; color-scheme: light !important; }
+  body { background-color: #FAF5EE !important; background: #FAF5EE !important; color: #3E3550 !important; }
   #app { background: #FAF5EE !important; }
   .main-content, main.main-content { background: #FAF5EE !important; }
+
+  /* 核弹级：强制所有卡片/面板/容器为亮色 */
+  .card, .dash-card, .overview-card, .zm-card, .ai-stage, .ai-step,
+  .module-header, .module-content, .geo-card, .geo-dimension-card,
+  .section-container, [class*="card"], [class*="panel"], [class*="container"] {
+    background-color: #FCF8F1 !important;
+    background: #FCF8F1 !important;
+    color: #3E3550 !important;
+  }
 
   /* ===== 侧栏：固定定位 + 默认滑出屏幕左侧（三重保障） ===== */
   #sidebar,
