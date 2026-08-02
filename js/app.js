@@ -5410,8 +5410,8 @@ function renderOverview(c) {
           </div>
         </div>
         <div class="db-btns">
-          <button class="db-btn" onclick="exportData()"><i class="fas fa-file-export"></i> 导出备份</button>
-          <button class="db-btn db-btn-2" onclick="importData()"><i class="fas fa-file-import"></i> 导入备份</button>
+          <button class="db-btn" onclick="exportData()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14v-4h-3l4-5 4 5h-3v4h-2z" fill="#8A6CB0"/></svg> 导出备份</button>
+          <button class="db-btn db-btn-2" onclick="importData()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="#C99BB5"/><circle cx="16" cy="5" r="2" fill="#FFD966"/></svg> 导入备份</button>
         </div>
         <input type="file" id="data-import-file" accept="application/json,.json" style="display:none" onchange="doImportData(this)">
       </div>
