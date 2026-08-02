@@ -5439,38 +5439,8 @@ const MODULE_META = {
   country:  { name: '国情与世界', icon: 'fa-globe', color: '#16a085' }
 };
 
-// ===== 跨设备数据同步（导出/导入备份文件） =====
-function exportData() {
-  try {
-    const data = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.indexOf('mw_') === 0) data[k] = localStorage.getItem(k);
-    }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = '马雯工作台数据备份_' + today() + '.json';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast('已导出 ' + Object.keys(data).length + ' 项数据，可发到手机后导入');
-  } catch (e) { showToast('导出失败：' + e.message); }
-}
+// ===== 跨设备数据同步：总览页的备份入口统一走完整版 exportWorkbench/importWorkbench（含图片 + 旅行地图） =====
 function importData() { const f = document.getElementById('data-import-file'); if (f) f.click(); }
-function doImportData(input) {
-  const file = input.files && input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      const data = JSON.parse(reader.result);
-      let n = 0;
-      for (const k in data) { if (k.indexOf('mw_') === 0) { localStorage.setItem(k, data[k]); n++; } }
-      showToast('已导入 ' + n + ' 项数据，即将刷新');
-      setTimeout(() => location.reload(), 900);
-    } catch (e) { showToast('导入失败：文件格式错误'); }
-  };
-  reader.readAsText(file);
-}
 
 let currentOvPeriod = 'week';
 function renderOverview(c) {
@@ -5560,10 +5530,10 @@ function renderOverview(c) {
           </div>
         </div>
         <div class="db-btns">
-          <button class="db-btn" onclick="exportData()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14v-4h-3l4-5 4 5h-3v4h-2z" fill="#8A6CB0"/></svg> 导出备份</button>
+          <button class="db-btn" onclick="exportWorkbench()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14v-4h-3l4-5 4 5h-3v4h-2z" fill="#8A6CB0"/></svg> 导出备份</button>
           <button class="db-btn db-btn-2" onclick="importData()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="#C99BB5"/><circle cx="16" cy="5" r="2" fill="#FFD966"/></svg> 导入备份</button>
         </div>
-        <input type="file" id="data-import-file" accept="application/json,.json" style="display:none" onchange="doImportData(this)">
+        <input type="file" id="data-import-file" accept="application/json,.json" style="display:none" onchange="importWorkbench(this)">
       </div>
 
       <div class="ov-grid">
