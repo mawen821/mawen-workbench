@@ -1,10 +1,78 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#8A6CB0"/>
-      <stop offset="1" stop-color="#C99BB5"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#8A6CB0"/>
+      <stop offset="100%" stop-color="#A78BC7"/>
     </linearGradient>
+    <linearGradient id="desk" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#F5EDF5"/>
+      <stop offset="100%" stop-color="#E8DFF5"/>
+    </linearGradient>
+    <radialGradient id="cheek" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#F5A0A0" stop-opacity=".6"/>
+      <stop offset="100%" stop-color="#F5A0A0" stop-opacity="0"/>
+    </radialGradient>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#g)"/>
-  <path d="M256 150 L284 228 L362 256 L284 284 L256 362 L228 284 L150 256 L228 228 Z" fill="#ffffff" fill-opacity="0.95"/>
+
+  <!-- 圆角背景 -->
+  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+
+  <!-- 装饰性云朵 -->
+  <ellipse cx="420" cy="110" rx="55" ry="35" fill="#fff" opacity=".12"/>
+  <ellipse cx="90" cy="430" rx="45" ry="28" fill="#fff" opacity=".08"/>
+  <circle cx="440" cy="400" r="20" fill="#FFD966" opacity=".25"/>
+  <circle cx="75" cy="115" r="15" fill="#FFD966" opacity=".2"/>
+
+  <!-- 可爱小书桌 -->
+  <rect x="116" y="300" width="280" height="22" rx="11" fill="url(#desk)"/>
+  <rect x="140" y="322" width="20" height="95" rx="6" fill="#C99BB5" opacity=".5"/>
+  <rect x="352" y="322" width="20" height="95" rx="6" fill="#C99BB5" opacity=".5"/>
+
+  <!-- 桌上的小电脑屏幕 -->
+  <rect x="170" y="180" width="172" height="118" rx="14" fill="#FAF5EE" stroke="#E8DFF5" stroke-width="4"/>
+  <rect x="184" y="196" width="144" height="86" rx="8" fill="#EDE4F5"/>
+
+  <!-- 屏幕上的可爱内容：小勾勾（代表完成✓） -->
+  <path d="M230 250 L260 278 L310 225" stroke="#8A6CB0" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="270" cy="235" r="18" fill="#FFD966" opacity=".35"/>
+
+  <!-- 显示器底座 -->
+  <rect x="238" y="298" width="36" height="8" rx="4" fill="#C99BB5" opacity=".6"/>
+
+  <!-- 桌上小盆栽 -->
+  <rect x="365" y="252" width="34" height="48" rx="8" fill="#F5A0A0" opacity=".5"/>
+  <ellipse cx="382" cy="248" rx="20" ry="16" fill="#7CB97C" opacity=".6"/>
+  <path d="M382 248 Q372 220 382 200 Q392 220 382 248" fill="#8FD48F" opacity=".7"/>
+  <path d="M382 248 Q368 232 360 240 Q370 248 382 248" fill="#7CB97C" opacity=".5"/>
+  <path d="M382 248 Q396 235 404 245 Q394 250 382 248" fill="#7CB97C" opacity=".5"/>
+
+  <!-- 桌上小台灯 -->
+  <rect x="118" y="266" width="30" height="34" rx="6" fill="#FFD966" opacity=".65"/>
+  <path d="M133 266 L133 238 Q133 210 160 202 L175 198" stroke="#FFD966" stroke-width="7" stroke-linecap="round" fill="none" opacity=".7"/>
+  <ellipse cx="182" cy="196" rx="18" ry="10" fill="#FFF5CC" opacity=".8"/>
+
+  <!-- 可爱笑脸（在屏幕区域上方，像个小精灵） -->
+  <circle cx="256" cy="130" r="46" fill="#FAF5EE"/>
+  <circle cx="256" cy="130" r="40" fill="#FFF9F2"/>
+
+  <!-- 眼睛 -->
+  <ellipse cx="238" cy="124" rx="9" ry="11" fill="#5A4470"/>
+  <ellipse cx="274" cy="124" rx="9" ry="11" fill="#5A4470"/>
+  <circle cx="241" cy="121" r="3.5" fill="#fff"/>
+  <circle cx="277" cy="121" r="3.5" fill="#fff"/>
+
+  <!-- 微笑 -->
+  <path d="M242 146 Q256 162 270 146" stroke="#5A4470" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+
+  <!-- 腮红 -->
+  <circle cx="224" cy="138" r="10" fill="url(#cheek)"/>
+  <circle cx="288" cy="138" r="10" fill="url(#cheek)"/>
+
+  <!-- 小蝴蝶结/装饰 -->
+  <path d="M256 82 L246 94 L256 88 L266 94 Z" fill="#F5A0A0" opacity=".7"/>
+  <circle cx="256" cy="80" r="5" fill="#F5A0A0" opacity=".6"/>
+
+  <!-- 小星星装饰 -->
+  <path d="M100 200 l3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="#FFD966" opacity=".5"/>
+  <path d="M410 250 l2.5 6 6 2.5-6 2.5-2.5 6-2.5-6-6-2.5 6-2.5z" fill="#FFD966" opacity=".4"/>
 </svg>
