@@ -587,6 +587,69 @@ const GRAMMAR_DATA = [
       }
     ],
     tip: "虚拟语气最核心的规则：时态后移。现在变过去，过去变过去完成。If I were 中的 were 是固定用法，不管主语是谁都用were（正式英语中）。"
+  },
+  {
+    id: 18,
+    title: "倒装句 (Inversion)",
+    icon: "fa-exchange-alt",
+    intro: "倒装句是指将句子中的谓语动词或助动词放在主语之前的句式。倒装分为全部倒装和局部倒装，是英语写作和阅读中常见的高级语法现象。",
+    sections: [
+      {
+        heading: "什么是倒装句？",
+        content: "正常语序是主语在前、谓语在后。倒装则是谓语（或助动词/情态动词）放在主语之前。全部倒装：整个谓语移到主语前。局部倒装（部分倒装）：只将助动词、be动词或情态动词移到主语前。",
+        examples: [
+          { en: "The bus comes. → Here comes the bus. (全部倒装)", cn: "公交车来了。→ 公交车来了。（here置于句首，谓语comes移到主语前）" },
+          { en: "He can swim. → Can he swim? (局部倒装)", cn: "他会游泳。→ 他会游泳吗？（疑问句本质上是倒装）" }
+        ]
+      },
+      {
+        heading: "全部倒装的情况",
+        content: "1. 表示方位或时间的副词 here, there, now, then 置于句首，且主语是名词时。2. 表示方位的介词短语置于句首时。注意：若主语是代词，则不倒装。",
+        examples: [
+          { en: "Here comes the teacher.", cn: "老师来了。" },
+          { en: "There goes the bell.", cn: "铃响了。" },
+          { en: "In front of the house stands a tall tree.", cn: "房子前面矗立着一棵大树。" },
+          { en: "Here you are. (主语是代词，不倒装)", cn: "给你。/你到了。" }
+        ]
+      },
+      {
+        heading: "局部倒装的情况（否定词置于句首）",
+        content: "当否定词或半否定词（never, seldom, hardly, rarely, little, not until, no sooner...than, hardly...when 等）置于句首时，句子需要局部倒装。",
+        examples: [
+          { en: "I have never seen such a beautiful sunset. → Never have I seen such a beautiful sunset.", cn: "我从未见过如此美丽的日落。→ 我从未见过如此美丽的日落。" },
+          { en: "She hardly had time to eat. → Hardly did she have time to eat.", cn: "她几乎没有时间吃饭。→ 她几乎没有时间吃饭。" },
+          { en: "I didn't realize it until he told me. → Not until he told me did I realize it.", cn: "直到他告诉我，我才意识到。→ 直到他告诉我，我才意识到。" }
+        ]
+      },
+      {
+        heading: "局部倒装的情况（Only / So / Such 置于句首）",
+        content: "Only + 状语（副词、介词短语、从句）置于句首时，主句需要局部倒装。So / Such...that 结构中，so/such 置于句首时也需要倒装。",
+        examples: [
+          { en: "You can succeed only by working hard. → Only by working hard can you succeed.", cn: "只有努力工作，你才能成功。→ 只有努力工作，你才能成功。" },
+          { en: "I realized the truth only when I saw the evidence. → Only when I saw the evidence did I realize the truth.", cn: "只有当我看到证据时，我才意识到真相。→ 只有当我看到证据时，我才意识到真相。" },
+          { en: "He is so kind that everyone likes him. → So kind is he that everyone likes him.", cn: "他如此善良，以至于每个人都喜欢他。→ 他如此善良，以至于每个人都喜欢他。" }
+        ]
+      },
+      {
+        heading: "虚拟条件句中的倒装（省略if）",
+        content: "在虚拟语气的条件句中，如果省略if，需要将 were, had, should 提到主语之前，形成倒装。这是比较正式的书面表达。",
+        examples: [
+          { en: "If I were you, I would accept the offer. → Were I you, I would accept the offer.", cn: "如果我是你，我会接受这个提议。→ 如果我是你，我会接受这个提议。" },
+          { en: "If he had studied harder, he would have passed. → Had he studied harder, he would have passed.", cn: "如果他当时更努力学习，他就通过了。→ 如果他当时更努力学习，他就通过了。" },
+          { en: "If it should rain tomorrow, we would cancel the trip. → Should it rain tomorrow, we would cancel the trip.", cn: "如果明天下雨，我们就取消旅行。→ 如果明天下雨，我们就取消旅行。" }
+        ]
+      },
+      {
+        heading: "as / though 引导的让步状语从句倒装",
+        content: "在 as 或 though 引导的让步状语从句中，可以将表语、状语或动词原形提到句首，形成倒装。注意：这种倒装中，名词前不加冠词。",
+        examples: [
+          { en: "Although he is young, he knows a lot. → Young as/though he is, he knows a lot.", cn: "虽然他很年轻，但他懂得很多。→ 虽然他很年轻，但他懂得很多。" },
+          { en: "Although she tried hard, she failed. → Hard as/though she tried, she failed.", cn: "尽管她很努力，但还是失败了。→ 尽管她很努力，但还是失败了。" },
+          { en: "Although he is a child, he speaks English fluently. → Child as/though he is, he speaks English fluently.", cn: "虽然他只是个小孩，但英语说得很流利。→ 虽然他只是个小孩，但英语说得很流利。（child前无冠词）" }
+        ]
+      }
+    ],
+    tip: "倒装句的识别关键：看主语和谓语/助动词的位置是否反常。写作中使用倒装能让句子更有变化和强调效果，但不要滥用。"
   }
 ];
 
@@ -693,7 +756,12 @@ const WORDS_DATA = {
     { en: "write", phonetic: "/raɪt/", cn: `v. 写`, example: "I can write my name." },
     { en: "draw", phonetic: "/drɔː/", cn: `v. 画`, example: "She likes to draw pictures." },
     { en: "dance", phonetic: "/dɑːns/", cn: `v. 跳舞`, example: "They dance at the party." },
-    { en: "sleep", phonetic: "/sliːp/", cn: `v. 睡觉`, example: "I sleep at nine o'clock." }
+    { en: "sleep", phonetic: "/sliːp/", cn: `v. 睡觉`, example: "I sleep at nine o'clock." },
+    { en: "breakfast", phonetic: "/ˈbrekfəst/", cn: `n. 早餐`, example: "I eat breakfast at seven." },
+    { en: "lunch", phonetic: "/lʌntʃ/", cn: `n. 午餐`, example: "Let's have lunch together." },
+    { en: "dinner", phonetic: "/ˈdɪnə/", cn: `n. 晚餐`, example: "Dinner is ready!" },
+    { en: "shoes", phonetic: "/ʃuːz/", cn: `n. 鞋子`, example: "Put on your shoes, please." },
+    { en: "bag", phonetic: "/bæɡ/", cn: `n. 包`, example: "My bag is heavy." }
   ],
   middle: [
     { en: "achieve", phonetic: "/əˈtʃiːv/", cn: "v. 实现，达成", example: "You can achieve your goals with hard work." },
@@ -796,7 +864,17 @@ const WORDS_DATA = {
     { en: "organize", phonetic: `/ˈɔːɡənaɪz/`, cn: `v. 组织`, example: "She organized a charity event." },
     { en: "policy", phonetic: `/ˈpɒləsi/`, cn: `n. 政策`, example: "The new policy helps students." },
     { en: "protect", phonetic: `/prəˈtekt/`, cn: `v. 保护`, example: "We must protect the earth." },
-    { en: "original", phonetic: `/əˈrɪdʒənl/`, cn: `adj. 原始的，原创的`, example: "This is the original painting." }
+    { en: "original", phonetic: `/əˈrɪdʒənl/`, cn: `adj. 原始的，原创的`, example: "This is the original painting." },
+    { en: "volunteer", phonetic: `/ˌvɒlənˈtɪə/`, cn: `n. 志愿者 v. 自愿`, example: "She works as a volunteer at the hospital." },
+    { en: "experience", phonetic: `/ɪkˈspɪəriəns/`, cn: `n. 经验 v. 体验`, example: "Travel gives you valuable experience." },
+    { en: "difficult", phonetic: `/ˈdɪfɪk(ə)lt/`, cn: `adj. 困难的`, example: "Math can be difficult for some students." },
+    { en: "practice", phonetic: `/ˈpræktɪs/`, cn: `n./v. 练习`, example: "Practice makes perfect." },
+    { en: "improve", phonetic: `/ɪmˈpruːv/`, cn: `v. 改善`, example: "I want to improve my English speaking." },
+    { en: "consider", phonetic: `/kənˈsɪdə/`, cn: `v. 考虑`, example: "Please consider my suggestion carefully." },
+    { en: "suggest", phonetic: `/səˈdʒest/`, cn: `v. 建议`, example: "I suggest we start early tomorrow." },
+    { en: "explain", phonetic: `/ɪkˈspleɪn/`, cn: `v. 解释`, example: "Can you explain this word to me?" },
+    { en: "discover", phonetic: `/dɪˈskʌvə/`, cn: `v. 发现`, example: "Scientists discovered a new planet last year." },
+    { en: "popular", phonetic: `/ˈpɒpjʊlə/`, cn: `adj. 受欢迎的`, example: "This song is very popular among teenagers." }
   ],
   high: [
     { en: "abandon", phonetic: "/əˈbændən/", cn: "v. 放弃，抛弃", example: "Never abandon your dreams." },
@@ -892,7 +970,12 @@ const WORDS_DATA = {
     { en: "scrutinize", phonetic: `/ˈskruːtənaɪz/`, cn: `v. 仔细检查`, example: "The committee scrutinized the report." },
     { en: "shift", phonetic: `/ʃɪft/`, cn: `v. 转移 n. 转变`, example: "There was a shift in public opinion." },
     { en: "simultaneous", phonetic: `/ˌsɪmlˈteɪniəs/`, cn: `adj. 同时发生的`, example: "The two events were simultaneous." },
-    { en: "substitute", phonetic: `/ˈsʌbstɪtjuːt/`, cn: `n. 替代品 v. 替代`, example: "Honey is a good substitute for sugar." }
+    { en: "substitute", phonetic: `/ˈsʌbstɪtjuːt/`, cn: `n. 替代品 v. 替代`, example: "Honey is a good substitute for sugar." },
+    { en: "allocate", phonetic: `/ˈæləkeɪt/`, cn: `v. 分配`, example: "The government allocated funds for education." },
+    { en: "anticipate", phonetic: `/ænˈtɪsɪpeɪt/`, cn: `v. 预期`, example: "We anticipate a busy holiday season this year." },
+    { en: "conscious", phonetic: `/ˈkɒnʃəs/`, cn: `adj. 有意识的`, example: "He was conscious of the risk involved." },
+    { en: "reinforce", phonetic: `/ˌriːɪnˈfɔːs/`, cn: `v. 加强`, example: "The teacher used examples to reinforce the lesson." },
+    { en: "spontaneous", phonetic: `/spɒnˈteɪniəs/`, cn: `adj. 自发的`, example: "The audience burst into spontaneous applause." }
   ],
 
   // ===== 四级（CET-4） =====
@@ -1207,7 +1290,12 @@ const SPEAKING_DATA = [
   { en: "I'd like to try the local specialty, please.", cn: "我想尝尝当地的特色菜。", scene: "点餐" },
   { en: "Is it within walking distance from here?", cn: "从这里走路能到吗？", scene: "问路" },
   { en: "It's been ages! How have you been?", cn: "好久不见！你最近怎么样？", scene: "社交" },
-  { en: "Is there a direct train to the airport?", cn: "有直达机场的火车吗？", scene: "旅行" }
+    { en: "Is there a direct train to the airport?", cn: "有直达机场的火车吗？", scene: "旅行" },
+  { en: "Could you give me a refund?", cn: "能给我退款吗？", scene: "购物" },
+  { en: "I'd like a table for two, please.", cn: "请给我一张两人桌。", scene: "点餐" },
+  { en: "How do I get to the train station?", cn: "去火车站怎么走？", scene: "问路" },
+  { en: "What have you been up to lately?", cn: "你最近在忙什么？", scene: "社交" },
+  { en: "Could you recommend a good hotel nearby?", cn: "你能推荐附近一家好酒店吗？", scene: "旅行" }
 ];
 
 // ===== 经典阅读（中英对照） =====
@@ -1356,6 +1444,27 @@ const READING_DATA = [
       { word: "quench", meaning: "v. 解渴" },
       { word: "mutter", meaning: "v. 嘟囔" },
       { word: "despise", meaning: "v. 轻视，鄙视" }
+    ]
+  },
+  {
+    title: "The Ant and the Grasshopper (蚂蚁与蚱蜢)",
+    level: "初级",
+    difficulty: "⭐",
+    paragraphs: [
+      { en: "One bright summer day, a grasshopper was hopping about in a field, singing and chirping merrily. An ant passed by, carrying a heavy grain of wheat with great effort.", cn: "一个阳光明媚的夏日，一只蚱蜢在田野里蹦蹦跳跳，欢快地唱着歌、唧唧叫着。一只蚂蚁路过，正费力地拖着一粒沉重的麦子。" },
+      { en: "\"Why don't you come and sing with me?\" said the grasshopper. \"Instead of working so hard all day long.\"", cn: "\"你为什么不一起来唱歌呢？\"蚱蜢说，\"何必整天这么辛苦地工作。\"" },
+      { en: "\"I am helping to store food for the winter,\" said the ant, \"and I recommend you do the same.\"", cn: "\"我在帮忙储存过冬的食物，\"蚂蚁说，\"我建议你也这样做。\"" },
+      { en: "\"Why worry about winter?\" said the grasshopper. \"We have plenty of food right now.\" But the ant went on its way and continued its hard work.", cn: "\"为什么要担心冬天呢？\"蚱蜢说，\"我们现在食物充足。\"但蚂蚁继续赶路，继续辛勤工作。" },
+      { en: "When winter came, the ground was covered with snow. The grasshopper could find nothing to eat and was starving. Meanwhile, the ant and its family were safe and warm, eating the food they had stored all summer.", cn: "冬天来临时，大地被雪覆盖。蚱蜢找不到任何吃的，饿得奄奄一息。与此同时，蚂蚁和它的家人安全而温暖地吃着整个夏天储存下来的食物。" },
+      { en: "Moral: It is wise to prepare for the future while you have the chance. Those who work hard in good times will not suffer in bad times.", cn: "寓意：有机会时为未来做准备是明智的。在好时光努力工作的人，不会在坏时光里受苦。" }
+    ],
+    vocabulary: [
+      { word: "grasshopper", meaning: "n. 蚱蜢" },
+      { word: "chirp", meaning: "v. 唧唧叫" },
+      { word: "grain", meaning: "n. 谷物，粮食" },
+      { word: "recommend", meaning: "v. 建议" },
+      { word: "starve", meaning: "v. 挨饿" },
+      { word: "store", meaning: "v. 储存" }
     ]
   }
 ];

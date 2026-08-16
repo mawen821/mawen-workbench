@@ -3,7 +3,7 @@
    ============================================ */
 
 // ===== 全局状态 =====
-let currentModule = 'checkin';
+let currentModule = 'overview';
 let currentEngTab = 'today';
 let currentWordBook = 'primary';
 let currentFinancePhase = 0;
@@ -48,25 +48,173 @@ function showToast(msg, type = 'success') {
   setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2500);
 }
 
+/* ===== 通用放大阅读弹窗（读书/申论/常识点击放大） ===== */
+function openZoom(title, html) {
+  let m = document.getElementById('zoom-modal');
+  if (!m) {
+    m = document.createElement('div');
+    m.className = 'zoom-modal';
+    m.id = 'zoom-modal';
+    m.style.display = 'none';
+    m.innerHTML = `<div class="zoom-modal-content"><button class="zoom-modal-close" onclick="closeZoom()">&times;</button><h3 class="zoom-modal-title"></h3><div class="zoom-modal-body"></div></div>`;
+    document.body.appendChild(m);
+    m.addEventListener('click', e => { if (e.target === m) closeZoom(); });
+  }
+  m.querySelector('.zoom-modal-title').innerHTML = title || '';
+  m.querySelector('.zoom-modal-body').innerHTML = html || '';
+  m.style.display = 'flex';
+  m.querySelector('.zoom-modal-content').scrollTop = 0;
+}
+function closeZoom() { const m = document.getElementById('zoom-modal'); if (m) m.style.display = 'none'; }
+
+/* ===== 视频放大弹窗（每天10分钟点击放大播放） ===== */
+function openVideoModal(bvid, title) {
+  let m = document.getElementById('video-modal');
+  if (!m) {
+    m = document.createElement('div');
+    m.className = 'video-modal';
+    m.id = 'video-modal';
+    m.style.display = 'none';
+    m.innerHTML = `<div class="video-modal-content"><button class="video-modal-close" onclick="closeVideoModal()">&times;</button><div id="video-modal-body"></div></div>`;
+    document.body.appendChild(m);
+    m.addEventListener('click', e => { if (e.target === m) closeVideoModal(); });
+  }
+  const body = document.getElementById('video-modal-body');
+  if (body) body.innerHTML = tenminIframeHTML({ bvid, title });
+  m.style.display = 'flex';
+}
+function closeVideoModal() {
+  const m = document.getElementById('video-modal');
+  if (m) { m.style.display = 'none'; const b = document.getElementById('video-modal-body'); if (b) b.innerHTML = ''; }
+}
+function tenminOpenBig(bvid, title) { openVideoModal(bvid, title); }
+
+/* ===== 语音朗读：浏览器不支持时降级为文字放大 ===== */
+// 把任意文本转成安全的 JS 单引号字符串字面量，用于 onclick="fn('...')" 注入。
+// 关键：先转义反斜杠，再转义单引号；否则 "I'm" 这类含撇号的文本会让内联 JS 字符串断裂、点击无反应。
+function jsLit(s) {
+  return String(s == null ? '' : s)
+    .replace(/\\/g, '\\\\')   // 反斜杠优先转义，避免后续转义符被二次处理
+    .replace(/'/g, "\\'")      // 单引号（撇号）
+    .replace(/\r/g, '\\r')
+    .replace(/\n/g, '\\n')
+    .replace(/</g, '\\u003C'); // 防 </script> 逃逸
+}
+function speakFallback(text) {
+  // 最后兜底：仅在 TTS 与有道音频都不可用时调用
+  showToast('当前环境无法播放英语音频，已为你放大文字', 'info');
+  openZoom('🔊 朗读（文字版）', `<p style="font-size:20px;line-height:2;color:var(--text-primary)">${escapeHtml(text)}</p>`);
+}
+
+// 全局英语语速（0.4~1.2），跨卡片记忆
+let engSpeed = (parseFloat(loadData('eng_speed', '0.9')) || 0.9);
+function setEngSpeed(v) {
+  engSpeed = (parseFloat(v) || 0.9);
+  if (engSpeed < 0.4) engSpeed = 0.4;
+  if (engSpeed > 1.2) engSpeed = 1.2;
+  saveData('eng_speed', String(engSpeed));
+  const lab = document.getElementById('eng-speed-val');
+  if (lab) lab.textContent = engSpeed.toFixed(1) + 'x';
+}
+
+// 用有道 dictvoice 公共接口播音频（国内免费、无需 API key、mp3 直链）
+// 兜底链：浏览器 TTS → 有道音频 → 文字放大
+// useFallback=true 时，若连有道音频也播不了（如部分手机 WebView），再降级为文字放大，保证「点击一定有反应」
+let _currentTtsAudio = null;
+function speakByYoudao(text, btn, onEnd, useFallback) {
+  try {
+    if (_currentTtsAudio) { try { _currentTtsAudio.pause(); } catch (e) {} _currentTtsAudio = null; }
+    const audio = new Audio(`https://dict.youdao.com/dictvoice?type=2&audio=${encodeURIComponent(text)}`);
+    audio.preload = 'auto';
+    audio.playbackRate = 1.0;
+    if (btn) {
+      if (!btn.dataset.orig) btn.dataset.orig = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 播放中';
+    }
+    const done = () => {
+      if (btn) btn.innerHTML = btn.dataset.orig || btn.innerHTML;
+      if (onEnd) onEnd();
+    };
+    audio.onended = done;
+    audio.onerror = () => { done(); if (useFallback) speakFallback(text); };
+    _currentTtsAudio = audio;
+    const p = audio.play();
+    if (p && p.catch) p.catch(() => { done(); if (useFallback) speakFallback(text); });
+    return true;
+  } catch (e) {
+    if (onEnd) onEnd();
+    if (useFallback) speakFallback(text);
+    return false;
+  }
+}
+
+// 播放英语一次；TTS 优先，250ms 内未出声或失败则降级有道音频；onEnd 在播放结束后回调
+function playEnglishOnce(text, rate, btn, onEnd) {
+  rate = parseFloat(rate) || 0.9;
+  try {
+    if (window.speechSynthesis && window.SpeechSynthesisUtterance) {
+      const synth = window.speechSynthesis;
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US';
+      u.rate = rate;
+      u.pitch = 1;
+      const v = pickEnglishVoice();
+      if (v) u.voice = v;
+      let handed = false;
+      u.onstart = () => { handed = true; };
+      u.onend = () => { if (handed) { if (btn) btn.innerHTML = btn.dataset.orig || btn.innerHTML; if (onEnd) onEnd(); } };
+      u.onerror = (ev) => {
+        if (handed) return;
+        if (ev && ev.error === 'canceled') return;
+        handed = true;
+        speakByYoudao(text, btn, onEnd, true);
+      };
+      synth.cancel();
+      synth.speak(u);
+      setTimeout(() => {
+        if (!handed) { handed = true; try { synth.cancel(); } catch (e) {} speakByYoudao(text, btn, onEnd, true); }
+      }, 250);
+      return;
+    }
+  } catch (e) {}
+  speakByYoudao(text, btn, onEnd, true);
+}
+let _cachedVoices = null;
+function pickEnglishVoice() {
+  try {
+    const vs = (window.speechSynthesis && window.speechSynthesis.getVoices()) || [];
+    if (!vs.length) return null;
+    return vs.find(v => /en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || vs[0];
+  } catch (e) { return null; }
+}
+
 /* ===== 数据备份：导出/导入，保证换手机可一键转移全部手动数据 ===== */
+// 主数据使用 mw_ 前缀；少数独立子应用（如旅行地图）用专属 key，也要一并备份
+const EXTRA_BACKUP_KEYS = ['travelBoard.v1'];
 function exportWorkbench() {
   const data = {};
   for (let i = 0; i < localStorage.length; i++) {
     const k = localStorage.key(i);
-    if (k && k.indexOf('mw_') === 0) data[k] = localStorage.getItem(k);
+    if (k && (k.indexOf('mw_') === 0 || EXTRA_BACKUP_KEYS.indexOf(k) > -1)) data[k] = localStorage.getItem(k);
   }
   const payload = {
     app: 'mawen-workbench', version: 1,
     exportedAt: new Date().toISOString(),
     count: Object.keys(data).length, data
   };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = '马雯工作台-备份-' + today() + '.json';
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  showToast('已导出 ' + payload.count + ' 项数据，请存到云盘/微信文件传输');
+  // 深拷贝后把图片引用内联进备份文件（换手机图片不丢），再下载
+  const clone = JSON.parse(JSON.stringify(payload));
+  MWImg.packForExport(clone.data).then(function () {
+    const blob = new Blob([JSON.stringify(clone, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '马雯工作台-备份-' + today() + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    showToast('已导出 ' + payload.count + ' 项数据（含图片），请存到云盘/微信文件传输');
+  }).catch(function () {
+    showToast('导出失败：图片处理出错', 'error');
+  });
 }
 
 function importWorkbench(input) {
@@ -77,12 +225,19 @@ function importWorkbench(input) {
     try {
       const parsed = JSON.parse(reader.result);
       const src = parsed && parsed.data ? parsed.data : parsed;
-      let n = 0;
-      for (const k in src) {
-        if (k.indexOf('mw_') === 0 && typeof src[k] === 'string') { localStorage.setItem(k, src[k]); n++; }
-      }
-      showToast('已导入 ' + n + ' 项数据，即将刷新…');
-      setTimeout(() => location.reload(), 900);
+      // 把备份里内联的图片还原回 IndexedDB，记录里只留 "IMG:<id>" 引用
+      MWImg.unpackFromImport(src).then(function (real) {
+        try {
+          let n = 0;
+          for (const k in real) {
+            if ((k.indexOf('mw_') === 0 || EXTRA_BACKUP_KEYS.indexOf(k) > -1) && typeof real[k] === 'string') { localStorage.setItem(k, real[k]); n++; }
+          }
+          showToast('已导入 ' + n + ' 项数据，即将刷新…');
+          setTimeout(() => location.reload(), 900);
+        } catch (e) {
+          showToast('导入失败：本地空间可能已满（可先删除部分图片）', 'error');
+        }
+      }).catch(function () { showToast('备份文件无法识别', 'error'); });
     } catch (e) {
       showToast('备份文件无法识别', 'error');
     }
@@ -207,8 +362,10 @@ function addPlan() {
   if (!inp) return;
   const text = inp.value.trim();
   if (!text) { showToast('请输入计划内容', 'error'); return; }
+  const dateInput = document.getElementById('plan-date');
+  const pdate = (dateInput && dateInput.value) ? dateInput.value : today();
   const arr = getPlans();
-  arr.unshift({ id: uid(), text, done: false, createdAt: Date.now() });
+  arr.unshift({ id: uid(), text, done: false, date: pdate, createdAt: Date.now() });
   savePlans(arr);
   inp.value = '';
   refreshPlans();
@@ -229,12 +386,10 @@ function deletePlan(id) {
 }
 function refreshPlans() {
   const plans = getPlans();
-  const doneCount = plans.filter(p => p.done).length;
-  const todoCount = plans.length - doneCount;
-  renderPlanChart(todoCount, doneCount);
+  renderPlanChart(plans);
   renderPlanList();
   const card = document.querySelector('.ov-stat-card[data-plan] .ov-stat-val');
-  if (card) card.textContent = `${todoCount}/${plans.length}`;
+  if (card) card.textContent = `${plans.filter(p => !p.done).length}/${plans.length}`;
 }
 
 // 通用 HTML 转义
@@ -369,7 +524,7 @@ function init() {
   bindNav();
   startFocusTracking();
   startUsageTracking();
-  renderModule('checkin');
+  renderModule('overview');
   setInterval(tickUpdateBadges, 30000);
   window.addEventListener('beforeunload', flushUsage);
   document.addEventListener('visibilitychange', () => {
@@ -467,7 +622,7 @@ const MODULE_UPDATES = {
   news:     { type:'daily',   hour:8,  minute:0,  label:'每日 08:00 自动更新新闻',            icon:'📰' },
   english:  { type:'weekly',  day:1,  hour:7,  minute:0,  label:'每周一 07:00 更新英语内容',        icon:'🔤' },
   shenlun:  { type:'weekly',  day:3,  hour:7,  minute:0,  label:'每周三 07:00 更新申论政治',        icon:'📝' },
-  finance:  { type:'weekly',  day:5,  hour:7,  minute:0,  label:'每周五 07:00 更新基金知识',        icon:'📈' },
+  finance:  { type:'weekly',  day:1,  hour:7,  minute:0,  label:'每周一 07:00 更新基金知识',        icon:'📈' },
   common:   { type:'weekly',  day:1,  hour:7,  minute:30, label:'每周一 07:30 更新常识积累',        icon:'🧠' },
   book:     { type:'manual',  label:'每 3 日自动推送精选书摘 + 经典书籍摘要（打开即触发）', icon:'📚' },
   misc:     { type:'weekly',  day:0,  hour:21, minute:0,  label:'每周日 21:00 更新杂学开眼',        icon:'✨' },
@@ -553,6 +708,9 @@ function tickUpdateBadges() {
 
 // ===== 模块渲染入口 =====
 function renderModule(mod) {
+  // 同步侧栏高亮（无论通过点击/跨模块跳转/直接渲染都能正确跟随）
+  $$('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.module === mod));
+  currentModule = mod;
   // 销毁旧图表
   Object.values(charts).forEach(c => { try { c.destroy(); } catch{} });
   charts = {};
@@ -974,6 +1132,7 @@ function renderCheckin(c) {
         <button class="checkin-tab" data-tab="quick">快速打卡</button>
         <button class="checkin-tab" data-tab="habit">习惯打卡</button>
         <button class="checkin-tab" data-tab="plan">今日计划</button>
+        <button class="checkin-tab" data-tab="diary">打卡日记</button>
         <button class="checkin-tab" data-tab="stats">数据统计</button>
       </div>
 
@@ -999,6 +1158,7 @@ function renderCheckinTab() {
   else if (currentCheckinTab === 'habit') renderHabitTab(c);
   else if (currentCheckinTab === 'plan') renderTodayPlanTab(c);
   else if (currentCheckinTab === 'stats') renderStatsTab(c);
+  else if (currentCheckinTab === 'diary') renderCheckinDiary(c);
 }
 
 function renderTasksTab(c) {
@@ -1574,6 +1734,125 @@ function chartOptions(label, color) {
 }
 
 /* ============================================
+   打卡日记（带图，图片存 IndexedDB，绕开 localStorage 5MB 限制）
+   ============================================ */
+let checkinDiaryImages = [];
+
+function renderCheckinDiary(c) {
+  c.innerHTML = `
+    <div class="review-card">
+      <div class="review-date"><i class="fas fa-camera"></i> 今日打卡日记 — ${new Date().toLocaleDateString('zh-CN', {year:'numeric',month:'long',day:'numeric'})}</div>
+      <h3 style="margin-bottom:10px;font-size:15px;">记一句今天，配张图</h3>
+      <textarea class="review-textarea" id="diary-text" placeholder="今天过得怎么样？配一张照片留念～" style="min-height:80px;"></textarea>
+      <div class="image-upload-area">
+        <h4><i class="fas fa-images"></i> 添加图片（最多6张）</h4>
+        <label class="btn-upload">
+          <i class="fas fa-cloud-upload-alt"></i> 选择图片
+          <input type="file" accept="image/*" multiple style="display:none" id="diary-img-input">
+        </label>
+        <div class="image-preview-grid" id="diary-img-preview"></div>
+      </div>
+      <button class="btn-save" onclick="saveCheckinDiary()"><i class="fas fa-save"></i> 保存今日日记</button>
+    </div>
+    <div class="review-history" id="diary-history">
+      <h3 style="font-size:18px;margin:18px 0 10px;"><i class="fas fa-history"></i> 历史日记</h3>
+      <div id="diary-history-list"></div>
+    </div>
+  `;
+  checkinDiaryImages = [];
+  $('#diary-img-input').addEventListener('change', handleDiaryUpload);
+  renderDiaryHistory();
+}
+
+function handleDiaryUpload(e) {
+  const files = e.target.files;
+  const maxImages = 6;
+  if (checkinDiaryImages.length + files.length > maxImages) { showToast(`最多上传${maxImages}张图片`, 'error'); return; }
+  Promise.all(Array.from(files).map(reviewCompress))
+    .then(function (dataUrls) {
+      return Promise.all(dataUrls.map(function (d) { return MWImg.put(d).then(function (id) { return MWImg.PREFIX + id; }); }));
+    })
+    .then(function (ids) {
+      ids.forEach(function (id) { checkinDiaryImages.push(id); });
+      renderDiaryImages();
+    })
+    .catch(function () { showToast('部分图片处理失败', 'error'); });
+  e.target.value = '';
+}
+
+function renderDiaryImages() {
+  const grid = $('#diary-img-preview');
+  if (!grid) return;
+  grid.innerHTML = checkinDiaryImages.map(function (ref, i) {
+    const idAttr = ref.indexOf(MWImg.PREFIX) === 0 ? ' data-imgid="' + ref.slice(MWImg.PREFIX.length) + '"' : '';
+    const srcAttr = ref.indexOf('data:') === 0 ? ' src="' + ref + '"' : '';
+    return '<div class="image-preview-item"><img' + srcAttr + idAttr + ' onclick="previewImage(this.src)"><button class="remove-img" onclick="removeDiaryImage(' + i + ')">&times;</button></div>';
+  }).join('');
+  MWImg.fill(grid);
+}
+
+function removeDiaryImage(idx) {
+  const ref = checkinDiaryImages[idx];
+  if (typeof ref === 'string' && ref.indexOf(MWImg.PREFIX) === 0) MWImg.delete(ref.slice(MWImg.PREFIX.length));
+  checkinDiaryImages.splice(idx, 1);
+  renderDiaryImages();
+}
+
+function saveCheckinDiary() {
+  const text = $('#diary-text').value.trim();
+  if (!text && checkinDiaryImages.length === 0) { showToast('写点什么或加张图再保存吧', 'error'); return; }
+  const diaries = loadData('checkin_diary', []);
+  const todayStr = today();
+  const entry = { id: uid(), date: todayStr, datetime: new Date().toISOString(), text: text, images: checkinDiaryImages.slice() };
+  const idx = diaries.findIndex(d => d.date === todayStr);
+  if (idx > -1) diaries[idx] = entry; else diaries.unshift(entry);
+  saveData('checkin_diary', diaries);
+  showToast(idx > -1 ? '今日日记已更新' : '日记已保存');
+  renderCheckinDiary($('#checkin-content'));
+}
+
+function renderDiaryHistory() {
+  const diaries = loadData('checkin_diary', []);
+  const list = $('#diary-history-list');
+  if (!list) return;
+  if (diaries.length === 0) { list.innerHTML = '<div class="empty-state"><i class="fas fa-camera"></i><p>还没有日记，今天写第一篇吧～</p></div>'; return; }
+  list.innerHTML = diaries.map(function (d) {
+    const dt = new Date(d.datetime || d.date);
+    const dateStr = (dt.getMonth() + 1) + '月' + dt.getDate() + '日';
+    return `
+      <div class="review-day-group open">
+        <div class="review-day-header">
+          <div class="review-day-title"><span>${dateStr}</span>${d.date === today() ? '<span class="review-today-badge">今天</span>' : ''}</div>
+          <span class="review-day-count">${(d.text || '').length}字${(d.images && d.images.length) ? ' · ' + d.images.length + '图' : ''}</span>
+        </div>
+        <div class="review-day-body">
+          ${d.text ? `<p class="review-text-content">${d.text}</p>` : ''}
+          ${d.images && d.images.length ? `
+            <div class="review-images">
+              ${d.images.map(function (img) {
+                if (typeof img === 'string' && img.indexOf(MWImg.PREFIX) === 0) return '<img class="review-thumb" data-imgid="' + img.slice(MWImg.PREFIX.length) + '" onclick="previewImage(this.src)">';
+                return '<img class="review-thumb" src="' + img + '" onclick="previewImage(this.src)">';
+              }).join('')}
+            </div>` : ''}
+          <div class="review-day-actions"><button class="review-del" onclick="deleteCheckinDiary('${d.id}')"><i class="fas fa-trash"></i> 删除</button></div>
+        </div>
+      </div>`;
+  }).join('');
+  MWImg.fill(list);
+}
+
+function deleteCheckinDiary(id) {
+  if (!confirm('确定删除这篇日记吗？')) return;
+  let diaries = loadData('checkin_diary', []);
+  const d = diaries.find(x => x.id === id);
+  if (d && d.images) d.images.forEach(function (img) { if (typeof img === 'string' && img.indexOf(MWImg.PREFIX) === 0) MWImg.delete(img.slice(MWImg.PREFIX.length)); });
+  diaries = diaries.filter(x => x.id !== id);
+  saveData('checkin_diary', diaries);
+  renderCheckinDiary($('#checkin-content'));
+  showToast('已删除');
+}
+
+/* ============================================
    每日复盘板块
    ============================================ */
 function renderReview(c) {
@@ -1667,6 +1946,32 @@ function renderReview(c) {
   renderReviewHistory();
 }
 
+function reviewCompress(file) {
+  return new Promise(function (resolve, reject) {
+    if (!file.type || !file.type.startsWith('image/')) { reject(); return; }
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      const img = new Image();
+      img.onload = function () {
+        const canvas = document.createElement('canvas');
+        const maxSize = 800;
+        let w = img.width, h = img.height;
+        if (w > maxSize || h > maxSize) {
+          if (w > h) { h = h * maxSize / w; w = maxSize; }
+          else { w = w * maxSize / h; h = maxSize; }
+        }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      img.onerror = reject;
+      img.src = ev.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 function handleImageUpload(e) {
   const files = e.target.files;
   const maxImages = 6;
@@ -1674,51 +1979,33 @@ function handleImageUpload(e) {
     showToast(`最多上传${maxImages}张图片`, 'error');
     return;
   }
-
-  Array.from(files).forEach(file => {
-    if (!file.type.startsWith('image/')) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      // 压缩图片
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const maxSize = 800;
-        let { width, height } = img;
-        if (width > maxSize || height > maxSize) {
-          if (width > height) {
-            height = height * maxSize / width;
-            width = maxSize;
-          } else {
-            width = width * maxSize / height;
-            height = maxSize;
-          }
-        }
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        reviewImages.push(canvas.toDataURL('image/jpeg', 0.7));
-        renderReviewImages();
-      };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
+  // 压缩后存入 IndexedDB（绕开 localStorage 5MB 限制），记录里只留 "IMG:<id>" 引用
+  Promise.all(Array.from(files).map(reviewCompress))
+    .then(function (dataUrls) {
+      return Promise.all(dataUrls.map(function (d) { return MWImg.put(d).then(function (id) { return MWImg.PREFIX + id; }); }));
+    })
+    .then(function (ids) {
+      ids.forEach(function (id) { reviewImages.push(id); });
+      renderReviewImages();
+    })
+    .catch(function () { showToast('部分图片处理失败', 'error'); });
   e.target.value = '';
 }
 
 function renderReviewImages() {
   const grid = $('#review-img-preview');
   if (!grid) return;
-  grid.innerHTML = reviewImages.map((src, i) => `
-    <div class="image-preview-item">
-      <img src="${src}" onclick="previewImage('${src}')">
-      <button class="remove-img" onclick="removeReviewImage(${i})">&times;</button>
-    </div>
-  `).join('');
+  grid.innerHTML = reviewImages.map(function (ref, i) {
+    const idAttr = ref.indexOf(MWImg.PREFIX) === 0 ? ' data-imgid="' + ref.slice(MWImg.PREFIX.length) + '"' : '';
+    const srcAttr = ref.indexOf('data:') === 0 ? ' src="' + ref + '"' : '';
+    return '<div class="image-preview-item"><img' + srcAttr + idAttr + ' onclick="previewImage(this.src)"><button class="remove-img" onclick="removeReviewImage(' + i + ')">&times;</button></div>';
+  }).join('');
+  MWImg.fill(grid);
 }
 
 function removeReviewImage(idx) {
+  const ref = reviewImages[idx];
+  if (typeof ref === 'string' && ref.indexOf(MWImg.PREFIX) === 0) MWImg.delete(ref.slice(MWImg.PREFIX.length));
   reviewImages.splice(idx, 1);
   renderReviewImages();
 }
@@ -1860,7 +2147,12 @@ function renderReviewHistory() {
           ${text ? `<p class="review-text-content">${text}</p>` : '<p style="color:var(--text-light);font-size:13px;">（当天只记了心情/图片）</p>'}
           ${r.images && r.images.length > 0 ? `
             <div class="review-images">
-              ${r.images.map(img => `<img src="${img}" onclick="previewImage('${img}')">`).join('')}
+              ${r.images.map(function (img) {
+                if (typeof img === 'string' && img.indexOf(MWImg.PREFIX) === 0) {
+                  return '<img class="review-thumb" data-imgid="' + img.slice(MWImg.PREFIX.length) + '" onclick="previewImage(this.src)">';
+                }
+                return '<img class="review-thumb" src="' + img + '" onclick="previewImage(this.src)">';
+              }).join('')}
             </div>
           ` : ''}
           <div class="review-day-actions">
@@ -1871,6 +2163,7 @@ function renderReviewHistory() {
     `;
   });
   list.innerHTML = html;
+  MWImg.fill(list);
 }
 
 function toggleReviewDay(day) {
@@ -1950,6 +2243,15 @@ function renderEnglish(c) {
         <button class="eng-tab" data-tab="reading"><i class="fas fa-book-reader"></i> 经典阅读</button>
         <button class="eng-tab" data-tab="bedtime"><i class="fas fa-moon"></i> 睡前跟读</button>
         <button class="eng-tab" data-tab="stats"><i class="fas fa-chart-bar"></i> 学习统计</button>
+      </div>
+
+      <div class="eng-toolbar" id="eng-toolbar">
+        <div class="eng-speed">
+          <i class="fas fa-tachometer-alt"></i> 语速
+          <input type="range" min="0.4" max="1.2" step="0.1" value="${engSpeed}" oninput="setEngSpeed(this.value)" onchange="setEngSpeed(this.value)">
+          <span class="eng-speed-val" id="eng-speed-val">${engSpeed.toFixed(1)}x</span>
+        </div>
+        <span class="eng-hint"><i class="fas fa-redo"></i> 点卡片上的「3遍」可连读跟读</span>
       </div>
 
       <div id="wordbook-bar" class="wordbook-bar"></div>
@@ -2039,8 +2341,9 @@ function renderTodayLearning(c) {
               <div class="word-cn">${w.cn}</div>
               ${w.bookName ? `<span class="word-level-tag">${w.bookName}</span>` : ''}
               <div class="word-actions">
-                <button onclick="speakWord('${w.en}')"><i class="fas fa-volume-up"></i></button>
-                <button onclick="speakWord('${w.en}', 0.5)"><i class="fas fa-snowflake"></i></button>
+                <button onclick="speakWord('${jsLit(w.en)}')"><i class="fas fa-volume-up"></i></button>
+                <button onclick="speakWord('${jsLit(w.en)}', 0.5)"><i class="fas fa-snowflake"></i></button>
+                <button class="eng-loop" title="连读3遍跟读" onclick="speakWord('${jsLit(w.en)}', engSpeed, 3)"><i class="fas fa-redo"></i>3遍</button>
                 <button class="btn-learn ${isWordLearned(w.bookId, w.en) ? 'learned' : ''}" onclick="toggleLearnWord('${w.en}', '${w.bookId}', this)">
                   <i class="fas ${isWordLearned(w.bookId, w.en) ? 'fa-check-circle' : 'fa-circle'}"></i> ${isWordLearned(w.bookId, w.en) ? '已学' : '标记已学'}
                 </button>
@@ -2098,7 +2401,8 @@ function renderTodayLearning(c) {
             <div class="phrase-en">${s.en}</div>
             <div class="phrase-cn">${s.cn}</div>
             <div class="speaking-controls">
-              <button class="btn-speak" onclick="speakPhrase('${s.en}', this)"><i class="fas fa-play"></i> 朗读</button>
+              <button class="btn-speak" onclick="speakPhrase('${jsLit(s.en)}', this)"><i class="fas fa-play"></i> 朗读</button>
+              <button class="btn-speak eng-loop" onclick="speakPhrase('${jsLit(s.en)}', this, 3)"><i class="fas fa-redo"></i> 3遍</button>
               <div class="speed-control">
                 <span>慢</span>
                 <input type="range" min="0.4" max="1" step="0.1" value="0.8" onchange="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+'x'">
@@ -2132,6 +2436,7 @@ function renderTodayLearning(c) {
                 ${r.paragraphs.map(p => `
                   <div class="reading-paragraph en">${p.en}
                     <button class="btn-speak" style="margin-top:6px;padding:4px 10px;font-size:12px;" onclick="speakWord('${p.en.replace(/'/g, "\\'")}')"><i class="fas fa-volume-up"></i> 朗读</button>
+                    <button class="btn-speak eng-loop" style="margin-top:6px;padding:4px 10px;font-size:12px;" onclick="speakWord('${p.en.replace(/'/g, "\\'")}', engSpeed, 3)"><i class="fas fa-redo"></i> 3遍</button>
                   </div>
                   <div class="reading-paragraph cn">${p.cn}</div>
                 `).join('')}
@@ -2362,8 +2667,9 @@ function renderWordGrid() {
       <div class="word-cn">${w.cn}</div>
       <div class="word-example">${w.example}</div>
       <div class="word-actions">
-        <button onclick="speakWord('${w.en}')"><i class="fas fa-volume-up"></i> 朗读</button>
-        <button onclick="speakWord('${w.en}', 0.5)"><i class="fas fa-snowflake"></i> 慢速</button>
+        <button onclick="speakWord('${jsLit(w.en)}')"><i class="fas fa-volume-up"></i> 朗读</button>
+        <button onclick="speakWord('${jsLit(w.en)}', 0.5)"><i class="fas fa-snowflake"></i> 慢速</button>
+        <button class="eng-loop" title="连读3遍跟读" onclick="speakWord('${jsLit(w.en)}', engSpeed, 3)"><i class="fas fa-redo"></i> 3遍</button>
         <button class="btn-learn ${learned ? 'learned' : ''}" onclick="toggleLearnWordFromList('${w.en}', this)">
           <i class="fas ${learned ? 'fa-check-circle' : 'fa-circle'}"></i> ${learned ? '已学' : '标记'}
         </button>
@@ -2602,17 +2908,21 @@ function importMarketBook(id) {
   renderWords($('#english-content'));
 }
 
-function speakWord(text, rate = 0.9) {
-  if (!('speechSynthesis' in window)) {
-    showToast('浏览器不支持语音朗读', 'error');
-    return;
-  }
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'en-US';
-  u.rate = rate;
-  u.pitch = 1;
-  speechSynthesis.speak(u);
+function speakWord(text, rate, times) {
+  // rate 缺省用全局语速；times>1 时连读跟读
+  if (rate == null || rate === '') rate = engSpeed;
+  rate = parseFloat(rate) || 0.9;
+  times = parseInt(times) || 1;
+  if (times < 1) times = 1;
+  if (times === 1) { playEnglishOnce(text, rate, null, null); return; }
+  let n = 0;
+  const step = () => {
+    n++;
+    playEnglishOnce(text, rate, null, () => {
+      if (n < times) setTimeout(step, 700);
+    });
+  };
+  step();
 }
 
 function renderSpeaking(c) {
@@ -2637,8 +2947,11 @@ function renderSpeaking(c) {
           <div class="phrase-en">${s.en}</div>
           <div class="phrase-cn">${s.cn}</div>
           <div class="speaking-controls">
-            <button class="btn-speak" onclick="speakPhrase('${s.en}', this)">
+            <button class="btn-speak" onclick="speakPhrase('${jsLit(s.en)}', this)">
               <i class="fas fa-play"></i> 朗读
+            </button>
+            <button class="btn-speak eng-loop" onclick="speakPhrase('${jsLit(s.en)}', this, 3)">
+              <i class="fas fa-redo"></i> 3遍
             </button>
             <div class="speed-control">
               <span>慢</span>
@@ -2666,22 +2979,27 @@ function toggleLearnSpeakingFromList(idx, btn) {
   showToast(justLearned ? '口语已学！' : '已取消标记');
 }
 
-function speakPhrase(text, btn) {
-  if (!('speechSynthesis' in window)) {
-    showToast('浏览器不支持语音朗读', 'error');
+function speakPhrase(text, btn, times) {
+  const speedInput = btn && btn.parentElement && btn.parentElement.querySelector('input[type="range"]');
+  let rate = speedInput ? parseFloat(speedInput.value) : engSpeed;
+  if (!(rate > 0)) rate = engSpeed;
+  times = parseInt(times) || 1; if (times < 1) times = 1;
+  const oldHTML = btn ? btn.innerHTML : '';
+  if (times === 1) {
+    if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 播放中';
+    playEnglishOnce(text, rate, btn, () => { if (btn) btn.innerHTML = oldHTML; });
     return;
   }
-  speechSynthesis.cancel();
-  const speedInput = btn.parentElement.querySelector('input[type="range"]');
-  const rate = parseFloat(speedInput.value);
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'en-US';
-  u.rate = rate;
-  u.pitch = 1;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 播放中';
-  u.onend = () => { btn.innerHTML = '<i class="fas fa-play"></i> 朗读'; };
-  u.onerror = () => { btn.innerHTML = '<i class="fas fa-play"></i> 朗读'; };
-  speechSynthesis.speak(u);
+  let n = 0;
+  const step = () => {
+    n++;
+    if (btn) btn.innerHTML = `<i class="fas fa-redo"></i> 第${n}/${times}遍`;
+    playEnglishOnce(text, rate, null, () => {
+      if (n < times) setTimeout(step, 700);
+      else if (btn) btn.innerHTML = oldHTML;
+    });
+  };
+  step();
 }
 
 function changeSpeed(idx, val) {
@@ -2746,6 +3064,9 @@ function renderPracticeContent() {
               <button class="btn-speak" onclick="speakPractice('${p.en.replace(/'/g, "\\'")}', this)">
                 <i class="fas fa-play"></i> 朗读
               </button>
+              <button class="btn-speak eng-loop" onclick="speakPractice('${p.en.replace(/'/g, "\\'")}', this, 3)">
+                <i class="fas fa-redo"></i> 3遍
+              </button>
               <div class="speed-control">
                 <span>慢</span>
                 <input type="range" min="0.4" max="1" step="0.1" value="0.8" onchange="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+'x'">
@@ -2783,6 +3104,9 @@ function renderPracticeContent() {
               <button class="btn-speak" onclick="speakPractice('${a.en.replace(/'/g, "\\'")}', this)">
                 <i class="fas fa-play"></i> 朗读
               </button>
+              <button class="btn-speak eng-loop" onclick="speakPractice('${a.en.replace(/'/g, "\\'")}', this, 3)">
+                <i class="fas fa-redo"></i> 3遍
+              </button>
               <div class="speed-control">
                 <span>慢</span>
                 <input type="range" min="0.4" max="1" step="0.1" value="0.8" onchange="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+'x'">
@@ -2800,22 +3124,27 @@ function renderPracticeContent() {
   }
 }
 
-function speakPractice(text, btn) {
-  if (!('speechSynthesis' in window)) {
-    showToast('浏览器不支持语音朗读', 'error');
+function speakPractice(text, btn, times) {
+  const speedInput = btn && btn.parentElement && btn.parentElement.querySelector('input[type="range"]');
+  let rate = speedInput ? parseFloat(speedInput.value) : engSpeed;
+  if (!(rate > 0)) rate = engSpeed;
+  times = parseInt(times) || 1; if (times < 1) times = 1;
+  const oldHTML = btn ? btn.innerHTML : '';
+  if (times === 1) {
+    if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 播放中';
+    playEnglishOnce(text, rate, btn, () => { if (btn) btn.innerHTML = oldHTML; });
     return;
   }
-  speechSynthesis.cancel();
-  const speedInput = btn.parentElement.querySelector('input[type="range"]');
-  const rate = parseFloat(speedInput.value);
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'en-US';
-  u.rate = rate;
-  u.pitch = 1;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 播放中';
-  u.onend = () => { btn.innerHTML = '<i class="fas fa-play"></i> 朗读'; };
-  u.onerror = () => { btn.innerHTML = '<i class="fas fa-play"></i> 朗读'; };
-  speechSynthesis.speak(u);
+  let n = 0;
+  const step = () => {
+    n++;
+    if (btn) btn.innerHTML = `<i class="fas fa-redo"></i> 第${n}/${times}遍`;
+    playEnglishOnce(text, rate, null, () => {
+      if (n < times) setTimeout(step, 700);
+      else if (btn) btn.innerHTML = oldHTML;
+    });
+  };
+  step();
 }
 
 function toggleLearnPractice(id, btn) {
@@ -2885,7 +3214,7 @@ function showWordTooltip(e, word) {
       ${entry.phonetic ? `<div class="tooltip-phonetic">${entry.phonetic}</div>` : ''}
       <div class="tooltip-meaning">${entry.cn}</div>
       <div class="tooltip-actions">
-        <button class="tooltip-speak" onclick="speakWord('${word}'); event.stopPropagation();" title="朗读"><i class="fas fa-volume-up"></i> 朗读</button>
+        <button class="tooltip-speak" onclick="speakWord('${jsLit(word)}'); event.stopPropagation();" title="朗读"><i class="fas fa-volume-up"></i> 朗读</button>
         <button class="tooltip-search" onclick="window.open('https://www.bing.com/dict/search?q=${word}', '_blank'); event.stopPropagation();" title="在线词典"><i class="fas fa-search"></i> 查词典</button>
       </div>
     `;
@@ -2968,6 +3297,7 @@ function renderReading(c) {
                   <button class="btn-speak" style="margin-top:6px;padding:4px 10px;font-size:12px;" onclick="speakWord('${p.en.replace(/'/g, "\\'")}')">
                     <i class="fas fa-volume-up"></i> 朗读
                   </button>
+                  <button class="btn-speak eng-loop" style="margin-top:6px;padding:4px 10px;font-size:12px;" onclick="speakWord('${p.en.replace(/'/g, "\\'")}', engSpeed, 3)"><i class="fas fa-redo"></i> 3遍</button>
                 </div>
                 <div class="reading-paragraph cn">${p.cn}</div>
               `).join('')}
@@ -3048,6 +3378,7 @@ function renderBedtime(c) {
         <div class="practice-tip"><i class="fas fa-lightbulb"></i> ${phrase.tip}</div>
         <div class="speaking-controls">
           <button class="btn-speak" onclick="speakPractice('${phrase.en.replace(/'/g, "\\'")}', this)"><i class="fas fa-play"></i> 朗读</button>
+          <button class="btn-speak eng-loop" onclick="speakPractice('${phrase.en.replace(/'/g, "\\'")}', this, 3)"><i class="fas fa-redo"></i> 3遍</button>
           <div class="speed-control"><span>慢</span><input type="range" min="0.4" max="1" step="0.1" value="0.8" onchange="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+'x'"><span class="speed-label">0.8x</span></div>
           <label class="bedtime-check"><input type="checkbox" ${doneToday.phrase?'checked':''} onchange="markBedtime('phrase', this.checked)"> 已读完</label>
         </div>
@@ -3062,6 +3393,7 @@ function renderBedtime(c) {
         <div class="practice-tip"><i class="fas fa-lightbulb"></i> ${article.tip}</div>
         <div class="speaking-controls">
           <button class="btn-speak" onclick="speakPractice('${article.en.replace(/'/g, "\\'")}', this)"><i class="fas fa-play"></i> 朗读</button>
+          <button class="btn-speak eng-loop" onclick="speakPractice('${article.en.replace(/'/g, "\\'")}', this, 3)"><i class="fas fa-redo"></i> 3遍</button>
           <div class="speed-control"><span>慢</span><input type="range" min="0.4" max="1" step="0.1" value="0.8" onchange="this.nextElementSibling.textContent=parseFloat(this.value).toFixed(1)+'x'"><span class="speed-label">0.8x</span></div>
           <label class="bedtime-check"><input type="checkbox" ${doneToday.article?'checked':''} onchange="markBedtime('article', this.checked)"> 已读完</label>
         </div>
@@ -3221,6 +3553,8 @@ function renderFinance(c) {
         </div>
       </div>
 
+      <div class="finance-weekly-lesson-panel" id="finance-weekly-lesson"></div>
+
       <div class="finance-phase-nav">
         ${FINANCE_PHASES.map((p, i) => {
           const phaseData = FINANCE_LESSONS[i];
@@ -3249,19 +3583,25 @@ function renderFinance(c) {
   renderFinanceLessons();
   renderFinanceWeekly();
   renderFinanceHotTracks();
+  renderFinanceWeeklyLesson();
 }
 
 function switchFinancePhase(phase) {
+  if (phase == null || !FINANCE_LESSONS[phase]) { showToast('该阶段暂无可学内容', 'info'); return; }
   currentFinancePhase = phase;
-  $$('.phase-card').forEach((c, i) => c.classList.toggle('active', i === phase));
+  const cards = $$('.phase-card');
+  cards.forEach((c, i) => { try { c.classList.toggle('active', i === phase); } catch (e) {} });
   renderFinanceLessons();
 }
 
 function renderFinanceLessons() {
+  if (!FINANCE_LESSONS[currentFinancePhase]) {
+    const box = $('#finance-content'); if (box) box.innerHTML = '<div class="ov-empty">该阶段暂无课程内容</div>';
+    return;
+  }
   const phaseData = FINANCE_LESSONS[currentFinancePhase];
   const phaseInfo = FINANCE_PHASES[currentFinancePhase];
   const c = $('#finance-content');
-
   c.innerHTML = `
     <div class="finance-lessons-section">
       <div class="phase-header">
@@ -3392,6 +3732,9 @@ function renderFinanceWeekly() {
             <div class="weekly-fund-row wf-adv"><span class="wf-label">优势</span><p>${f.advantage}</p></div>
             <div class="weekly-fund-row wf-suit"><span class="wf-label">适合</span><p>${f.suitable}</p></div>
             <div class="weekly-fund-row wf-risk"><span class="wf-label"><i class="fas fa-triangle-exclamation"></i> 风险</span><p>${f.risk}</p></div>
+            ${f.position ? `<div class="weekly-fund-row wf-pos"><span class="wf-label">持仓占比</span><p>${f.position}</p></div>` : ''}
+            ${f.flow ? `<div class="weekly-fund-row wf-flow"><span class="wf-label">资金流向</span><p>${f.flow}</p></div>` : ''}
+            ${f.trend ? `<div class="weekly-fund-row wf-trend"><span class="wf-label">发展趋势</span><p>${f.trend}</p></div>` : ''}
           </div>
         `).join('')}
       </div>
@@ -3439,6 +3782,79 @@ function renderFinanceHotTracks() {
       </div>
     </div>
   `;
+}
+
+// ===== 每周基金新课（每周一自动更新，源源不断学习，不再固定式） =====
+let currentFinanceLessonPos = 0; // 0 = 本周新课；负数 = 往期
+
+// 计算"自锚点周一起过了第几周"，保证每周一自动换一篇新课
+function currentMondayIndex() {
+  const now = new Date();
+  const day = now.getDay(); // 0=周日 .. 6=周六
+  const diffToMon = (day === 0 ? -6 : 1 - day);
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  monday.setDate(monday.getDate() + diffToMon);
+  const anchor = new Date(2026, 0, 5); // 2026-01-05 是周一，作为计数锚点
+  return Math.floor((monday - anchor) / (7 * 24 * 3600 * 1000));
+}
+
+function finEsc(s) {
+  return (s == null ? '' : String(s)).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+}
+
+function renderFinanceWeeklyLesson() {
+  const c = document.getElementById('finance-weekly-lesson');
+  if (!c) return;
+  if (!FINANCE_WEEKLY_LESSONS || !FINANCE_WEEKLY_LESSONS.length) { c.innerHTML = ''; return; }
+  const len = FINANCE_WEEKLY_LESSONS.length;
+  const base = ((currentMondayIndex() % len) + len) % len;
+  const minPos = -base; // 最旧=第 0 周的那一篇
+  const maxPos = 0;     // 最新=本周
+  const pos = ((base + currentFinanceLessonPos) % len + len) % len;
+  const les = FINANCE_WEEKLY_LESSONS[pos];
+  const isThisWeek = currentFinanceLessonPos === 0;
+  const atOldest = currentFinanceLessonPos <= minPos;
+  const realWeekNo = currentMondayIndex();
+  c.innerHTML = `
+    <div class="weekly-lesson-card">
+      <div class="weekly-lesson-head">
+        <div class="weekly-lesson-title">
+          <i class="fas fa-graduation-cap"></i>
+          <div>
+            <h2>每周基金新课${isThisWeek ? '' : ' · 往期'}</h2>
+            <span class="weekly-lesson-sub">${isThisWeek ? '每周一自动更新 · 源源不断学新知' : '复盘往期知识点'}</span>
+          </div>
+        </div>
+        <div class="weekly-switch">
+          <button class="weekly-nav-btn" onclick="switchFinanceLesson(-1)" ${atOldest ? 'disabled' : ''}><i class="fas fa-chevron-left"></i> 更早</button>
+          <button class="weekly-nav-btn" onclick="switchFinanceLesson(1)" ${isThisWeek ? 'disabled' : ''}>更新 <i class="fas fa-chevron-right"></i></button>
+        </div>
+      </div>
+      <div class="weekly-lesson-body">
+        <div class="weekly-lesson-meta">
+          <span class="weekly-lesson-cat">${finEsc(les.tag)}</span>
+          <span class="weekly-lesson-week">第 ${realWeekNo} 周</span>
+        </div>
+        <h3 class="weekly-lesson-name"><i class="fas ${finEsc(les.icon)}"></i> ${finEsc(les.title)}</h3>
+        <p class="weekly-lesson-summary">${finEsc(les.summary)}</p>
+        <ul class="weekly-lesson-points">
+          ${les.points.map(p => `<li>${finEsc(p)}</li>`).join('')}
+        </ul>
+        ${les.tip ? `<div class="weekly-lesson-tip"><i class="fas fa-lightbulb"></i> ${finEsc(les.tip)}</div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+function switchFinanceLesson(dir) {
+  const len = FINANCE_WEEKLY_LESSONS ? FINANCE_WEEKLY_LESSONS.length : 0;
+  if (!len) return;
+  const base = ((currentMondayIndex() % len) + len) % len;
+  const minPos = -base;
+  currentFinanceLessonPos = Math.max(minPos, Math.min(0, currentFinanceLessonPos + dir));
+  renderFinanceWeeklyLesson();
+  const c = document.getElementById('finance-weekly-lesson');
+  if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 /* ============================================
@@ -3644,7 +4060,7 @@ function bookDigestCard(d) {
       </div>
       <h3 class="bf-title">${d.title}</h3>
       <p class="bf-author">${d.author || ''}</p>
-      <div class="bf-content ${long ? 'collapsed' : ''}" id="bf-content-${d.id}">${(d.content||'').replace(/\n/g, '<br>')}</div>
+      <div class="bf-content ${long ? 'collapsed' : ''}" id="bf-content-${d.id}" onclick="zoomBookDigest('${d.id}')" title="点击放大">${(d.content||'').replace(/\n/g, '<br>')}</div>
       ${long ? `<button class="bf-expand-btn" onclick="toggleBookFeatured('${d.id}')">展开全文 <i class="fas fa-chevron-down"></i></button>` : ''}
       <div class="bf-source"><i class="fas fa-quote-left"></i> ${d.source || ''}</div>
     </div>
@@ -3662,7 +4078,7 @@ function bookFeaturedCard(f) {
       </div>
       <h3 class="bf-title">${f.title}</h3>
       <p class="bf-author">${f.author}</p>
-      <div class="bf-content ${long ? 'collapsed' : ''}" id="bf-content-${f.id}">${f.content.replace(/\n/g, '<br>')}</div>
+      <div class="bf-content ${long ? 'collapsed' : ''}" id="bf-content-${f.id}" onclick="zoomBookFeaturedCard('${f.id}')" title="点击放大">${f.content.replace(/\n/g, '<br>')}</div>
       ${long ? `<button class="bf-expand-btn" onclick="toggleBookFeatured('${f.id}')">展开全文 <i class="fas fa-chevron-down"></i></button>` : ''}
       <div class="bf-source"><i class="fas fa-quote-left"></i> ${f.source}</div>
     </div>
@@ -4005,7 +4421,7 @@ function renderBookNotes(c) {
               <span class="bn-item-date">${formatDate(n.updated)}</span>
             </div>
             ${n.tags && n.tags.length ? `<div class="bn-item-tags">${n.tags.map(t => `<span class="bn-tag">${t}</span>`).join('')}</div>` : ''}
-            <p class="bn-item-content">${n.content.replace(/\n/g, '<br>')}</p>
+            <p class="bn-item-content" onclick="zoomBookNote('${n.id}')" title="点击放大阅读"><span class="bn-zoom-hint">🔍 点击放大</span>${n.content.replace(/\n/g, '<br>')}</p>
             <div class="bn-item-actions">
               <button onclick="deleteBookNote('${n.id}')"><i class="fas fa-trash"></i> 删除</button>
             </div>
@@ -4035,6 +4451,26 @@ function deleteBookNote(id) {
   notes = notes.filter(n => n.id !== id);
   saveData('mw_book_notes', notes);
   renderBookContent();
+}
+
+function zoomBookNote(id) {
+  const notes = loadData('mw_book_notes', []);
+  const n = notes.find(x => x.id === id);
+  if (!n) return;
+  const body = `<p style="white-space:pre-wrap;line-height:1.9">${escapeHtml(n.content)}</p>` +
+    (n.tags && n.tags.length ? '<div style="margin-top:12px">标签：' + n.tags.map(t => `<span class="bn-tag">${escapeHtml(t)}</span>`).join(' ') + '</div>' : '');
+  openZoom(escapeHtml(n.title || '读书笔记'), body);
+}
+function zoomBookDigest(id) {
+  const digs = loadData('mw_book_digests', []);
+  const d = digs.find(x => x.id === id);
+  if (!d) return;
+  openZoom(escapeHtml(d.title || '书摘'), `<p style="white-space:pre-wrap;line-height:1.9">${escapeHtml(d.content || '')}</p><div class="bf-author" style="margin-top:8px;color:var(--text-light)">${escapeHtml(d.author || '')} · ${escapeHtml(d.source || '')}</div>`);
+}
+function zoomBookFeaturedCard(id) {
+  const f = BOOK_FEATURED.find(x => x.id === id);
+  if (!f) return;
+  openZoom(escapeHtml(f.title || '精选书摘'), `<p style="white-space:pre-wrap;line-height:1.9">${escapeHtml(f.content || '')}</p><div class="bf-author" style="margin-top:8px;color:var(--text-light)">${escapeHtml(f.author || '')} · ${escapeHtml(f.source || '')}</div>`);
 }
 
 function formatDate(ts) {
@@ -4283,12 +4719,16 @@ function renderCommonDaily() {
   const key = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
   const q = COMMON_QUESTIONS[hashDate(key) % COMMON_QUESTIONS.length];
   const cat = commonCat(q.cat);
+  const opts = q.options.map((o, i) => `
+    <div class="cc-opt" data-opt="${i}" onclick="commonSelectDaily('${q.id}',${i},this)">
+      <span class="cc-letter">${String.fromCharCode(65 + i)}</span>${o}
+    </div>`).join('');
   el.innerHTML = `
     <div class="cd-tag" style="background:${cat.color}">${cat.emoji} ${cat.name} · 每日一题</div>
     <div class="cd-body">
       <div class="cd-q">${q.q}</div>
       <div class="cd-meta">来源：${q.source}（${q.year}）</div>
-      <button class="cd-btn" onclick="commonReveal('cd-answer')">显示答案与解析</button>
+      <div class="cc-opts">${opts}</div>
       <div class="cd-answer" id="cd-answer" style="display:none">
         <div class="cd-correct">正确答案：${String.fromCharCode(65 + q.answer)}. ${q.options[q.answer]}</div>
         <p class="cd-explain">${q.explain}</p>
@@ -4297,11 +4737,35 @@ function renderCommonDaily() {
   `;
 }
 
+// 每日一题：先选再判分（与题库卡片一致）
+function commonSelectDaily(qid, optIdx, el) {
+  const wrap = el.closest('.cd-body');
+  if (!wrap || wrap.dataset.done === '1') return;
+  const q = commonQuestionById(qid);
+  if (!q) return;
+  const optsEls = wrap.querySelectorAll('.cc-opt');
+  optsEls.forEach(o => { o.onclick = null; o.classList.remove('chosen'); });
+  el.classList.add('chosen');
+  wrap.dataset.done = '1';
+  const correct = optIdx === q.answer;
+  if (correct) el.classList.add('is-correct');
+  else { el.classList.add('wrong'); if (optsEls[q.answer]) optsEls[q.answer].classList.add('is-correct'); }
+  const ans = document.getElementById('cd-answer');
+  if (ans) {
+    ans.style.display = 'block';
+    const correctLetter = String.fromCharCode(65 + q.answer);
+    const res = document.createElement('div');
+    res.className = 'cc-result ' + (correct ? 'ok' : 'no');
+    res.innerHTML = correct ? `✅ 回答正确！正确答案：${correctLetter}` : `❌ 回答错误，正确答案：${correctLetter}`;
+    ans.parentNode.insertBefore(res, ans);
+  }
+}
+
 function commonCardHTML(q, scope) {
   const cat = commonCat(q.cat);
   const learned = commonLearned[q.id] ? ' learned' : '';
   const opts = q.options.map((o, i) => `
-    <div class="cc-opt ${i === q.answer ? 'is-correct' : ''}">
+    <div class="cc-opt" data-opt="${i}" onclick="commonSelect('${scope}','${q.id}',${i},this)">
       <span class="cc-letter">${String.fromCharCode(65 + i)}</span>${o}
     </div>`).join('');
   return `
@@ -4317,12 +4781,38 @@ function commonCardHTML(q, scope) {
         <p class="cc-explain">${q.explain}</p>
       </div>
       <div class="cc-actions">
-        <button class="cc-btn" onclick="commonReveal('${scope}-ans-${q.id}')">显示答案</button>
+        <button class="cc-btn" onclick="commonReveal('${scope}-ans-${q.id}')">直接看答案</button>
         <button class="cc-learn ${learned ? 'on' : ''}" onclick="commonToggleLearn('${q.id}')">
           <i class="fas fa-${commonLearned[q.id] ? 'check' : 'circle'}"></i> ${commonLearned[q.id] ? '已掌握' : '标记掌握'}
         </button>
       </div>
     </div>`;
+}
+
+// 先作答，再判分并给出解析（修复"还没做答案就出来了"）
+function commonSelect(scope, qid, optIdx, el) {
+  const card = el.closest('.common-card');
+  if (!card || card.dataset.done === '1') return;
+  const q = commonQuestionById(qid);
+  if (!q) return;
+  const optsEls = card.querySelectorAll('.cc-opt');
+  optsEls.forEach(o => { o.onclick = null; o.classList.remove('chosen'); });
+  el.classList.add('chosen');
+  card.dataset.done = '1';
+  const correct = optIdx === q.answer;
+  if (correct) el.classList.add('is-correct');
+  else { el.classList.add('wrong'); if (optsEls[q.answer]) optsEls[q.answer].classList.add('is-correct'); }
+  const ans = document.getElementById(`${scope}-ans-${qid}`);
+  if (ans) {
+    ans.style.display = 'block';
+    const correctLetter = String.fromCharCode(65 + q.answer);
+    const res = document.createElement('div');
+    res.className = 'cc-result ' + (correct ? 'ok' : 'no');
+    res.innerHTML = correct ? `✅ 回答正确！正确答案：${correctLetter}` : `❌ 回答错误，正确答案：${correctLetter}`;
+    ans.parentNode.insertBefore(res, ans);
+  }
+  const giveBtn = card.querySelector('.cc-btn');
+  if (giveBtn) giveBtn.style.display = 'none';
 }
 
 function commonReveal(id) {
@@ -4713,6 +5203,7 @@ function renderShenlunReading(c) {
                     <p class="reading-excerpt">${art.excerpt}</p>
                   </div>
                   <i class="fas fa-chevron-down reading-expand-icon" id="read-icon-${idx}"></i>
+                  <button class="mini-zoom" onclick="event.stopPropagation();zoomShenlunReading(${idx})">🔍 放大</button>
                 </div>
                 <div class="reading-body" id="read-body-${idx}">
                   <div class="reading-content">
@@ -4767,6 +5258,7 @@ function renderShenlunFlashcard(c) {
       <span>已掌握 ${learnedF.length} / ${totalCards}</span>
     </div>
     <div class="flashcard-container">
+      <button class="mini-zoom" onclick="zoomFlashcard()" style="top:8px;right:8px">🔍 放大</button>
       <div class="flashcard ${isLearnedCard ? 'learned' : ''}" id="flashcard" onclick="flipFlashcard()">
         <div class="flashcard-front">
           <div class="flashcard-category">${card.category}</div>
@@ -4866,6 +5358,7 @@ function renderShenlunPolicy(c) {
               <span class="policy-cat-badge">${catInfo ? catInfo.label : ''}</span>
               <h3>${p.term}</h3>
               <span class="policy-source">${p.source}</span>
+              <button class="mini-zoom" onclick="zoomPolicy('${p.id}')">🔍 放大</button>
             </div>
             <div class="policy-card-body">
               <p class="policy-def">${p.def}</p>
@@ -4901,6 +5394,40 @@ function toggleLearnPolicy(id, btn) {
   showToast(justLearned ? '已标记为已掌握！' : '已取消标记');
 }
 
+// 申论内容点击放大（手机阅读更清晰）
+function zoomShenlunReading(idx) {
+  const art = SHENLUN_READING_DATA[idx];
+  if (!art) return;
+  const html = `<h4>文章正文</h4><p>${art.content}</p><h4><i class="fas fa-highlighter"></i> 批注分析</h4>` +
+    (art.annotation || []).map(a => `<div class="annotation-item annotation-${a.type}"><span class="annotation-type">${a.type === 'structure' ? '结构' : a.type === 'language' ? '语言' : a.type === 'technique' ? '技巧' : '运用'}</span><p>${a.text}</p></div>`).join('');
+  openZoom(escapeHtml(art.title), html);
+}
+function zoomEssay(idx) {
+  const e = ESSAY_ANALYSIS_DATA[idx];
+  if (!e) return;
+  const html = `<div class="essay-why"><span class="essay-section-label"><i class="fas fa-star"></i> 为什么高分</span><p>${e.whyHigh}</p></div>` +
+    `<div class="essay-sentences"><span class="essay-section-label"><i class="fas fa-cut"></i> 句子拆解</span>` +
+    (e.sentences || []).map(s => `<div class="essay-sentence"><div class="es-quote">“${s.quote}”</div><div class="es-analysis"><i class="fas fa-angle-right"></i> ${s.analysis}</div></div>`).join('') + `</div>` +
+    (e.full ? `<div class="essay-full"><span class="essay-section-label"><i class="fas fa-file-alt"></i> 原文通读</span><p>${e.full}</p></div>` : '');
+  openZoom(escapeHtml(e.title), html);
+}
+function zoomPolicy(id) {
+  const p = POLICY_DATA.find(x => x.id === id);
+  if (!p) return;
+  const html = `<p class="policy-def">${p.def}</p><div class="policy-keypoints">${(p.keyPoints || []).map(kp => `<span class="policy-keypoint">${kp}</span>`).join('')}</div><div class="policy-shenlun"><span class="policy-shenlun-label"><i class="fas fa-pen-fancy"></i> 申论运用</span><p>${p.shenlunAngle}</p></div>`;
+  openZoom(escapeHtml(p.term), html);
+}
+function zoomFlashcard() {
+  const card = FLASHCARD_DATA[currentFlashcardIdx];
+  if (!card) return;
+  const html = `<div class="flashcard-quote" style="font-size:18px;line-height:1.6">“${card.front}”</div>` +
+    `<div class="flashcard-back-section" style="margin-top:12px"><span class="back-label">出处</span><p>${card.back.source} · ${card.back.context}</p></div>` +
+    `<div class="flashcard-back-section" style="margin-top:8px"><span class="back-label">释义</span><p>${card.back.meaning}</p></div>` +
+    `<div class="flashcard-back-section" style="margin-top:8px"><span class="back-label">适用场景</span><p>${card.back.usage}</p></div>` +
+    `<div class="flashcard-back-section" style="margin-top:8px"><span class="back-label">运用示范</span><p>${card.back.example}</p></div>`;
+  openZoom('金句 · ' + escapeHtml(card.category), html);
+}
+
 // ===== 高分作文剖析（替代原写作微课 + 微练习）=====
 function renderShenlunEssay(c) {
   const learnedE = getLearned('essay');
@@ -4923,6 +5450,7 @@ function renderShenlunEssay(c) {
               </div>
               <h3>${e.title}</h3>
               <i class="fas fa-chevron-down essay-expand-icon" id="essay-icon-${idx}"></i>
+              <button class="mini-zoom" onclick="event.stopPropagation();zoomEssay(${idx})">🔍 放大</button>
             </div>
             <div class="essay-body" id="essay-body-${idx}">
               <div class="essay-why">
@@ -5289,40 +5817,573 @@ const MODULE_META = {
   country:  { name: '国情与世界', icon: 'fa-globe', color: '#16a085' }
 };
 
-// ===== 跨设备数据同步（导出/导入备份文件） =====
-function exportData() {
-  try {
-    const data = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (k && k.indexOf('mw_') === 0) data[k] = localStorage.getItem(k);
-    }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = '马雯工作台数据备份_' + today() + '.json';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showToast('已导出 ' + Object.keys(data).length + ' 项数据，可发到手机后导入');
-  } catch (e) { showToast('导出失败：' + e.message); }
-}
+// ===== 跨设备数据同步：总览页的备份入口统一走完整版 exportWorkbench/importWorkbench（含图片 + 旅行地图） =====
 function importData() { const f = document.getElementById('data-import-file'); if (f) f.click(); }
-function doImportData(input) {
-  const file = input.files && input.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      const data = JSON.parse(reader.result);
-      let n = 0;
-      for (const k in data) { if (k.indexOf('mw_') === 0) { localStorage.setItem(k, data[k]); n++; } }
-      showToast('已导入 ' + n + ' 项数据，即将刷新');
-      setTimeout(() => location.reload(), 900);
-    } catch (e) { showToast('导入失败：文件格式错误'); }
-  };
-  reader.readAsText(file);
-}
 
 let currentOvPeriod = 'week';
+
+// ===== 总览成长日历（月视图，聚合 打卡 / 学习动态 / 计划 / 使用时长） =====
+let currentOvCal = { y: new Date().getFullYear(), m: new Date().getMonth() };
+function ovCalPrev() { currentOvCal.m--; if (currentOvCal.m < 0) { currentOvCal.m = 11; currentOvCal.y--; } renderOverviewCalendar(); }
+function ovCalNext() { currentOvCal.m++; if (currentOvCal.m > 11) { currentOvCal.m = 0; currentOvCal.y++; } renderOverviewCalendar(); }
+function ovCalToday() { currentOvCal = { y: new Date().getFullYear(), m: new Date().getMonth() }; renderOverviewCalendar(); }
+function ovCalYearPrev() { currentOvCal.y--; renderOverviewCalendar(); }
+function ovCalYearNext() { currentOvCal.y++; renderOverviewCalendar(); }
+function ovCalGoTo(m) { currentOvCal.m = m; renderOverviewCalendar(); }
+function ovCalSyncChrome() {
+  const { y, m } = currentOvCal;
+  const ylbl = document.getElementById('cal-year-label');
+  const ylbl2 = document.getElementById('cal-year-label-2');
+  if (ylbl) ylbl.textContent = y + ' 年';
+  if (ylbl2) ylbl2.textContent = y + ' 年';
+  document.querySelectorAll('.cal-month-chip').forEach((c, i) => {
+    c.classList.toggle('on', i === m);
+  });
+  // 给月份 chip 绑定点击（一次性）
+  document.querySelectorAll('.cal-month-chip').forEach((c, i) => {
+    if (c.dataset.bound !== '1') {
+      c.dataset.bound = '1';
+      c.addEventListener('click', (e) => { e.stopPropagation(); ovCalGoTo(i); });
+    }
+  });
+}
+// ===== 日历笔记：按日期存储的随手记/日记 =====
+function getCalNotesMap() { return loadData('cal_notes', {}); }
+function saveCalNotesMap(m) { saveData('cal_notes', m); }
+function getCalNotes(ds) {
+  const m = getCalNotesMap();
+  return m[ds] || [];
+}
+function addCalNote(ds) {
+  const input = document.getElementById('cal-note-input-' + ds);
+  if (!input) return;
+  const text = (input.value || '').trim();
+  if (!text) { showToast('写点什么再保存', 'info'); return; }
+  if (text.length > 2000) { showToast('这一条太长啦（限 2000 字），可以拆成多条记～', 'info'); return; }
+  const m = getCalNotesMap();
+  m[ds] = m[ds] || [];
+  m[ds].push({ id: 'n' + Date.now() + Math.random().toString(36).slice(2, 6), text, createdAt: Date.now() });
+  saveCalNotesMap(m);
+  showToast('已记录到 ' + ds, 'success');
+  ovCalSelect(ds);
+  renderOverviewCalendar();
+  // 同步刷新日记本弹窗（若打开）
+  const dm = $('#diary-modal');
+  if (dm && !dm.classList.contains('hidden') && typeof renderDiaryModal === 'function') renderDiaryModal();
+}
+function deleteCalNote(ds, id) {
+  const m = getCalNotesMap();
+  if (!m[ds]) return;
+  m[ds] = m[ds].filter(n => n.id !== id);
+  if (!m[ds].length) delete m[ds];
+  saveCalNotesMap(m);
+  ovCalSelect(ds);
+  renderOverviewCalendar();
+  const dm = $('#diary-modal');
+  if (dm && !dm.classList.contains('hidden') && typeof renderDiaryModal === 'function') {
+    if (diaryCurrentDate === ds) renderDiaryModal();
+  }
+}
+
+// ===== 日记本全屏弹窗（独立的添加 / 删除入口） =====
+let diaryCurrentDate = '';
+function openDiaryModal(ds) {
+  diaryCurrentDate = ds || today();
+  const modal = $('#diary-modal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  if (typeof renderDiaryModal === 'function') renderDiaryModal();
+  setTimeout(() => { const t = $('#diary-input'); if (t) t.focus(); }, 80);
+}
+function closeDiaryModal() {
+  const modal = $('#diary-modal');
+  if (modal) modal.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+function diaryShiftDay(delta) {
+  const d = new Date(diaryCurrentDate + 'T00:00:00');
+  d.setDate(d.getDate() + delta);
+  diaryCurrentDate = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  renderDiaryModal();
+}
+function diaryGoToday() { diaryCurrentDate = today(); renderDiaryModal(); }
+function diaryAdd() {
+  const input = $('#diary-input');
+  if (!input) return;
+  const text = (input.value || '').trim();
+  if (!text) { input.focus(); return; }
+  if (text.length > 2000) { showToast('这一条太长啦（限 2000 字），可以拆成多条记～', 'info'); return; }
+  const m = getCalNotesMap();
+  m[diaryCurrentDate] = m[diaryCurrentDate] || [];
+  m[diaryCurrentDate].push({ id: 'n' + Date.now() + Math.random().toString(36).slice(2, 6), text, createdAt: Date.now() });
+  saveCalNotesMap(m);
+  input.value = '';
+  showToast('已记录到 ' + diaryCurrentDate, 'success');
+  renderDiaryModal();
+  if (typeof ovCalSelect === 'function' && ovCalSelect) {
+    // 同时刷新日历下方详情面板
+    try { ovCalSelect(diaryCurrentDate); } catch (e) {}
+  }
+}
+function diaryDelete(id) {
+  const m = getCalNotesMap();
+  if (!m[diaryCurrentDate]) return;
+  m[diaryCurrentDate] = m[diaryCurrentDate].filter(n => n.id !== id);
+  if (!m[diaryCurrentDate].length) delete m[diaryCurrentDate];
+  saveCalNotesMap(m);
+  renderDiaryModal();
+  try { ovCalSelect(diaryCurrentDate); } catch (e) {}
+}
+function diaryClearAll() {
+  if (!confirm('清空 ' + diaryCurrentDate + ' 当天所有笔记？')) return;
+  const m = getCalNotesMap();
+  delete m[diaryCurrentDate];
+  saveCalNotesMap(m);
+  renderDiaryModal();
+  try { ovCalSelect(diaryCurrentDate); } catch (e) {}
+}
+function renderDiaryModal() {
+  const box = $('#diary-content');
+  if (!box) return;
+  const ds = diaryCurrentDate;
+  const notes = getCalNotes(ds);
+  const totalDays = Object.keys(getCalNotesMap()).filter(k => (getCalNotesMap()[k] || []).length).length;
+  const d = new Date(ds + 'T00:00:00');
+  const weekday = ['日','一','二','三','四','五','六'][d.getDay()];
+  const isToday = ds === today();
+
+  const listHtml = notes.length
+    ? notes.map(n => {
+        const t = new Date(n.createdAt || 0);
+        const time = t.getTime() ? t.toLocaleString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+        return '<li class="diary-item">' +
+          '<div class="diary-item-text">' + escapeHtml(n.text) +
+            (time ? '<span class="diary-item-time">⏰ ' + time + '</span>' : '') +
+          '</div>' +
+          '<button class="diary-item-del" onclick="diaryDelete(\'' + n.id + '\')" title="删除这一条" aria-label="删除"><i class="fas fa-trash"></i> 删除</button>' +
+        '</li>';
+      }).join('')
+    : '<li class="diary-empty">🌱 今天还没留下字迹，写下第一笔吧～</li>';
+
+  box.innerHTML =
+    '<header class="diary-head">' +
+      '<button class="diary-shift" onclick="diaryShiftDay(-1)" title="前一天" aria-label="前一天"><i class="fas fa-chevron-left"></i></button>' +
+      '<div class="diary-date">' +
+        '<div class="diary-date-main">' + ds + (isToday ? ' · 今天' : ' · 周' + weekday) + '</div>' +
+        '<div class="diary-date-sub">点击 ‹ › 切换日期' + (totalDays ? ' · 已坚持 ' + totalDays + ' 天' : '') + '</div>' +
+      '</div>' +
+      '<div class="diary-head-actions">' +
+        '<button class="diary-today" onclick="diaryGoToday()">今天</button>' +
+        '<button class="diary-close" onclick="closeDiaryModal()" aria-label="关闭"><i class="fas fa-times"></i></button>' +
+      '</div>' +
+      '<button class="diary-shift diary-shift-right" onclick="diaryShiftDay(1)" title="后一天" aria-label="后一天"><i class="fas fa-chevron-right"></i></button>' +
+    '</header>' +
+    '<section class="diary-addbox">' +
+      '<textarea id="diary-input" rows="4" maxlength="2000" placeholder="✍️ 今天做了什么，随便记：游泳 1 小时、背了 50 个单词、读完《小王子》第 3 章、晚上和闺蜜吃了火锅…（多段换行随便写，每条最多 2000 字，⌘/Ctrl+Enter 提交）" onkeydown="if((event.metaKey||event.ctrlKey)&amp;&amp;event.key===\'Enter\'){event.preventDefault();diaryAdd();}"></textarea>' +
+      '<div class="diary-addbar">' +
+        '<span class="diary-count">' + notes.length + ' 条 · 每条最多 2000 字</span>' +
+        '<div class="diary-addbtns">' +
+          (notes.length ? '<button class="diary-clear" onclick="diaryClearAll()"><i class="fas fa-broom"></i> 清空当天</button>' : '') +
+          '<button class="diary-add" onclick="diaryAdd()"><i class="fas fa-plus-circle"></i> 记一笔</button>' +
+        '</div>' +
+      '</div>' +
+    '</section>' +
+    '<section class="diary-section">' +
+      '<h5 class="diary-section-title"><i class="fas fa-list-ul"></i> 当天的全部记录 <span class="diary-section-count">' + notes.length + '</span></h5>' +
+      '<ul class="diary-list">' + listHtml + '</ul>' +
+    '</section>';
+}
+
+// ===== 计划全屏弹窗（与日记本同级，独立的添加 / 勾选 / 删除入口） =====
+let planCurrentDate = '';
+function openPlanModal(ds) {
+  planCurrentDate = ds || today();
+  const modal = $('#plan-modal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  if (typeof renderPlanModal === 'function') renderPlanModal();
+  setTimeout(() => { const t = $('#plan-modal-input'); if (t) t.focus(); }, 80);
+}
+function closePlanModal() {
+  const modal = $('#plan-modal');
+  if (modal) modal.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+function planShiftDay(delta) {
+  const d = new Date(planCurrentDate + 'T00:00:00');
+  d.setDate(d.getDate() + delta);
+  planCurrentDate = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  renderPlanModal();
+}
+function planGoToday() { planCurrentDate = today(); renderPlanModal(); }
+function planAdd() {
+  const input = $('#plan-modal-input');
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) { input.focus(); return; }
+  if (text.length > 200) { showToast('单条计划过长（限 200 字）', 'info'); return; }
+  const arr = getPlans();
+  arr.unshift({ id: uid(), text, done: false, date: planCurrentDate, createdAt: Date.now() });
+  savePlans(arr);
+  input.value = '';
+  showToast('已添加计划到 ' + planCurrentDate, 'success');
+  renderPlanModal();
+  try { ovCalSelect(planCurrentDate); } catch (e) {}
+  renderOverviewCalendar();
+  refreshPlans();
+}
+function planToggle(id) {
+  const arr = getPlans();
+  const p = arr.find(x => x.id === id);
+  if (!p) return;
+  p.done = !p.done;
+  p.completedAt = p.done ? Date.now() : null;
+  savePlans(arr);
+  renderPlanModal();
+  try { ovCalSelect(planCurrentDate); } catch (e) {}
+  renderOverviewCalendar();
+  refreshPlans();
+}
+function planDelete(id) {
+  savePlans(getPlans().filter(x => x.id !== id));
+  renderPlanModal();
+  try { ovCalSelect(planCurrentDate); } catch (e) {}
+  renderOverviewCalendar();
+  refreshPlans();
+}
+function planClearAll() {
+  if (!confirm('删除 ' + planCurrentDate + ' 当天所有计划？')) return;
+  const arr = getPlans().filter(p => p.date !== planCurrentDate);
+  savePlans(arr);
+  renderPlanModal();
+  try { ovCalSelect(planCurrentDate); } catch (e) {}
+  renderOverviewCalendar();
+  refreshPlans();
+}
+function planMove(id, delta) {
+  // delta: -1 上移 / +1 下移（仅在同一日期内调换顺序）
+  const arr = getPlans();
+  const idx = arr.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  const sameDayIdx = arr.map((p, i) => p.date === planCurrentDate ? i : -1).filter(i => i >= 0);
+  const pos = sameDayIdx.indexOf(idx);
+  if (pos < 0) return;
+  const tgt = pos + delta;
+  if (tgt < 0 || tgt >= sameDayIdx.length) return;
+  const a = sameDayIdx[pos], b = sameDayIdx[tgt];
+  const tmp = arr[a]; arr[a] = arr[b]; arr[b] = tmp;
+  savePlans(arr);
+  renderPlanModal();
+}
+// 把计划按「待办 / 已完成」分成两组渲染，状态一眼可辨（不再统一用蓝/橙标注）
+function planListTwoGroups(plans, opts) {
+  opts = opts || {};
+  const toggleFn = opts.toggle || 'planToggle';
+  const delFn = opts.del || 'planDelete';
+  const toggleExtra = opts.toggleExtra || '';
+  const delExtra = opts.delExtra || '';
+  const withMove = !!opts.withMove;
+  const todo = plans.filter(p => !p.done);
+  const done = plans.filter(p => p.done);
+  const item = function (p) {
+    const t = tagify(p.text);
+    const move = withMove
+      ? '<button class="planm-mv" onclick="planMove(\'' + p.id + '\',-1)" title="上移" aria-label="上移"><i class="fas fa-arrow-up"></i></button>' +
+        '<button class="planm-mv" onclick="planMove(\'' + p.id + '\',+1)" title="下移" aria-label="下移"><i class="fas fa-arrow-down"></i></button>'
+      : '';
+    return '<li class="planm-item ' + (p.done ? 'is-done' : 'is-todo') + '">' +
+      '<label class="planm-check">' +
+        '<input type="checkbox" ' + (p.done ? 'checked' : '') + ' onchange="' + toggleFn + '(\'' + p.id + '\')' + toggleExtra + '">' +
+        '<span class="planm-check-box"></span>' +
+      '</label>' +
+      '<span class="planm-emoji">' + t.icon + '</span>' +
+      '<span class="planm-text">' + escapeHtml(p.text) + '</span>' +
+      '<span class="planm-tag ' + (p.done ? 'tag-done' : 'tag-todo') + '">' + (p.done ? '已完成' : '待办') + '</span>' +
+      '<span class="planm-actions">' + move +
+        '<button class="planm-del" onclick="' + delFn + '(\'' + p.id + '\')' + delExtra + '" title="删除" aria-label="删除"><i class="fas fa-trash"></i></button>' +
+      '</span>' +
+    '</li>';
+  };
+  let html = '';
+  html += '<div class="planm-group planm-group-todo">' +
+    '<div class="planm-group-head"><span class="planm-group-dot dot-todo"></span>待办<span class="planm-group-count">' + todo.length + '</span></div>' +
+    (todo.length ? '<ul class="planm-list">' + todo.map(item).join('') + '</ul>' : '<div class="planm-group-empty">🎉 没有待办，全部搞定啦</div>') +
+    '</div>';
+  html += '<div class="planm-group planm-group-done">' +
+    '<div class="planm-group-head"><span class="planm-group-dot dot-done"></span>已完成<span class="planm-group-count">' + done.length + '</span></div>' +
+    (done.length ? '<ul class="planm-list">' + done.map(item).join('') + '</ul>' : '<div class="planm-group-empty">还没有完成的事项</div>') +
+    '</div>';
+  return html;
+}
+
+function renderPlanModal() {
+  const box = $('#plan-modal-content');
+  if (!box) return;
+  const ds = planCurrentDate;
+  const dayPlans = getPlans().filter(p => p.date === ds);
+  const allCount = getPlans().length;
+  const todoCount = dayPlans.filter(p => !p.done).length;
+  const doneCount = dayPlans.filter(p => p.done).length;
+  const d = new Date(ds + 'T00:00:00');
+  const weekday = ['日','一','二','三','四','五','六'][d.getDay()];
+  const isToday = ds === today();
+
+  // 头部日期副标题
+  const dateSub = isToday ? '今天' : ds + ' · 周' + weekday;
+
+  // 列表（按「待办 / 已完成」两组展示，状态一眼可辨）
+  const listHtml = dayPlans.length
+    ? planListTwoGroups(dayPlans, { toggle: 'planToggle', del: 'planDelete', withMove: true })
+    : '<div class="planm-empty">🌱 这一天还没有计划——加一条试试看～</div>';
+
+  // 进度
+  const ratio = dayPlans.length ? Math.round(doneCount / dayPlans.length * 100) : 0;
+  const progress = dayPlans.length
+    ? '<div class="planm-progress"><div class="planm-progress-bar" style="width:' + ratio + '%"></div><span class="planm-progress-label">完成 ' + doneCount + '/' + dayPlans.length + ' · ' + ratio + '%</span></div>'
+    : '';
+
+  box.innerHTML =
+    '<header class="planm-head">' +
+      '<button class="planm-shift" onclick="planShiftDay(-1)" title="前一天" aria-label="前一天"><i class="fas fa-chevron-left"></i></button>' +
+      '<div class="planm-date">' +
+        '<div class="planm-date-main">' + (isToday ? '今天' : ds) + (isToday ? '' : ' · 周' + weekday) + '</div>' +
+        '<div class="planm-date-sub">点击 ‹ › 切换日期' + (isToday ? '' : ' · 回到「今天」点右侧按钮') + '</div>' +
+      '</div>' +
+      '<div class="planm-head-actions">' +
+        '<button class="planm-today" onclick="planGoToday()">今天</button>' +
+        '<button class="planm-close" onclick="closePlanModal()" aria-label="关闭"><i class="fas fa-times"></i></button>' +
+      '</div>' +
+      '<button class="planm-shift planm-shift-right" onclick="planShiftDay(+1)" title="后一天" aria-label="后一天"><i class="fas fa-chevron-right"></i></button>' +
+    '</header>' +
+    progress +
+    '<section class="planm-addbox">' +
+      '<input id="plan-modal-input" type="text" placeholder="✏️ 加一条计划：游泳1小时、背30个单词、读完《小王子》第3章…" maxlength="200" onkeydown="if(event.key===\'Enter\'){event.preventDefault();planAdd();}">' +
+      '<div class="planm-addbar">' +
+        '<span class="planm-count">' + todoCount + ' 待办 · ' + doneCount + ' 已完成 · 共 ' + dayPlans.length + ' 条</span>' +
+        '<div class="planm-addbtns">' +
+          (dayPlans.length ? '<button class="planm-clear" onclick="planClearAll()"><i class="fas fa-broom"></i> 清空当天</button>' : '') +
+          '<button class="planm-add" onclick="planAdd()"><i class="fas fa-plus-circle"></i> 记一条计划</button>' +
+        '</div>' +
+      '</div>' +
+    '</section>' +
+    '<section class="planm-section">' +
+      '<h5 class="planm-section-title"><i class="fas fa-list-check"></i> 当天计划</h5>' +
+      listHtml +
+      (allCount > dayPlans.length ? '<div class="planm-hint">📌 工作台共有 ' + allCount + ' 条计划，本日之外还有 ' + (allCount - dayPlans.length) + ' 条设在别的日期</div>' : '') +
+    '</section>';
+}
+
+function ovCalDayData(ds) {
+  const checkin = getCheckinCount(ds);
+  const acts = getActivityLog().filter(a => a.date === ds);
+  const usage = (getUsage()[ds]) || {};
+  const usageSec = Object.keys(usage).reduce((s, k) => s + (usage[k] || 0), 0);
+  const plans = getPlans().filter(p => p.date === ds);
+  const notes = getCalNotes(ds);
+  return { checkin, acts, usageSec, plans, notes };
+}
+
+// ===== 日历标签：按关键词自动匹配 emoji + 颜色（把"游泳了/背英语了"这种活动变成可视色块） =====
+function tagify(text) {
+  const s = String(text || '');
+  const rules = [
+    { k: ['游泳','泳池','泡澡'],                              icon: '🏊', color: '#3498DB' },
+    { k: ['跑步','跑了','快走','行走','徒步'],                icon: '🏃', color: '#E67E22' },
+    { k: ['瑜伽','冥想','普拉提','拉伸'],                     icon: '🧘', color: '#9B59B6' },
+    { k: ['健身','撸铁','力量','器械','举铁'],                icon: '💪', color: '#E74C3C' },
+    { k: ['骑车','骑行','单车','自行车'],                     icon: '🚴', color: '#16A085' },
+    { k: ['跳绳','跳'],                                      icon: '🤸', color: '#FF7F50' },
+    { k: ['篮球','足球','羽毛球','网球','乒乓','排球','打球'], icon: '🏀', color: '#E74C3C' },
+    { k: ['爬山','登高','登'],                                icon: '⛰️', color: '#8B7355' },
+    { k: ['跳舞','舞蹈','广场舞','跳操'],                     icon: '💃', color: '#FF69B4' },
+    { k: ['背单词','背书','背','英语','口语','听力','跟读','朗读','晨读','外教'],  icon: '📚', color: '#8A6CB0' },
+    { k: ['读书','阅读','看书','读完','读完书','一本书'],     icon: '📖', color: '#5C8AC9' },
+    { k: ['写作','文章','摘抄','作文','论文','邮件','改稿'],  icon: '✍️', color: '#5C8AC9' },
+    { k: ['复习','刷题','模考','真题','备考'],                icon: '📝', color: '#8A6CB0' },
+    { k: ['上课','网课','学习'],                              icon: '🎓', color: '#8A6CB0' },
+    { k: ['上班','加班','开会','汇报','项目','工作'],         icon: '💼', color: '#607D8B' },
+    { k: ['电影','看片','电视剧','综艺','纪录片'],            icon: '🎬', color: '#E74C3C' },
+    { k: ['听歌','听音乐','听书','音乐'],                     icon: '🎵', color: '#FF6B9D' },
+    { k: ['游戏','王者','原神','switch','主机','lol'],        icon: '🎮', color: '#9B59B6' },
+    { k: ['吃饭','午餐','晚餐','早饭','早餐','夜宵','火锅','烧烤','咖啡','奶茶','甜品','面包'],  icon: '🍜', color: '#FF9800' },
+    { k: ['购物','逛街','买了','剁手'],                       icon: '🛍️', color: '#E91E63' },
+    { k: ['睡觉','早睡','睡眠','休息','午睡','睡'],            icon: '💤', color: '#7F8C8D' },
+    { k: ['早起','起床'],                                     icon: '🌅', color: '#FFB84D' },
+    { k: ['感恩','写日记'],                                   icon: '🙏', color: '#9B59B6' },
+    { k: ['聚会','约会','见朋友','恋爱','闺蜜','朋友'],        icon: '👯', color: '#FF69B4' },
+    { k: ['家人','爸妈','父母','孩子','家庭','回家'],         icon: '🏠', color: '#FF7043' },
+    { k: ['医院','看病','吃药','体检','看牙'],                icon: '💊', color: '#26A69A' },
+    { k: ['理财','记账','基金','股票','投资','定投'],         icon: '💰', color: '#F39C12' },
+    { k: ['开心','快乐','happy','棒','满意','成就感'],        icon: '🥳', color: '#FFC857' },
+    { k: ['累','疲惫','疲惫不堪','没精神'],                   icon: '😮‍💨', color: '#95A5A6' },
+    { k: ['焦虑','抑郁','烦躁','emo','难受','悲伤','哭'],     icon: '😔', color: '#7F8C8D' },
+    { k: ['跑','奔跑'],                                        icon: '🏃', color: '#E67E22' },
+  ];
+  for (const r of rules) {
+    for (const kw of r.k) {
+      if (s.indexOf(kw) >= 0) return { icon: r.icon, color: r.color };
+    }
+  }
+  return { icon: '📌', color: '#8A6CB0' };
+}
+function truncateText(s, max) {
+  s = String(s == null ? '' : s);
+  if (!max || s.length <= max) return s;
+  return s.slice(0, max) + '…';
+}
+function renderOverviewCalendar() {
+  const grid = $('#cal-grid'); if (!grid) return;
+  const { y, m } = currentOvCal;
+  // 同步年份 + 月份 chrome
+  ovCalSyncChrome();
+  const first = new Date(y, m, 1);
+  const startDow = first.getDay();
+  const dim = new Date(y, m + 1, 0).getDate();
+  let html = '';
+  for (let i = 0; i < startDow; i++) html += '<div class="cal-cell out" title="上一个月 · 点击前往" onclick="ovCalPrev()"></div>';
+  for (let d = 1; d <= dim; d++) {
+    const ds = y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+    const data = ovCalDayData(ds);
+    const isToday = ds === today();
+
+    // 聚合当天所有"事件"成色块标签
+    const entries = [];
+    data.plans.forEach(p => {
+      const t = tagify(p.text);
+      entries.push({ icon: t.icon, color: t.color, label: truncateText(p.text, 6), raw: p.text, type: 'plan', done: p.done });
+    });
+    data.notes.forEach(n => {
+      const t = tagify(n.text);
+      entries.push({ icon: t.icon, color: t.color, label: truncateText(n.text, 6), raw: n.text, type: 'note' });
+    });
+    if (data.checkin > 0) entries.push({ icon: '✅', color: '#00B894', label: '打卡 ' + data.checkin, type: 'check' });
+    if (data.acts.length) {
+      const actN = data.acts.reduce((s, a) => s + (a.n || 1), 0);
+      entries.push({ icon: '📊', color: '#6C5CE7', label: '学 ' + actN, type: 'act' });
+    }
+    if (data.usageSec > 0 && data.usageSec > 600) {
+      entries.push({ icon: '⏱️', color: '#5C8AC9', label: (data.usageSec / 60).toFixed(0) + '分', type: 'usage' });
+    }
+    // 排序：plan > note > check > act > usage
+    const priority = { plan: 0, note: 1, check: 2, act: 3, usage: 4 };
+    entries.sort((a, b) => priority[a.type] - priority[b.type]);
+
+    const hasAny = entries.length > 0;
+    const cls = 'cal-cell' + (isToday ? ' today' : '') + (hasAny ? ' has-act has-bars' : '');
+    const barsHtml = entries.map(e =>
+      '<span class="cal-bar ' + e.type + (e.done ? ' done' : '') + '" style="background:' + e.color + '22;color:' + e.color + ';border-color:' + e.color + '40" title="' + escapeHtml((e.done ? '✅ ' : '') + e.raw) + '">' +
+        '<span class="cal-bar-ic">' + e.icon + '</span>' +
+        '<span class="cal-bar-tx">' + escapeHtml(e.label) + '</span>' +
+      '</span>'
+    ).join('');
+
+    html += '<div class="' + cls + '" onclick="ovCalSelect(\'' + ds + '\')">' +
+      '<div class="cal-num">' + d + '</div>' +
+      '<div class="cal-bars">' + barsHtml + '</div>' +
+    '</div>';
+  }
+  grid.innerHTML = html;
+  if (!grid.dataset.ready) { grid.dataset.ready = '1'; ovCalSelect(today()); }
+}
+function ovCalSelect(ds) {
+  const box = $('#cal-detail'); if (!box) return;
+  const data = ovCalDayData(ds);
+  const isToday = ds === today();
+
+  // —— 打卡 / 学习动态 概览 ——
+  const statRows = [];
+  if (data.checkin > 0) statRows.push('<div class="cd-row"><span style="color:#00B894"><i class="fas fa-check-circle"></i></span><div><strong>打卡 ' + data.checkin + ' 次</strong></div></div>');
+  if (data.usageSec > 0) statRows.push('<div class="cd-row"><span style="color:#8A6CB0"><i class="fas fa-clock"></i></span><div>工作台使用 <strong>' + formatDuration(data.usageSec) + '</strong></div></div>');
+  if (data.acts.length) {
+    const byMod = {};
+    data.acts.forEach(a => { byMod[a.module] = byMod[a.module] || { n: 0, types: new Set() }; byMod[a.module].n += (a.n || 1); byMod[a.module].types.add(a.type); });
+    const list = Object.keys(byMod).map(mk => {
+      const meta = MODULE_META[mk] || { name: mk, icon: 'fa-circle', color: '#8A6CB0' };
+      const det = Array.from(byMod[mk].types).map(t => escapeHtml(t)).join('、');
+      return '<div class="cd-row"><span style="color:' + (meta.color || '#8A6CB0') + '"><i class="fas ' + meta.icon + '"></i></span><div><strong>' + meta.name + '</strong>：' + det + ' ×' + byMod[mk].n + '</div></div>';
+    }).join('');
+    statRows.push(list);
+  }
+  const statsBlock = statRows.length
+    ? '<div class="cd-section cd-stats-section"><div class="cd-section-head"><i class="fas fa-chart-pie"></i> 当天打卡与学习 <span class="cd-section-count">' + (data.checkin + data.acts.length) + '</span></div><div class="cd-section-body">' + statRows.join('') + '</div></div>'
+    : '';
+
+  // —— 计划区（按「待办 / 已完成」两组展示，状态一眼可辨） ——
+  const planListHtml = data.plans.length
+    ? planListTwoGroups(data.plans, {
+        toggle: 'togglePlan', del: 'deletePlan', withMove: false,
+        toggleExtra: ";ovCalSelect('" + ds + "');renderOverviewCalendar()",
+        delExtra: ";ovCalSelect('" + ds + "');renderOverviewCalendar()"
+      })
+    : '<div class="cd-section-empty">📋 还没写计划——在左侧「每日打卡」里就能加</div>';
+  const planAddHtml = '<div class="cd-plan-add">' +
+    '<input type="text" id="cd-plan-input-' + ds + '" placeholder="加一条计划：背 30 个单词、晚上跑步…" maxlength="200" onkeydown="if(event.key===\'Enter\'){event.preventDefault();cdPlanAdd(\'' + ds + '\');}">' +
+    '<button class="btn-add" onclick="cdPlanAdd(\'' + ds + '\')"><i class="fas fa-plus"></i> 添加</button>' +
+  '</div>';
+  const planSection = '<div class="cd-section cd-plan-section">' +
+    '<div class="cd-section-head plan-head"><i class="fas fa-list-check"></i> 我今天要做什么 <span class="cd-section-count">' + data.plans.length + '</span>' +
+      '<button class="cd-open-btn plan-open-btn" onclick="openPlanModal(\'' + ds + '\')"><i class="fas fa-expand"></i> 全屏打开</button>' +
+    '</div>' +
+    '<div class="cd-section-body">' + planListHtml + planAddHtml + '</div>' +
+  '</div>';
+
+  // —— 心得/日记区（紫蓝色块） ——
+  const notesHtml = data.notes.length
+    ? '<ul class="cd-diary-list">' + data.notes.map(n => {
+        const t = tagify(n.text);
+        const tm = n.createdAt ? new Date(n.createdAt).toLocaleString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' }) : '';
+        return '<li class="cd-diary-item">' +
+          '<span class="cd-diary-emoji">' + t.icon + '</span>' +
+          '<div class="cd-diary-text">' +
+            '<div class="cd-diary-main">' + escapeHtml(n.text) + '</div>' +
+            (tm ? '<div class="cd-diary-time">' + tm + '</div>' : '') +
+          '</div>' +
+          '<button class="cd-diary-del" onclick="deleteCalNote(\'' + ds + '\',\'' + n.id + '\');ovCalSelect(\'' + ds + '\');renderOverviewCalendar();" title="删除" aria-label="删除"><i class="fas fa-trash"></i></button>' +
+        '</li>';
+      }).join('') + '</ul>'
+    : '<div class="cd-section-empty diary-empty">📔 还没留下字迹——写一句今天做了什么吧</div>';
+  const diaryAddHtml = '<div class="cd-diary-add">' +
+    '<input type="text" id="cal-note-input-' + ds + '" placeholder="写下今天做了什么（最多 2000 字，可多段）：游泳、背单词、读书…" maxlength="2000" onkeydown="if(event.key===\'Enter\'){event.preventDefault();addCalNote(\'' + ds + '\');}">' +
+    '<button class="btn-add" onclick="addCalNote(\'' + ds + '\')"><i class="fas fa-plus"></i> 记一笔</button>' +
+  '</div>';
+  const diarySection = '<div class="cd-section cd-diary-section">' +
+    '<div class="cd-section-head diary-head"><i class="fas fa-book"></i> 我今天做了啥 / 想说的话 <span class="cd-section-count">' + data.notes.length + '</span>' +
+      '<button class="cd-open-btn diary-open-btn" onclick="openDiaryModal(\'' + ds + '\')"><i class="fas fa-expand"></i> 全屏打开</button>' +
+    '</div>' +
+    '<div class="cd-section-body">' + notesHtml + diaryAddHtml + '</div>' +
+  '</div>';
+
+  const emptyHint = (data.checkin === 0 && data.acts.length === 0 && data.plans.length === 0 && data.notes.length === 0)
+    ? '<div class="cal-empty">这一天还没有任何记录，先在任意板块打卡、在这里加计划或写心得试试～</div>' : '';
+
+  box.innerHTML =
+    '<h4>' + ds + (isToday ? ' · 今天' : '') + '</h4>' +
+    emptyHint +
+    statsBlock +
+    planSection +
+    diarySection;
+}
+
+// 在日历详情面板里加计划（用既有的 plans 存储）
+function cdPlanAdd(ds) {
+  const inp = document.getElementById('cd-plan-input-' + ds);
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) { inp.focus(); return; }
+  const arr = getPlans();
+  arr.unshift({ id: uid(), text, done: false, date: ds, createdAt: Date.now() });
+  savePlans(arr);
+  inp.value = '';
+  showToast('已添加计划到 ' + ds, 'success');
+  ovCalSelect(ds);
+  renderOverviewCalendar();
+  // 同步刷新计划面板弹窗（若打开）
+  const pm = $('#plan-modal');
+  if (pm && !pm.classList.contains('hidden') && typeof renderPlanModal === 'function') renderPlanModal();
+}
+
 function renderOverview(c) {
   const act = todayActivityByModule();
   const focus = getFocusSeconds();
@@ -5410,10 +6471,10 @@ function renderOverview(c) {
           </div>
         </div>
         <div class="db-btns">
-          <button class="db-btn" onclick="exportData()"><i class="fas fa-file-export"></i> 导出备份</button>
-          <button class="db-btn db-btn-2" onclick="importData()"><i class="fas fa-file-import"></i> 导入备份</button>
+          <button class="db-btn" onclick="exportWorkbench()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14v-4h-3l4-5 4 5h-3v4h-2z" fill="#8A6CB0"/></svg> 导出备份</button>
+          <button class="db-btn db-btn-2" onclick="importData()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" fill="#C99BB5"/><circle cx="16" cy="5" r="2" fill="#FFD966"/></svg> 导入备份</button>
         </div>
-        <input type="file" id="data-import-file" accept="application/json,.json" style="display:none" onchange="doImportData(this)">
+        <input type="file" id="data-import-file" accept="application/json,.json" style="display:none" onchange="importWorkbench(this)">
       </div>
 
       <div class="ov-grid">
@@ -5425,6 +6486,47 @@ function renderOverview(c) {
           <h3 class="ov-panel-title"><i class="fas fa-stream"></i> 今日动态</h3>
           <div class="ov-feed">${feed}</div>
         </div>
+      </div>
+
+      <div class="ov-panel ov-calendar">
+        <div class="cal-head">
+          <div class="cal-title">
+            <i class="fas fa-calendar-days"></i>
+            <span class="cal-title-text">成长日历</span>
+            <button class="cal-year-pill" id="cal-year-pill" onclick="ovCalYearPrev();event.stopPropagation();" title="上一年"><i class="fas fa-chevron-left"></i> <span id="cal-year-label">2026 年</span></button>
+            <span class="cal-months" id="cal-months-strip">
+              <button class="cal-month-chip" data-m="0">1月</button>
+              <button class="cal-month-chip" data-m="1">2月</button>
+              <button class="cal-month-chip" data-m="2">3月</button>
+              <button class="cal-month-chip" data-m="3">4月</button>
+              <button class="cal-month-chip" data-m="4">5月</button>
+              <button class="cal-month-chip" data-m="5">6月</button>
+              <button class="cal-month-chip" data-m="6">7月</button>
+              <button class="cal-month-chip" data-m="7">8月</button>
+              <button class="cal-month-chip" data-m="8">9月</button>
+              <button class="cal-month-chip" data-m="9">10月</button>
+              <button class="cal-month-chip" data-m="10">11月</button>
+              <button class="cal-month-chip" data-m="11">12月</button>
+            </span>
+            <button class="cal-year-pill cal-year-next" onclick="ovCalYearNext();event.stopPropagation();" title="下一年"><span id="cal-year-label-2">2026 年</span> <i class="fas fa-chevron-right"></i></button>
+          </div>
+          <div class="cal-head-actions">
+            <button class="cal-diary-btn plan-diary-btn" onclick="openPlanModal(today())" title="打开今天的计划面板">
+              <i class="fas fa-list-check"></i> 今天的计划
+            </button>
+            <button class="cal-diary-btn" onclick="openDiaryModal(today())" title="打开今天的日记本">
+              <i class="fas fa-book"></i> 今天做了什么
+            </button>
+            <div class="cal-nav">
+              <button onclick="ovCalPrev()"><i class="fas fa-chevron-left"></i></button>
+              <button onclick="ovCalToday()" title="回到本月">今</button>
+              <button onclick="ovCalNext()"><i class="fas fa-chevron-right"></i></button>
+            </div>
+          </div>
+        </div>
+        <div class="cal-weekdays"><span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span></div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="cal-detail" id="cal-detail"></div>
       </div>
 
       <div class="ov-panel">
@@ -5443,6 +6545,10 @@ function renderOverview(c) {
       <div class="ov-panel ov-plan-panel">
         <h3 class="ov-panel-title"><i class="fas fa-list-check"></i> 我的计划</h3>
         <p class="ov-plan-tip">写下今天 / 这段时间想完成的事，完成后勾选。右侧圆环一目了然看到「待办 vs 已办」。</p>
+        <div class="plan-date-row">
+          <span>计划日期：</span>
+          <input type="date" id="plan-date" value="${today()}">
+        </div>
         <div class="plan-input-bar">
           <input type="text" id="plan-input" placeholder="添加一个待办 / 计划…" maxlength="120" onkeydown="if(event.key==='Enter')addPlan()">
           <button class="btn-add" onclick="addPlan()"><i class="fas fa-plus"></i> 添加</button>
@@ -5458,8 +6564,9 @@ function renderOverview(c) {
   setTimeout(() => {
     renderOverviewTodayUsage(usageModKeys, todayUsageData);
     renderOverviewPeriod(currentOvPeriod);
-    renderPlanChart(todoCount, doneCount);
+    renderPlanChart(getPlans());
     renderPlanList();
+    renderOverviewCalendar();
   }, 60);
 }
 
@@ -5544,28 +6651,56 @@ function renderOverviewPeriod(period) {
   box.innerHTML = `<div class="ov-learn-title">${pName}学习了这些（共 ${acts.length} 项）</div>${rows}`;
 }
 
-function renderPlanChart(todo, done) {
+function renderPlanChart(plans) {
   const ctx = $('#plan-chart');
   if (!ctx) return;
   if (charts.plan) { try { charts.plan.destroy(); } catch {} }
+  const list = plans || [];
+  if (!list.length) {
+    charts.plan = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels: ['暂无计划'], datasets: [{ data: [1], backgroundColor: ['#E5E1ED'], borderWidth: 0 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom' }, tooltip: { enabled: false } } }
+    });
+    return;
+  }
+  // 按"先已完成后待办"排列，每段独立颜色
+  const sorted = list.slice().sort((a, b) => (a.done === b.done) ? 0 : (a.done ? -1 : 1));
+  const labels = sorted.map(p => p.text);
+  const data = sorted.map(() => 1); // 等分
+  const colors = sorted.map(p => {
+    const t = tagify(p.text);
+    if (p.done) return t.color; // 已完成：tagify 原色
+    // 待办：原色 + 35% 透明 + 浅灰底，用纯色再加透明 alpha
+    return hexToRgba(t.color, 0.45);
+  });
+  const borderColors = sorted.map(p => p.done ? '#fff' : '#d8cdec');
+  const icons = sorted.map(p => tagify(p.text).icon);
+  const doneFlags = sorted.map(p => p.done);
+
   charts.plan = new Chart(ctx, {
     type: 'doughnut',
-    data: {
-      labels: ['待办', '已完成'],
-      datasets: [{
-        data: [todo, done],
-        backgroundColor: ['#ff9800', '#4caf50'],
-        borderWidth: 2, borderColor: '#fff'
-      }]
-    },
+    data: { labels, datasets: [{ data, backgroundColor: colors, borderColor: borderColors, borderWidth: 2, borderRadius: 3 }] },
     options: {
-      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      responsive: true, maintainAspectRatio: false, cutout: '60%',
       plugins: {
-        legend: { position: 'bottom', labels: { font: { size: 13 }, padding: 14 } },
-        tooltip: { callbacks: { label: (c) => `${c.label}：${c.parsed} 项` } }
+        legend: {
+          position: 'bottom', labels: { font: { size: 11 }, padding: 8, boxWidth: 14, generateLabels: (chart) => {
+            return chart.data.labels.map((lab, i) => ({
+              text: (doneFlags[i] ? '✅ ' : '⬜ ') + icons[i] + ' ' + lab + (doneFlags[i] ? '（已完成）' : '（待办）'),
+              fillStyle: colors[i], strokeStyle: borderColors[i], lineWidth: 1, hidden: false, index: i
+            }));
+          } }
+        },
+        tooltip: { callbacks: { label: (c) => `${doneFlags[c.dataIndex] ? '✅ 已完成' : '⬜ 待办'} · ${c.label}` } }
       }
     }
   });
+}
+function hexToRgba(hex, alpha) {
+  const h = (hex || '#8A6CB0').replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16), g = parseInt(h.substring(2, 4), 16), b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 function renderPlanList() {
@@ -5575,10 +6710,10 @@ function renderPlanList() {
   if (!plans.length) { box.innerHTML = '<div class="ov-empty">还没有计划，先添加一个吧～</div>'; return; }
   box.innerHTML = plans.map(p => `
     <div class="plan-item ${p.done ? 'done' : ''}">
-      <label class="plan-check">
-        <input type="checkbox" ${p.done ? 'checked' : ''} onchange="togglePlan('${p.id}')">
-        <span class="plan-text">${escapeHtml(p.text)}</span>
-      </label>
+       <label class="plan-check">
+         <input type="checkbox" ${p.done ? 'checked' : ''} onchange="togglePlan('${p.id}')">
+         <span class="plan-text">${escapeHtml(p.text)}${p.date && p.date !== today() ? `<span class="plan-date-tag">${p.date}</span>` : ''}</span>
+       </label>
       <button class="plan-del" onclick="deletePlan('${p.id}')" title="删除"><i class="fas fa-trash"></i></button>
     </div>
   `).join('');
@@ -6064,9 +7199,9 @@ function tenminIframeHTML(v) {
 }
 function tenminPlaceholderHTML(v) {
   const t = String(v.title).replace(/"/g, '&quot;');
-  return `<div class="tenmin-video-ph" onclick="tenminPlay('${v.bvid}','${t.replace(/'/g, "\\'")}')">
+  return `<div class="tenmin-video-ph" onclick="tenminOpenBig('${v.bvid}','${t.replace(/'/g, "\\'")}')">
       <div class="tenmin-video-ph-inner"><i class="fas fa-play"></i></div>
-      <div class="tenmin-video-ph-label">${v.title} · 点击播放</div>
+      <div class="tenmin-video-ph-label">${v.title} · 点击放大播放</div>
     </div>`;
 }
 function tenminVideoHTML(v) {
@@ -6164,12 +7299,7 @@ function tenminPick(actId, idx) {
   const box = $('#tenmin-video-' + actId);
   if (box) {
     const v = act.videos[idx % act.videos.length];
-    // 先暂停其它正在播放的视频
-    $$('.tenmin-iframe').forEach(f => {
-      const b = f.parentElement;
-      if (b && b.classList.contains('tenmin-video')) b.innerHTML = tenminPlaceholderHTML({ bvid: f.dataset.bv, title: f.dataset.title });
-    });
-    box.innerHTML = (v.type === 'bilibili') ? tenminIframeHTML(v) : tenminVideoHTML(v);
+    box.innerHTML = tenminPlaceholderHTML(v);
     box.setAttribute('data-bv', v.type === 'bilibili' ? v.bvid : '');
     box.setAttribute('data-title', v.type === 'bilibili' ? v.title.replace(/"/g, '&quot;') : '');
     // 刷新 chip 高亮
@@ -6359,7 +7489,7 @@ function renderBeauty(c) {
    宠物板块（猫猫 / 狗狗 同步双栏）
    ============================================ */
 function loadPet() {
-  const def = { cats: {}, dogs: { '狗狗': { weights: [], deworm: [], notes: [] } }, food: [], currentCat: PET_DEFAULT_CATS[0] };
+  const def = { cats: {}, dogs: { '狗狗': { weights: [], deworm: [], notes: [] } }, food: [], currentCat: PET_DEFAULT_CATS[0], playLog: { cats: {}, dogs: {} }, playGoalMin: 30 };
   PET_DEFAULT_CATS.forEach(n => { def.cats[n] = { weights: [], deworm: [], notes: [] }; });
   try {
     const raw = localStorage.getItem('mw_pet');
@@ -6370,12 +7500,21 @@ function loadPet() {
     if (d.dog && d.dog.weights) { d.dogs = { '狗狗': { weights: d.dog.weights, deworm: d.dog.deworm || [], notes: d.dog.notes || [] } }; delete d.dog; }
     d.cats = d.cats || {}; d.dogs = d.dogs || { '狗狗': { weights: [], deworm: [], notes: [] } };
     d.food = d.food || [];
+    // 逗猫时间日志（按猫 + 日期）
+    d.playLog = d.playLog || { cats: {}, dogs: {} };
+    d.playLog.cats = d.playLog.cats || {};
+    d.playLog.dogs = d.playLog.dogs || {};
+    d.playGoalMin = (typeof d.playGoalMin === 'number' && d.playGoalMin > 0) ? d.playGoalMin : 30;
     // 保证 5 只默认猫咪都在
     PET_DEFAULT_CATS.forEach(n => {
       if (!d.cats[n]) d.cats[n] = { weights: [], deworm: [], notes: [] };
       d.cats[n].weights = d.cats[n].weights || []; d.cats[n].deworm = d.cats[n].deworm || []; d.cats[n].notes = d.cats[n].notes || [];
+      d.playLog.cats[n] = d.playLog.cats[n] || {};
     });
-    Object.keys(d.dogs).forEach(k => { d.dogs[k].weights = d.dogs[k].weights || []; d.dogs[k].deworm = d.dogs[k].deworm || []; d.dogs[k].notes = d.dogs[k].notes || []; });
+    Object.keys(d.dogs).forEach(k => {
+      d.dogs[k].weights = d.dogs[k].weights || []; d.dogs[k].deworm = d.dogs[k].deworm || []; d.dogs[k].notes = d.dogs[k].notes || [];
+      d.playLog.dogs[k] = d.playLog.dogs[k] || {};
+    });
     if (!d.currentCat || !d.cats[d.currentCat]) d.currentCat = Object.keys(d.cats)[0] || PET_DEFAULT_CATS[0];
     return d;
   } catch { return def; }
@@ -6437,7 +7576,7 @@ function renderPet(c) {
           </div>` : ''}
           <div class="pet-block">
             <div class="pet-block-title">${cur} · 每日体重</div>
-            <canvas id="pet-cat-weight"></canvas>
+            <div class="pet-weight-chart"><canvas id="pet-cat-weight"></canvas></div>
             <div class="pet-form">
               <input type="date" id="pet-cat-wdate" value="${todayStr()}">
               <input type="number" step="0.01" min="0" placeholder="kg" id="pet-cat-wkg">
@@ -6459,6 +7598,10 @@ function renderPet(c) {
             <div class="pet-list">
               ${catDeworm.map(w => `<div class="pet-list-row"><span>${w.date}</span><b>${w.type}</b><span class="pet-note">${escapeHtml(w.product || '')} ${escapeHtml(w.note || '')}</span></div>`).join('') || '<div class="pet-empty">暂无记录</div>'}
             </div>
+          </div>
+          <div class="pet-block pet-play-block">
+            <div class="pet-block-title">${cur} · 每日逗猫时间 <span class="pet-block-sub">（减肥目标：陪猫咪动起来 🎯）</span></div>
+            ${renderPetPlaySection('cat', cur, d.playGoalMin)}
           </div>
           <div class="pet-block">
             <div class="pet-block-title">${cur} · 随笔 / 备注（可加图片）</div>
@@ -6482,7 +7625,7 @@ function renderPet(c) {
           </div>
           <div class="pet-block">
             <div class="pet-block-title">每日体重</div>
-            <canvas id="pet-dog-weight"></canvas>
+            <div class="pet-weight-chart"><canvas id="pet-dog-weight"></canvas></div>
             <div class="pet-form">
               <input type="date" id="pet-dog-wdate" value="${todayStr()}">
               <input type="number" step="0.01" min="0" placeholder="kg" id="pet-dog-wkg">
@@ -6572,6 +7715,37 @@ function renderPet(c) {
       options: chartOptions('kg', '#0984E3')
     });
   }
+
+  // 逗猫时间柱状图
+  const playCanvas = $('#pet-cat-play-' + cur);
+  if (playCanvas) {
+    const playMap = (d.playLog.cats && d.playLog.cats[cur]) || {};
+    const labels = [], mins = [], colors = [];
+    const goalMin = d.playGoalMin || 30;
+    for (let i = 13; i >= 0; i--) {
+      const dt = new Date(); dt.setDate(dt.getDate() - i);
+      const ds = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+      const segs = playMap[ds] || [];
+      const sec = segs.reduce((s, x) => s + (x.durationSec || 0), 0);
+      const m = Math.round(sec / 60);
+      labels.push(ds.slice(5));
+      mins.push(m);
+      colors.push(m >= goalMin ? 'rgba(76,175,80,.7)' : 'rgba(255,152,0,.65)');
+    }
+    if (charts.petCatPlay) { try { charts.petCatPlay.destroy(); } catch {} }
+    charts.petCatPlay = new Chart(playCanvas, {
+      type: 'bar',
+      data: { labels, datasets: [{ label: '逗猫分钟', data: mins, backgroundColor: colors, borderColor: colors.map(c => c.replace('rgba', 'rgb').replace(',.7)', ',1)').replace(',.65)', ',1)')), borderWidth: 1.5, borderRadius: 4 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => `${c.parsed.y} 分钟 · 目标 ${goalMin} 分 ${c.parsed.y >= goalMin ? '✅ 已达标' : '⬜ 未达标'}` } }
+        },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 5 } } }
+      }
+    });
+  }
 }
 
 function switchPetHealthTab(id) { currentPetHealthTab = id; const c = $('#main-content'); renderPet(c); injectUpdateBadge(c, 'pet'); }
@@ -6598,11 +7772,24 @@ function renderPetMeds() {
     </div>`).join('') + '</div>';
 }
 function renderPetArticles() {
-  return '<div class="pet-health-list">' + PET_HEALTH_ARTICLES.map(a => `
+  const dayIdx = Math.floor((Date.now() - Date.UTC(new Date().getFullYear(), 0, 0)) / 86400000);
+  const featI = dayIdx % PET_HEALTH_ARTICLES.length;
+  const feat = PET_HEALTH_ARTICLES[featI];
+  const featHtml = `
+    <div class="ph-card ph-featured">
+      <div class="ph-card-title"><i class="fas fa-book-medical"></i> 📌 今日深读 · ${feat.title}</div>
+      <div class="ph-article"><p>${feat.body[0]}</p></div>
+      <button class="ph-deep-btn" onclick="petReadDeep(${featI})">读全文（共 ${feat.body.length} 段）↗</button>
+    </div>`;
+  return '<div class="pet-health-list">' + featHtml + PET_HEALTH_ARTICLES.map((a, i) => `
     <div class="ph-card">
       <div class="ph-card-title"><i class="fas fa-book-medical"></i> ${a.title}</div>
       <div class="ph-article">${a.body.map(p => `<p>${p}</p>`).join('')}</div>
     </div>`).join('') + '</div>';
+}
+function petReadDeep(idx) {
+  const a = PET_HEALTH_ARTICLES[idx]; if (!a) return;
+  openZoom('📚 ' + a.title, '<div class="zm-mz-full">' + a.body.map(p => `<p>${escapeHtml(p)}</p>`).join('') + '</div>');
 }
 
 // ===== 记账板块 =====
@@ -6863,6 +8050,241 @@ function petAddCat() {
   if (d.cats[name]) { alert('已存在这只猫咪'); return; }
   d.cats[name] = { weights: [], deworm: [], notes: [] };
   d.currentCat = name; petAddingCat = false; savePet(d); renderPet($('#main-content'));
+}
+
+/* ===== 宠物逗猫时间 ===== */
+const petPlayState = { ticking: null, startTs: 0 };
+function renderPetPlaySection(kind, name, goalMin) {
+  const d = loadPet();
+  const map = (d.playLog[kind] && d.playLog[kind][name]) || {};
+  const today = todayStr();
+  const todaySegs = map[today] || [];
+  const todaySec = todaySegs.reduce((s, x) => s + (x.durationSec || 0), 0);
+  const goal = goalMin || 30;
+  const ratio = Math.min(100, Math.round((todaySec / 60 / goal) * 100));
+  // 最近 14 天数据
+  const days = [];
+  for (let i = 13; i >= 0; i--) {
+    const dt = new Date(); dt.setDate(dt.getDate() - i);
+    const ds = dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
+    const segs = map[ds] || [];
+    const sec = segs.reduce((s, x) => s + (x.durationSec || 0), 0);
+    days.push({ ds, sec, n: segs.length });
+  }
+  const weekSec = days.slice(-7).reduce((s, x) => s + x.sec, 0);
+  const weekMin = Math.round(weekSec / 60);
+  const todayMin = Math.round(todaySec / 60);
+  const fmt = (s) => `${Math.floor(s / 60)}分${s % 60}秒`;
+  const fmtStart = (ts) => { const dd = new Date(ts); return String(dd.getHours()).padStart(2, '0') + ':' + String(dd.getMinutes()).padStart(2, '0'); };
+  const isTicking = petPlayState.ticking && petPlayState.ticking.kind === kind && petPlayState.ticking.name === name;
+
+  const listHtml = todaySegs.length
+    ? todaySegs.slice().reverse().map(s => `<div class="play-seg-row">
+        <span class="play-seg-time">${fmtStart(s.startTs)} – ${fmtStart(s.endTs)}</span>
+        <b class="play-seg-dur">${fmt(s.durationSec)}</b>
+        <button class="play-seg-del" onclick="petPlayDelete('${kind}','${name}','${s.id}')" title="删除"><i class="fas fa-trash"></i></button>
+      </div>`).join('')
+    : '<div class="pet-empty">今天还没逗过——点上面 ▶ 开始逗猫 即可计时</div>';
+
+  const statusBadge = isTicking
+    ? `<span class="play-status on"><span class="play-dot"></span> 正在逗猫 ${fmt(Math.floor((Date.now() - petPlayState.startTs) / 1000))}</span>`
+    : '';
+
+  return `
+    <div class="pet-play">
+      <div class="pet-play-row1">
+        <button class="play-toggle ${isTicking ? 'on' : ''}" onclick="${isTicking ? 'petPlayStop()' : 'petPlayStart(\'' + kind + '\',\'' + name + '\')'}">
+          <i class="fas ${isTicking ? 'fa-stop-circle' : 'fa-play-circle'}"></i>
+          ${isTicking ? '⏸ 结束逗猫' : '▶ 开始逗猫'}
+        </button>
+        <div class="play-goal">
+          <span>减肥目标：</span>
+          <input type="number" min="1" max="240" value="${goal}" id="pet-play-goal-${kind}-${name}" onchange="petPlaySetGoal(this.value)"> 分钟/天
+        </div>
+      </div>
+      ${statusBadge}
+      <div class="play-today">
+        <div class="play-today-head"><i class="fas fa-calendar-day"></i> 今天 · ${today}</div>
+        <div class="play-today-stats">
+          <div class="play-stat"><div class="play-stat-num">${todayMin}</div><div class="play-stat-lbl">分钟</div></div>
+          <div class="play-stat"><div class="play-stat-num">${todaySegs.length}</div><div class="play-stat-lbl">次</div></div>
+          <div class="play-stat"><div class="play-stat-num">${weekMin}</div><div class="play-stat-lbl">本周分钟</div></div>
+          <div class="play-progress">
+            <div class="play-progress-label">目标 ${goal} 分钟 · ${ratio}%</div>
+            <div class="play-progress-bar"><div class="play-progress-fill" style="width:${ratio}%;background:${ratio >= 100 ? '#4caf50' : '#FF9800'}"></div></div>
+          </div>
+        </div>
+        <div class="play-seg-list">${listHtml}</div>
+      </div>
+      <div class="play-history">
+        <div class="play-history-head">
+          <span><i class="fas fa-chart-line"></i> 最近 14 天逗猫时长（分钟）</span>
+          <button class="play-review-btn" onclick="petPlayReview('${kind}','${name}')"><i class="fas fa-history"></i> 复盘全部</button>
+        </div>
+        <div class="play-history-tip">只展示最近 14 天；点「复盘全部」可回看 <b>全部历史</b> 并做月度复盘 📚</div>
+        <div class="pet-play-chart"><canvas id="pet-${kind}-play-${name}"></canvas></div>
+        <div class="play-history-table">
+          <div class="play-history-row head"><span>日期</span><span>次数</span><span>时长</span><span>达标</span></div>
+          ${days.slice().reverse().map(x => {
+            const hit = (x.sec / 60) >= goal;
+            return `<div class="play-history-row"><span>${x.ds.slice(5)}</span><span>${x.n}</span><span>${Math.round(x.sec / 60)} 分</span><span class="${hit ? 'hit' : 'miss'}">${hit ? '✅' : '⬜'}</span></div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+function petPlayStart(kind, name) {
+  if (petPlayState.ticking) { showToast('已有正在进行的逗猫，请先结束上一段', 'info'); return; }
+  petPlayState.ticking = { kind, name };
+  petPlayState.startTs = Date.now();
+  showToast('已开始逗猫计时，去陪' + name + '玩吧 🐾', 'success');
+  if (typeof renderPet === 'function' && currentModule === 'pet') renderPet(document.getElementById('main-content'));
+}
+function petPlayStop() {
+  if (!petPlayState.ticking) return;
+  const { kind, name } = petPlayState.ticking;
+  const endTs = Date.now();
+  const startTs = petPlayState.startTs;
+  const durationSec = Math.max(1, Math.round((endTs - startTs) / 1000));
+  if (durationSec < 3) {
+    showToast('太短了（< 3 秒），不记录', 'info');
+    petPlayState.ticking = null;
+    petPlayState.startTs = 0;
+    if (typeof renderPet === 'function' && currentModule === 'pet') renderPet(document.getElementById('main-content'));
+    return;
+  }
+  const d = loadPet();
+  if (!d.playLog[kind]) d.playLog[kind] = {};
+  if (!d.playLog[kind][name]) d.playLog[kind][name] = {};
+  const day = todayStr();
+  if (!d.playLog[kind][name][day]) d.playLog[kind][name][day] = [];
+  d.playLog[kind][name][day].push({ id: uid(), startTs, endTs, durationSec });
+  savePet(d);
+  petPlayState.ticking = null;
+  petPlayState.startTs = 0;
+  showToast('已记录 ' + Math.floor(durationSec / 60) + '分' + (durationSec % 60) + '秒', 'success');
+  if (typeof renderPet === 'function' && currentModule === 'pet') renderPet(document.getElementById('main-content'));
+}
+function petPlayDelete(kind, name, segId) {
+  const d = loadPet();
+  const day = todayStr();
+  if (!d.playLog[kind] || !d.playLog[kind][name] || !d.playLog[kind][name][day]) return;
+  d.playLog[kind][name][day] = d.playLog[kind][name][day].filter(s => s.id !== segId);
+  if (!d.playLog[kind][name][day].length) delete d.playLog[kind][name][day];
+  savePet(d);
+  showToast('已删除该段', 'success');
+  if (typeof renderPet === 'function' && currentModule === 'pet') renderPet(document.getElementById('main-content'));
+}
+function petPlaySetGoal(min) {
+  const m = Math.max(1, Math.min(240, parseInt(min) || 30));
+  const d = loadPet();
+  d.playGoalMin = m;
+  savePet(d);
+  if (typeof renderPet === 'function' && currentModule === 'pet') renderPet(document.getElementById('main-content'));
+}
+
+/* 逗猫时间复盘：开放全部历史（数据全量保留，默认只渲染最近 14 天） */
+function petPlayReview(kind, name) {
+  const m = document.getElementById('pet-play-review-modal');
+  if (!m) return;
+  m.classList.remove('hidden');
+  renderPetPlayReview(kind, name, 'all');
+}
+function closePetPlayReview() {
+  const m = document.getElementById('pet-play-review-modal');
+  if (m) m.classList.add('hidden');
+  if (charts.petReview) { try { charts.petReview.destroy(); } catch {} charts.petReview = null; }
+}
+function longestPlayStreak(daysAsc) {
+  if (!daysAsc || !daysAsc.length) return 0;
+  let best = 1, cur = 1;
+  for (let i = 1; i < daysAsc.length; i++) {
+    const prev = new Date(daysAsc[i - 1]); const now = new Date(daysAsc[i]);
+    const diff = Math.round((now - prev) / 86400000);
+    if (diff === 1) cur++;
+    else if (diff > 1) cur = 1;
+    if (cur > best) best = cur;
+  }
+  return best;
+}
+function renderPetPlayReview(kind, name, monthFilter) {
+  const body = document.getElementById('pet-play-review-body');
+  if (!body) return;
+  const d = loadPet();
+  const map = (d.playLog[kind] && d.playLog[kind][name]) || {};
+  const goal = d.playGoalMin || 30;
+  const allDays = Object.keys(map).filter(ds => map[ds] && map[ds].length).sort(); // 升序、有数据的日期
+  if (!allDays.length) {
+    body.innerHTML = '<div class="pet-empty">还没有任何逗猫记录，先去「开始逗猫」计时吧 🐾</div>';
+    return;
+  }
+  const months = [...new Set(allDays.map(ds => ds.slice(0, 7)))].sort();
+  const sel = monthFilter || 'all';
+  const days = sel === 'all' ? allDays : allDays.filter(ds => ds.slice(0, 7) === sel);
+  const totalSec = days.reduce((s, ds) => s + map[ds].reduce((a, x) => a + (x.durationSec || 0), 0), 0);
+  const totalMin = Math.round(totalSec / 60);
+  const avgMin = Math.round((totalSec / 60) / days.length);
+  const hitDays = days.filter(ds => (map[ds].reduce((a, x) => a + (x.durationSec || 0), 0) / 60) >= goal).length;
+  const hitRate = Math.round(hitDays / days.length * 100);
+  const streak = longestPlayStreak(allDays);
+  const optHtml = '<option value="all"' + (sel === 'all' ? ' selected' : '') + '>全部月份</option>' +
+    months.map(mo => `<option value="${mo}"${sel === mo ? ' selected' : ''}>${mo}</option>`).join('');
+  // 按月分组的历史表（倒序）
+  const groups = {};
+  days.forEach(ds => { const mo = ds.slice(0, 7); (groups[mo] = groups[mo] || []).push(ds); });
+  const tableHtml = Object.keys(groups).sort().reverse().map(mo => {
+    const rows = groups[mo].slice().sort().reverse().map(ds => {
+      const sec = map[ds].reduce((a, x) => a + (x.durationSec || 0), 0);
+      const n = map[ds].length, m = Math.round(sec / 60);
+      const hit = (sec / 60) >= goal;
+      return `<div class="play-history-row"><span>${ds.slice(5)}</span><span>${n}</span><span>${m} 分</span><span class="${hit ? 'hit' : 'miss'}">${hit ? '✅' : '⬜'}</span></div>`;
+    }).join('');
+    return `<div class="rv-month-group"><div class="rv-month-label">${mo} 月</div>${rows}</div>`;
+  }).join('');
+  body.innerHTML = `
+    <div class="rv-filter">
+      <label>选择月份：</label>
+      <select id="pet-review-month" onchange="renderPetPlayReview('${kind}','${name}', this.value)">${optHtml}</select>
+      <span class="rv-range">${sel === 'all' ? '全部 ' + allDays.length + ' 天' : sel + ' 共 ' + days.length + ' 天'}</span>
+    </div>
+    <div class="rv-stats">
+      <div class="rv-stat"><div class="rv-num">${days.length}</div><div class="rv-lbl">逗猫天数</div></div>
+      <div class="rv-stat"><div class="rv-num">${totalMin}</div><div class="rv-lbl">累计分钟</div></div>
+      <div class="rv-stat"><div class="rv-num">${avgMin}</div><div class="rv-lbl">日均分钟</div></div>
+      <div class="rv-stat"><div class="rv-num">${streak}</div><div class="rv-lbl">最长连续</div></div>
+      <div class="rv-stat"><div class="rv-num">${hitRate}%</div><div class="rv-lbl">达标率</div></div>
+    </div>
+    <div class="rv-chart-wrap"><canvas id="pet-play-review-chart"></canvas></div>
+    <div class="play-history-table">
+      <div class="play-history-row head"><span>日期</span><span>次数</span><span>时长</span><span>达标</span></div>
+      ${tableHtml}
+    </div>`;
+  // 复盘图表：全部=按月聚合；单月=按日
+  const canvas = document.getElementById('pet-play-review-chart');
+  if (canvas && typeof Chart === 'function') {
+    let labels, data, colors;
+    if (sel === 'all') {
+      labels = months;
+      data = months.map(mo => Math.round(allDays.filter(ds => ds.slice(0, 7) === mo).reduce((s, ds) => s + map[ds].reduce((a, x) => a + (x.durationSec || 0), 0), 0) / 60));
+      colors = data.map(v => v > 0 ? 'rgba(138,108,176,.7)' : 'rgba(200,190,210,.4)');
+    } else {
+      const sdays = days.slice().sort();
+      labels = sdays.map(ds => ds.slice(5));
+      data = sdays.map(ds => Math.round(map[ds].reduce((a, x) => a + (x.durationSec || 0), 0) / 60));
+      colors = data.map(v => v >= goal ? 'rgba(76,175,80,.7)' : 'rgba(255,152,0,.65)');
+    }
+    if (charts.petReview) { try { charts.petReview.destroy(); } catch {} }
+    charts.petReview = new Chart(canvas, {
+      type: 'bar',
+      data: { labels, datasets: [{ label: sel === 'all' ? '每月分钟' : '每日分钟', data, backgroundColor: colors, borderRadius: 4 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => `${c.parsed.y} 分钟` } } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 5 } } }
+      }
+    });
+  }
 }
 
 function renderPetNotes(list) {
