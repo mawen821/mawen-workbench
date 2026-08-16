@@ -102,8 +102,16 @@ function jsLit(s) {
 }
 function speakFallback(text) {
   // 最后兜底：仅在 TTS 与有道音频都不可用时调用
-  showToast('当前环境无法播放英语音频，已为你放大文字', 'info');
-  openZoom('🔊 朗读（文字版）', `<p style="font-size:20px;line-height:2;color:var(--text-primary)">${escapeHtml(text)}</p>`);
+  // 长文本（>60 字符）一般是阅读段落，用更小字号便于一次性看完整段
+  const isLongText = text.length > 60;
+  const fontSize = isLongText ? '15px' : '20px';
+  const lineHeight = isLongText ? 1.9 : 2;
+  const title = isLongText ? '📖 原文（当前环境无 TTS 引擎）' : '🔊 朗读（文字版）';
+  const toast = isLongText
+    ? '当前环境无 TTS 引擎，已为你显示原文。建议在手机「设置→语言→文字转语音」启用系统 TTS'
+    : '当前环境无法播放英语音频，已为你放大文字';
+  showToast(toast, 'info');
+  openZoom(title, `<p style="font-size:${fontSize};line-height:${lineHeight};color:var(--text-primary)">${escapeHtml(text)}</p>`);
 }
 
 // 全局英语语速（0.4~1.2），跨卡片记忆
@@ -148,9 +156,11 @@ function speakByYoudao(text, btn, onEnd, useFallback) {
   }
 }
 
-// 播放英语一次；TTS 优先，250ms 内未出声或失败则降级有道音频；onEnd 在播放结束后回调
+// 播放英语一次；TTS 优先，长文本跳过有道（dictvoice 对 >20 字符输入会 HTTP 500）；onEnd 在播放结束后回调
 function playEnglishOnce(text, rate, btn, onEnd) {
   rate = parseFloat(rate) || 0.9;
+  // 阈值：有道 dictvoice 对长度 >20 字符的输入直接 HTTP 500，长文本不绕路
+  const isLongText = text.length > 20;
   try {
     if (window.speechSynthesis && window.SpeechSynthesisUtterance) {
       const synth = window.speechSynthesis;
@@ -161,23 +171,31 @@ function playEnglishOnce(text, rate, btn, onEnd) {
       const v = pickEnglishVoice();
       if (v) u.voice = v;
       let handed = false;
+      const fallthrough = () => {
+        if (handed) return;
+        handed = true;
+        try { synth.cancel(); } catch (e) {}
+        // 长文本跳过有道（必失败），直接进文字兜底
+        if (isLongText) speakFallback(text);
+        else speakByYoudao(text, btn, onEnd, true);
+      };
       u.onstart = () => { handed = true; };
       u.onend = () => { if (handed) { if (btn) btn.innerHTML = btn.dataset.orig || btn.innerHTML; if (onEnd) onEnd(); } };
       u.onerror = (ev) => {
         if (handed) return;
         if (ev && ev.error === 'canceled') return;
-        handed = true;
-        speakByYoudao(text, btn, onEnd, true);
+        fallthrough();
       };
       synth.cancel();
       synth.speak(u);
-      setTimeout(() => {
-        if (!handed) { handed = true; try { synth.cancel(); } catch (e) {} speakByYoudao(text, btn, onEnd, true); }
-      }, 250);
+      // 手机 WebView 的 TTS 启动普遍较慢（300~1500ms），原 250ms 太短会误判失败
+      setTimeout(fallthrough, 1500);
       return;
     }
   } catch (e) {}
-  speakByYoudao(text, btn, onEnd, true);
+  // TTS 完全不可用：长文本跳过有道（必失败），短文本再尝试一次
+  if (isLongText) speakFallback(text);
+  else speakByYoudao(text, btn, onEnd, true);
 }
 let _cachedVoices = null;
 function pickEnglishVoice() {
