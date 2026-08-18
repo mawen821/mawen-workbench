@@ -186,46 +186,79 @@ function speakByBaidu(text, btn, onEnd, useFallback) {
   }
 }
 
-// 播放英语一次；TTS 优先；1500ms 内未发声则降级长文本走百度、短文本先有道再百度；onEnd 在播放结束后回调
+// 稳定 key：文本(trim)的 UTF-8 字节 djb2 哈希，与离线预生成脚本(_gen_audio.py)保持一致
+// 用于把朗读文本映射到本地预生成的 ./audio/eng/<key>.mp3
+function engAudioKey(text) {
+  const t = (text || '').trim();
+  let bytes;
+  try { bytes = new TextEncoder().encode(t); }
+  catch (e) { bytes = []; for (let i = 0; i < t.length; i++) bytes.push(t.charCodeAt(i) & 0xff); }
+  let h = 5381;
+  for (let i = 0; i < bytes.length; i++) h = (((h << 5) + h) + bytes[i]) >>> 0;
+  return 'eng-' + h.toString(16).padStart(8, '0');
+}
+
+// 播放英语一次。
+// 策略：① 优先用离线预生成的本地 mp3（同源、100% 可播，不依赖手机 TTS 引擎或第三方接口）；
+//       ② 本地无对应音频（动态文本/单词）时，才走 TTS → 有道 → 百度 → 文字兜底 链。
 function playEnglishOnce(text, rate, btn, onEnd) {
   rate = parseFloat(rate) || 0.9;
-  // 阈值：有道 dictvoice 对长度 >20 字符的输入直接 HTTP 500，长文本走百度（支持任意长度）
   const isLongText = text.length > 20;
-  try {
-    if (window.speechSynthesis && window.SpeechSynthesisUtterance) {
-      const synth = window.speechSynthesis;
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US';
-      u.rate = rate;
-      u.pitch = 1;
-      const v = pickEnglishVoice();
-      if (v) u.voice = v;
-      let handed = false;
-      const fallthrough = () => {
-        if (handed) return;
-        handed = true;
-        try { synth.cancel(); } catch (e) {}
-        // 长文本：直接走百度（支持任意长度）；短文本先尝试有道（更快），失败再百度
-        if (isLongText) speakByBaidu(text, btn, onEnd, true);
-        else speakByYoudao(text, btn, () => speakByBaidu(text, btn, onEnd, true), false);
-      };
-      u.onstart = () => { handed = true; };
-      u.onend = () => { if (handed) { if (btn) btn.innerHTML = btn.dataset.orig || btn.innerHTML; if (onEnd) onEnd(); } };
-      u.onerror = (ev) => {
-        if (handed) return;
-        if (ev && ev.error === 'canceled') return;
-        fallthrough();
-      };
-      synth.cancel();
-      synth.speak(u);
-      // 手机 WebView 的 TTS 启动普遍较慢（300~1500ms），原 250ms 太短会误判失败
-      setTimeout(fallthrough, 1500);
-      return;
-    }
-  } catch (e) {}
-  // TTS 完全不可用：长文本走百度；短文本先有道再百度
-  if (isLongText) speakByBaidu(text, btn, onEnd, true);
-  else speakByYoudao(text, btn, () => speakByBaidu(text, btn, onEnd, true), false);
+  if (btn && !btn.dataset.orig) btn.dataset.orig = btn.innerHTML;
+  const restoreBtn = () => { if (btn) btn.innerHTML = btn.dataset.orig || btn.innerHTML; };
+
+  // —— ① 本地 mp3 优先 ——
+  const localSrc = './audio/eng/' + engAudioKey(text) + '.mp3';
+  const tryLocal = (onLocalFail) => {
+    try {
+      if (_currentTtsAudio) { try { _currentTtsAudio.pause(); } catch (e) {} _currentTtsAudio = null; }
+      const audio = new Audio(localSrc);
+      audio.preload = 'auto';
+      let done = false;
+      const finish = () => { if (done) return; done = true; restoreBtn(); if (onEnd) onEnd(); };
+      audio.onended = finish;
+      audio.onerror = () => { if (!done) { done = true; onLocalFail(); } };
+      _currentTtsAudio = audio;
+      const p = audio.play();
+      if (p && p.catch) p.catch(() => { if (!done) { done = true; onLocalFail(); } });
+      return true;
+    } catch (e) { onLocalFail(); return false; }
+  };
+
+  // —— ② 在线兜底链（原逻辑）——
+  const playOnline = () => {
+    try {
+      if (window.speechSynthesis && window.SpeechSynthesisUtterance) {
+        const synth = window.speechSynthesis;
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'en-US'; u.rate = rate; u.pitch = 1;
+        const v = pickEnglishVoice(); if (v) u.voice = v;
+        let handed = false;
+        const fallthrough = () => {
+          if (handed) return; handed = true;
+          try { synth.cancel(); } catch (e) {}
+          if (isLongText) speakByBaidu(text, btn, onEnd, true);
+          else speakByYoudao(text, btn, () => speakByBaidu(text, btn, onEnd, true), false);
+        };
+        u.onstart = () => { handed = true; };
+        u.onend = () => { if (handed) { restoreBtn(); if (onEnd) onEnd(); } };
+        u.onerror = (ev) => {
+          if (handed) return;
+          if (ev && ev.error === 'canceled') return;
+          fallthrough();
+        };
+        synth.cancel(); synth.speak(u);
+        setTimeout(fallthrough, 1500);
+        return;
+      }
+    } catch (e) {}
+    if (isLongText) speakByBaidu(text, btn, onEnd, true);
+    else speakByYoudao(text, btn, () => speakByBaidu(text, btn, onEnd, true), false);
+  };
+
+  // 先试本地，本地加载/播放失败再走在线兜底
+  if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 播放中';
+  tryLocal(playOnline);
 }
 let _cachedVoices = null;
 function pickEnglishVoice() {
