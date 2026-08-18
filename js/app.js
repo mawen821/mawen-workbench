@@ -156,10 +156,40 @@ function speakByYoudao(text, btn, onEnd, useFallback) {
   }
 }
 
-// 播放英语一次；TTS 优先，长文本跳过有道（dictvoice 对 >20 字符输入会 HTTP 500）；onEnd 在播放结束后回调
+// 用百度翻译公共 TTS 接口播音频（国内 CDN、免 key、支持任意长度的文本）
+// 专门补足有道 dictvoice 的长度短板（>20 字符会 HTTP 500）；useFallback=true 时再降级为文字放大
+function speakByBaidu(text, btn, onEnd, useFallback) {
+  try {
+    if (_currentTtsAudio) { try { _currentTtsAudio.pause(); } catch (e) {} _currentTtsAudio = null; }
+    // 百度翻译 TTS 公共接口：lan=en 美音，spd=3 中速，source=wise 与官方翻译 widget 一致
+    const audio = new Audio(`https://fanyi.baidu.com/gettts?lan=en&text=${encodeURIComponent(text)}&spd=3&source=wise`);
+    audio.preload = 'auto';
+    audio.playbackRate = 1.0;
+    if (btn) {
+      if (!btn.dataset.orig) btn.dataset.orig = btn.innerHTML;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 播放中';
+    }
+    const done = () => {
+      if (btn) btn.innerHTML = btn.dataset.orig || btn.innerHTML;
+      if (onEnd) onEnd();
+    };
+    audio.onended = done;
+    audio.onerror = () => { done(); if (useFallback) speakFallback(text); };
+    _currentTtsAudio = audio;
+    const p = audio.play();
+    if (p && p.catch) p.catch(() => { done(); if (useFallback) speakFallback(text); });
+    return true;
+  } catch (e) {
+    if (onEnd) onEnd();
+    if (useFallback) speakFallback(text);
+    return false;
+  }
+}
+
+// 播放英语一次；TTS 优先；1500ms 内未发声则降级长文本走百度、短文本先有道再百度；onEnd 在播放结束后回调
 function playEnglishOnce(text, rate, btn, onEnd) {
   rate = parseFloat(rate) || 0.9;
-  // 阈值：有道 dictvoice 对长度 >20 字符的输入直接 HTTP 500，长文本不绕路
+  // 阈值：有道 dictvoice 对长度 >20 字符的输入直接 HTTP 500，长文本走百度（支持任意长度）
   const isLongText = text.length > 20;
   try {
     if (window.speechSynthesis && window.SpeechSynthesisUtterance) {
@@ -175,9 +205,9 @@ function playEnglishOnce(text, rate, btn, onEnd) {
         if (handed) return;
         handed = true;
         try { synth.cancel(); } catch (e) {}
-        // 长文本跳过有道（必失败），直接进文字兜底
-        if (isLongText) speakFallback(text);
-        else speakByYoudao(text, btn, onEnd, true);
+        // 长文本：直接走百度（支持任意长度）；短文本先尝试有道（更快），失败再百度
+        if (isLongText) speakByBaidu(text, btn, onEnd, true);
+        else speakByYoudao(text, btn, () => speakByBaidu(text, btn, onEnd, true), false);
       };
       u.onstart = () => { handed = true; };
       u.onend = () => { if (handed) { if (btn) btn.innerHTML = btn.dataset.orig || btn.innerHTML; if (onEnd) onEnd(); } };
@@ -193,9 +223,9 @@ function playEnglishOnce(text, rate, btn, onEnd) {
       return;
     }
   } catch (e) {}
-  // TTS 完全不可用：长文本跳过有道（必失败），短文本再尝试一次
-  if (isLongText) speakFallback(text);
-  else speakByYoudao(text, btn, onEnd, true);
+  // TTS 完全不可用：长文本走百度；短文本先有道再百度
+  if (isLongText) speakByBaidu(text, btn, onEnd, true);
+  else speakByYoudao(text, btn, () => speakByBaidu(text, btn, onEnd, true), false);
 }
 let _cachedVoices = null;
 function pickEnglishVoice() {
