@@ -650,6 +650,49 @@ const GRAMMAR_DATA = [
       }
     ],
     tip: "倒装句的识别关键：看主语和谓语/助动词的位置是否反常。写作中使用倒装能让句子更有变化和强调效果，但不要滥用。"
+  },
+  {
+    id: 19,
+    title: "独立主格结构 (Absolute Construction)",
+    icon: "fa-puzzle-piece",
+    intro: "独立主格结构是一种由名词/代词加上分词、形容词、副词或介词短语等构成的独立结构，在句中作状语，表示时间、原因、条件、伴随等。它有自己的逻辑主语，与主句主语不同，因此称为'独立'。",
+    sections: [
+      {
+        heading: "什么是独立主格结构？",
+        content: "独立主格结构由'名词/代词 + 其他成分'构成，在句中作状语。它与主句之间没有连接词，用逗号隔开。其核心特点是：独立主格中的名词/代词有自己的逻辑主语，与主句主语不同。",
+        examples: [
+          { en: "Weather permitting, we will have a picnic tomorrow.", cn: "如果天气允许，我们明天去野餐。" },
+          { en: "He sat in the chair, book in hand.", cn: "他坐在椅子上，手里拿着书。" }
+        ]
+      },
+      {
+        heading: "独立主格结构的常见形式",
+        content: "常见形式有：名词/代词 + 现在分词（表示主动/进行）、名词/代词 + 过去分词（表示被动/完成）、名词/代词 + 不定式（表示将来）、名词/代词 + 形容词/副词/介词短语。",
+        examples: [
+          { en: "The meeting being over, everyone left the room.", cn: "会议结束了，每个人都离开了房间。（现在分词）" },
+          { en: "The work finished, we went home.", cn: "工作完成后，我们回家了。（过去分词）" },
+          { en: "So many people to help him, he is sure to succeed.", cn: "有这么多人帮他，他一定会成功。（不定式）" },
+          { en: "He entered the room, his face red with cold.", cn: "他走进房间，脸冻得通红。（形容词）" }
+        ]
+      },
+      {
+        heading: "独立主格与with复合结构",
+        content: "with + 宾语 + 宾语补足语 构成的复合结构，本质上是一种独立主格结构，常表示伴随状态。",
+        examples: [
+          { en: "With winter coming on, it's time to buy warm clothes.", cn: "冬天来了，该买暖和的衣服了。" },
+          { en: "She sat there, with her eyes fixed on the blackboard.", cn: "她坐在那里，眼睛盯着黑板。" }
+        ]
+      },
+      {
+        heading: "使用注意",
+        content: "独立主格结构在句中只能作状语，不能独立成句。它没有谓语动词，因此不是一个完整的句子。写作中适当使用能让表达更简洁地道。",
+        examples: [
+          { en: "Time permitting, I will visit you next week.", cn: "如果时间允许，我下周会去看你。" },
+          { en: "Everything taken into consideration, his plan seems better.", cn: "综合考虑一切，他的计划似乎更好。" }
+        ]
+      }
+    ],
+    tip: "独立主格结构不是完整句子，不能加连接词。判断方法：把结构还原成状语从句，如 Weather permitting → If weather permits。"
   }
 ];
 
@@ -761,7 +804,12 @@ const WORDS_DATA = {
     { en: "lunch", phonetic: "/lʌntʃ/", cn: `n. 午餐`, example: "Let's have lunch together." },
     { en: "dinner", phonetic: "/ˈdɪnə/", cn: `n. 晚餐`, example: "Dinner is ready!" },
     { en: "shoes", phonetic: "/ʃuːz/", cn: `n. 鞋子`, example: "Put on your shoes, please." },
-    { en: "bag", phonetic: "/bæɡ/", cn: `n. 包`, example: "My bag is heavy." }
+    { en: "bag", phonetic: "/bæɡ/", cn: `n. 包`, example: "My bag is heavy." },
+    { en: "hat", phonetic: "/hæt/", cn: `n. 帽子`, example: "Put on your hat before going out." },
+    { en: "toy", phonetic: "/tɔɪ/", cn: `n. 玩具`, example: "The child is playing with a toy car." },
+    { en: "cake", phonetic: "/keɪk/", cn: `n. 蛋糕`, example: "We eat cake on birthdays." },
+    { en: "baby", phonetic: "/ˈbeɪbi/", cn: `n. 婴儿`, example: "The baby is sleeping quietly." },
+    { en: "car", phonetic: "/kɑː/", cn: `n. 汽车`, example: "My father drives a red car." }
   ],
   middle: [
     { en: "achieve", phonetic: "/əˈtʃiːv/", cn: "v. 实现，达成", example: "You can achieve your goals with hard work." },
@@ -874,7 +922,17 @@ const WORDS_DATA = {
     { en: "suggest", phonetic: `/səˈdʒest/`, cn: `v. 建议`, example: "I suggest we start early tomorrow." },
     { en: "explain", phonetic: `/ɪkˈspleɪn/`, cn: `v. 解释`, example: "Can you explain this word to me?" },
     { en: "discover", phonetic: `/dɪˈskʌvə/`, cn: `v. 发现`, example: "Scientists discovered a new planet last year." },
-    { en: "popular", phonetic: `/ˈpɒpjʊlə/`, cn: `adj. 受欢迎的`, example: "This song is very popular among teenagers." }
+    { en: "popular", phonetic: `/ˈpɒpjʊlə/`, cn: `adj. 受欢迎的`, example: "This song is very popular among teenagers." },
+    { en: "active", phonetic: `/ˈæktɪv/`, cn: `adj. 积极的`, example: "She takes an active part in class activities." },
+    { en: "avoid", phonetic: `/əˈvɔɪd/`, cn: `v. 避免`, example: "You should avoid eating too much sugar." },
+    { en: "celebrate", phonetic: `/ˈselɪbreɪt/`, cn: `v. 庆祝`, example: "We celebrate the Spring Festival every year." },
+    { en: "eager", phonetic: `/ˈiːɡə/`, cn: `adj. 渴望的`, example: "The students are eager to learn new things." },
+    { en: "familiar", phonetic: `/fəˈmɪliə/`, cn: `adj. 熟悉的`, example: "Are you familiar with this city?" },
+    { en: "grateful", phonetic: `/ˈɡreɪtfl/`, cn: `adj. 感激的`, example: "I am grateful for your help." },
+    { en: "keen", phonetic: `/kiːn/`, cn: `adj. 热衷的`, example: "He is keen on playing basketball." },
+    { en: "modest", phonetic: `/ˈmɒdɪst/`, cn: `adj. 谦虚的`, example: "She is modest about her achievements." },
+    { en: "overcome", phonetic: `/ˌəʊvəˈkʌm/`, cn: `v. 克服`, example: "We must overcome difficulties together." },
+    { en: "patient", phonetic: `/ˈpeɪʃnt/`, cn: `adj. 耐心的`, example: "Be patient; learning takes time." }
   ],
   high: [
     { en: "abandon", phonetic: "/əˈbændən/", cn: "v. 放弃，抛弃", example: "Never abandon your dreams." },
@@ -975,7 +1033,12 @@ const WORDS_DATA = {
     { en: "anticipate", phonetic: `/ænˈtɪsɪpeɪt/`, cn: `v. 预期`, example: "We anticipate a busy holiday season this year." },
     { en: "conscious", phonetic: `/ˈkɒnʃəs/`, cn: `adj. 有意识的`, example: "He was conscious of the risk involved." },
     { en: "reinforce", phonetic: `/ˌriːɪnˈfɔːs/`, cn: `v. 加强`, example: "The teacher used examples to reinforce the lesson." },
-    { en: "spontaneous", phonetic: `/spɒnˈteɪniəs/`, cn: `adj. 自发的`, example: "The audience burst into spontaneous applause." }
+    { en: "spontaneous", phonetic: `/spɒnˈteɪniəs/`, cn: `adj. 自发的`, example: "The audience burst into spontaneous applause." },
+    { en: "absorb", phonetic: `/əbˈsɔːb/`, cn: `v. 吸收`, example: "Plants absorb carbon dioxide from the air." },
+    { en: "essential", phonetic: `/ɪˈsenʃl/`, cn: `adj. 必不可少的`, example: "Water is essential for all living things." },
+    { en: "flexible", phonetic: `/ˈfleksəbl/`, cn: `adj. 灵活的`, example: "We need a flexible schedule for the trip." },
+    { en: "genuine", phonetic: `/ˈdʒenjuɪn/`, cn: `adj. 真诚的`, example: "She gave me a genuine smile." },
+    { en: "optimistic", phonetic: `/ˌɒptɪˈmɪstɪk/`, cn: `adj. 乐观的`, example: "He remains optimistic about the future." }
   ],
 
   // ===== 四级（CET-4） =====
@@ -1295,7 +1358,12 @@ const SPEAKING_DATA = [
   { en: "I'd like a table for two, please.", cn: "请给我一张两人桌。", scene: "点餐" },
   { en: "How do I get to the train station?", cn: "去火车站怎么走？", scene: "问路" },
   { en: "What have you been up to lately?", cn: "你最近在忙什么？", scene: "社交" },
-  { en: "Could you recommend a good hotel nearby?", cn: "你能推荐附近一家好酒店吗？", scene: "旅行" }
+  { en: "Could you recommend a good hotel nearby?", cn: "你能推荐附近一家好酒店吗？", scene: "旅行" },
+  { en: "Do you have any discounts today?", cn: "今天有折扣吗？", scene: "购物" },
+  { en: "Could I see the menu, please?", cn: "请给我看一下菜单好吗？", scene: "点餐" },
+  { en: "Which bus should I take to get there?", cn: "去那里我应该坐哪路公交车？", scene: "问路" },
+  { en: "Would you like to join us for dinner?", cn: "你愿意和我们一起吃晚饭吗？", scene: "社交" },
+  { en: "What time does the museum open tomorrow?", cn: "博物馆明天几点开门？", scene: "旅行" }
 ];
 
 // ===== 经典阅读（中英对照） =====
@@ -1465,6 +1533,28 @@ const READING_DATA = [
       { word: "recommend", meaning: "v. 建议" },
       { word: "starve", meaning: "v. 挨饿" },
       { word: "store", meaning: "v. 储存" }
+    ]
+  },
+  {
+    title: "The Tortoise and the Hare (龟兔赛跑)",
+    level: "初级",
+    difficulty: "⭐",
+    paragraphs: [
+      { en: "Once upon a time, a hare was making fun of a tortoise for moving so slowly. The hare laughed and said, \"I can run much faster than you. It would take you all day just to walk across the field.\"", cn: "从前，一只兔子正在嘲笑一只乌龟，因为它走得太慢了。兔子笑着说：\"我跑得比你快多了。你光是穿过这片田地就要花上一整天。\"" },
+      { en: "The tortoise did not get angry. Instead, he calmly replied, \"I may be slow, but I can beat you in a race.\" The hare thought this was the funniest thing he had ever heard.", cn: "乌龟并没有生气。相反，它平静地回答：\"我可能很慢，但我能在比赛中击败你。\"兔子觉得这是他听过的最可笑的话。" },
+      { en: "\"Let us have a race right now,\" said the hare. \"I will show everyone that speed is everything.\" They agreed on a long path through the forest, and the race began.", cn: "\"那我们现在就来比赛吧，\"兔子说。\"我要让大家知道速度就是一切。\"它们商定了一条穿过森林的长路，比赛开始了。" },
+      { en: "The hare ran as fast as the wind and quickly left the tortoise far behind. After a while, he looked back and could not see the tortoise at all. \"That slow creature will never catch up,\" he thought.", cn: "兔子像风一样快跑着，很快就把乌龟远远甩在了后面。过了一会儿，它回头看了看，根本看不到乌龟了。\"那个慢家伙永远追不上我的，\"它想。" },
+      { en: "The hare decided to rest under a shady tree. \"I have plenty of time,\" he said to himself. Soon, he fell into a deep sleep. Meanwhile, the tortoise kept walking slowly but steadily, never stopping.", cn: "兔子决定在一棵阴凉的树下休息。\"我有的是时间，\"它自言自语道。很快，它就沉沉睡去。与此同时，乌龟虽然走得慢，但步伐稳健，从未停歇。" },
+      { en: "When the hare finally woke up, the sun was beginning to set. He ran as fast as he could toward the finish line, but it was too late. The tortoise was already there, waiting quietly.", cn: "当兔子终于醒来时，太阳开始落山了。它尽可能快地冲向终点线，但已经太晚了。乌龟已经在那里了，静静地等待着。" },
+      { en: "Moral: Slow and steady wins the race. Being too proud of your own abilities can lead to failure.", cn: "寓意：稳扎稳打才能赢得比赛。过于骄傲自己的能力会导致失败。" }
+    ],
+    vocabulary: [
+      { word: "hare", meaning: "n. 野兔" },
+      { word: "tortoise", meaning: "n. 乌龟" },
+      { word: "make fun of", meaning: "phr. 嘲笑" },
+      { word: "calmly", meaning: "adv. 平静地" },
+      { word: "steady", meaning: "adj. 稳定的" },
+      { word: "proud", meaning: "adj. 骄傲的" }
     ]
   }
 ];
@@ -1802,7 +1892,42 @@ const DAILY_ACCUM_WORDS = [
   { en: 'chore', phonetic: '/tʃɔː(r)/', cn: `n. 家务杂活；烦人的例行事`, example: 'We split the household chores evenly.' },
   { en: 'brew', phonetic: '/bruː/', cn: `v. 冲泡（茶或咖啡）；酿造`, example: 'She brews her own coffee every single morning.' },
   { en: 'exquisite', phonetic: '/ɪkˈskwɪzɪt/', cn: `adj. 精致的，精美绝伦的`, example: 'The dessert was small but absolutely exquisite.' },
-  { en: 'rummage', phonetic: '/ˈrʌmɪdʒ/', cn: `v. 翻找，乱翻一气`, example: 'She rummaged through her bag looking for the receipt.' }
+  { en: 'rummage', phonetic: '/ˈrʌmɪdʒ/', cn: `v. 翻找，乱翻一气`, example: 'She rummaged through her bag looking for the receipt.' },
+  // ── 2026-09-27 补充（主题：职场工作 / 商务沟通）──
+  { en: 'leverage', phonetic: '/ˈlevərɪdʒ/', cn: `v. 利用，撬动（资源或优势）`, example: 'We can leverage our network to reach more clients.' },
+  { en: 'streamline', phonetic: '/ˈstriːmlaɪn/', cn: `v. 精简，使流程高效化`, example: 'The new tool streamlines our daily workflow.' },
+  { en: 'delegate', phonetic: '/ˈdelɪɡeɪt/', cn: `v. 委派，授权（工作给他人）`, example: 'A good leader knows how to delegate tasks.' },
+  { en: 'proactive', phonetic: '/proʊˈæktɪv/', cn: `adj. 主动的，前瞻的`, example: 'Stay proactive and fix issues before they grow.' },
+  { en: 'initiative', phonetic: '/ɪˈnɪʃətɪv/', cn: `n. 主动性；新举措，倡议`, example: 'She took the initiative to launch the project.' },
+  { en: 'consensus', phonetic: '/kənˈsensəs/', cn: `n. 共识，一致意见`, example: 'The team reached a consensus after debate.' },
+  { en: 'mitigate', phonetic: '/ˈmɪtɪɡeɪt/', cn: `v. 减轻，缓解（风险或影响）`, example: 'We must mitigate the risk of data loss.' },
+  { en: 'escalate', phonetic: '/ˈeskəleɪt/', cn: `v. 升级，上报（问题）`, example: 'If it fails, escalate the issue to your manager.' },
+  { en: 'onboarding', phonetic: '/ˈɒnbɔːdɪŋ/', cn: `n. 入职引导，新手上路流程`, example: 'The onboarding program lasts two weeks.' },
+  { en: 'deliverable', phonetic: '/dɪˈlɪvərəbl/', cn: `n. 可交付成果，交付物`, example: 'The final report is our main deliverable.' },
+  { en: 'bandwidth', phonetic: '/ˈbændwɪdθ/', cn: `n. 带宽；（喻）精力，可投入的处理能力`, example: 'I do not have the bandwidth for a new project.' },
+  { en: 'align', phonetic: '/əˈlaɪn/', cn: `v. 使一致，对齐（目标或方向）`, example: 'We should align our goals with the strategy.' },
+  { en: 'rapport', phonetic: '/ræˈpɔː(r)/', cn: `n. 融洽关系，默契`, example: 'She built strong rapport with her clients.' },
+  { en: 'articulate', phonetic: '/ɑːˈtɪkjuleɪt/', cn: `v. 清晰有力地表达`, example: 'He articulated his plan with great clarity.' },
+  { en: 'proficient', phonetic: '/prəˈfɪʃnt/', cn: `adj. 精通的，熟练的`, example: 'She is proficient in three coding languages.' },
+  { en: 'liaise', phonetic: '/liˈeɪz/', cn: `v. 联络，协调（部门或人员）`, example: 'I will liaise with the design team on this.' },
+  { en: 'optimize', phonetic: '/ˈɒptɪmaɪz/', cn: `v. 优化，使最佳化`, example: 'We optimized the process to save time.' },
+  { en: 'implement', phonetic: '/ˈɪmplɪment/', cn: `v. 实施，落实`, example: 'We will implement the new policy next month.' },
+  { en: 'facilitate', phonetic: '/fəˈsɪlɪteɪt/', cn: `v. 促进，使便利`, example: 'This app facilitates teamwork across offices.' },
+  { en: 'underscore', phonetic: '/ˌʌndərˈskɔː(r)/', cn: `v. 强调，凸显`, example: 'The results underscore the need for change.' },
+  { en: 'pivotal', phonetic: '/ˈpɪvətl/', cn: `adj. 关键的，中枢性的`, example: 'She played a pivotal role in the deal.' },
+  { en: 'counterpart', phonetic: '/ˈkaʊntəpɑːt/', cn: `n. 对应方，对等的人或机构`, example: 'I spoke with my counterpart in the Beijing office.' },
+  { en: 'revenue', phonetic: '/ˈrevənjuː/', cn: `n. 收入，营收`, example: 'The new product boosted our revenue.' },
+  { en: 'lucrative', phonetic: '/ˈluːkrətɪv/', cn: `adj. 利润丰厚的，赚钱的`, example: 'He left for a more lucrative position.' },
+  { en: 'turnover', phonetic: '/ˈtɜːnəʊvə(r)/', cn: `n. 营业额；人员流动率`, example: 'Staff turnover is unusually high this year.' },
+  { en: 'discrepancy', phonetic: '/dɪsˈkrepənsi/', cn: `n. 差异，不符（之处）`, example: 'There was a discrepancy in the monthly invoice.' },
+  { en: 'acumen', phonetic: '/ˈækjəmən/', cn: `n. 敏锐，精明（尤指商业嗅觉）`, example: 'She has sharp business acumen.' },
+  { en: 'succinct', phonetic: '/səkˈsɪŋkt/', cn: `adj. 简洁明了的`, example: 'Keep your project summary succinct.' },
+  { en: 'expedite', phonetic: '/ˈekspədaɪt/', cn: `v. 加快，加速（处理或交付）`, example: 'We need to expedite the shipping process.' },
+  { en: 'astute', phonetic: '/əˈstjuːt/', cn: `adj. 精明的，敏锐的`, example: 'An astute investor spots trends early.' },
+  { en: 'cumbersome', phonetic: '/ˈkʌmbəsəm/', cn: `adj. 累赘的，繁琐的`, example: 'The old approval system is cumbersome.' },
+  { en: 'rectify', phonetic: '/ˈrektɪfaɪ/', cn: `v. 纠正，修正`, example: 'We must rectify the error before launch.' },
+  { en: 'judicious', phonetic: '/dʒuˈdɪʃəs/', cn: `adj. 明智的，审慎得当的`, example: 'Make a judicious use of your limited time.' },
+  { en: 'incisive', phonetic: '/ɪnˈsaɪsɪv/', cn: `adj. 敏锐的，切中要害的`, example: 'She asked an incisive question in the meeting.' }
 ];
 
 // 可一键导入的词库市场（真实词书，由 AI 基于公开词表整理，覆盖常见教材与考试）

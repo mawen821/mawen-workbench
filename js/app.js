@@ -7,6 +7,7 @@ let currentModule = 'overview';
 let currentEngTab = 'today';
 let currentWordBook = 'primary';
 let currentFinancePhase = 0;
+let currentFinanceView = 'system';  // 'course' | 'system' —— 学完后默认进"知识体系"总览
 let currentShenlunTab = 'reading';
 let currentFlashcardIdx = 0;
 let currentPolicyCat = 'all';
@@ -863,6 +864,8 @@ function renderCountry(c) {
         </div>
       </div>
 
+      ${renderCountryFocus()}
+
       <div class="country-view-tabs">
         <button class="country-view-tab ${currentCountryView==='cards'?'active':''}" onclick="switchCountryView('cards')"><i class="fas fa-th-large"></i> 卡片浏览</button>
         <button class="country-view-tab ${currentCountryView==='tracks'?'active':''}" onclick="switchCountryView('tracks')"><i class="fas fa-route"></i> 学习路径</button>
@@ -884,6 +887,66 @@ function renderCountry(c) {
 }
 
 function entriesOf(part, dim) { return countryMergedEntries(part, dim); }
+
+/* ---------- 本周聚焦（序列化体系 · 自动按周轮换） ---------- */
+function renderCountryFocus() {
+  if (typeof COUNTRY_FOCUS === 'undefined' || !COUNTRY_FOCUS.length) return '';
+  const fs = currentFocusStation();
+  const st = fs.station;
+  const total = COUNTRY_FOCUS.length;
+  const idx1 = fs.index + 1;
+  const mastery = loadData('country_mastery', {});
+  let done = 0;
+  COUNTRY_FOCUS.forEach(s => {
+    if (s.entryId && s.part && s.dim && !s.view) {
+      if (mastery[countryLearnKey(s.part, s.dim, s.entryId)]) done++;
+    }
+  });
+  const autoCount = (typeof COUNTRY_AUTO_ENTRIES !== 'undefined' && Array.isArray(COUNTRY_AUTO_ENTRIES)) ? COUNTRY_AUTO_ENTRIES.length : 0;
+  const pct = Math.round(done / total * 100);
+  return `
+    <div class="country-focus">
+      <div class="cf-top">
+        <span class="cf-tag">📌 本周聚焦</span>
+        <span class="cf-step">第 ${idx1} 站 / 共 ${total} 站</span>
+        <span class="cf-progress">体系进度 <strong>${done}</strong>/${total}（${pct}%）</span>
+      </div>
+      <div class="cf-title">${st.title}</div>
+      <div class="cf-hook">${st.hook}</div>
+      <div class="cf-why"><i class="fas fa-compass"></i> 为什么这周学它：${st.why}</div>
+      <div class="cf-actions">
+        <button class="cf-go" onclick="focusGoto('${st.part||''}','${st.dim||''}','${st.entryId||''}','${st.view||'cards'}')"><i class="fas fa-arrow-right"></i> 去研读本周聚焦</button>
+        ${autoCount ? `<button class="cf-latest" onclick="gotoLatestAuto()">🆕 最新战略动态 ${autoCount} 条</button>` : ''}
+      </div>
+    </div>`;
+}
+
+function focusGoto(part, dim, entryId, view) {
+  if (view === 'tracks' || view === 'frameworks') {
+    currentCountryView = view;
+    renderCountry($('#main-content'));
+    injectUpdateBadge($('#main-content'), 'country');
+    if (entryId) { const el = document.getElementById(entryId); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    return;
+  }
+  currentCountryView = 'cards';
+  currentCountryPart = part;
+  currentCountryDim = dim;
+  renderCountry($('#main-content'));
+  injectUpdateBadge($('#main-content'), 'country');
+  if (entryId) {
+    const entries = countryMergedEntries(part, dim);
+    const i = entries.findIndex(e => e.id === entryId);
+    if (i >= 0) setTimeout(() => toggleCountryEntry(i, true), 80);
+  }
+}
+
+function gotoLatestAuto() {
+  if (typeof COUNTRY_AUTO_ENTRIES === 'undefined' || !COUNTRY_AUTO_ENTRIES.length) return;
+  const sorted = COUNTRY_AUTO_ENTRIES.slice().sort((a, b) => String(b.id || '').localeCompare(String(a.id || '')));
+  const e = sorted[0];
+  focusGoto(e.part, e.dim, e.id, 'cards');
+}
 
 function renderCountryCards() {
   const part = COUNTRY_PARTS.find(p => p.id === currentCountryPart) || COUNTRY_PARTS[0];
@@ -2321,6 +2384,7 @@ function renderEnglish(c) {
         <button class="eng-tab" data-tab="words"><i class="fas fa-spell-check"></i> 每日单词</button>
         <button class="eng-tab" data-tab="speaking"><i class="fas fa-microphone"></i> 口语跟读</button>
         <button class="eng-tab" data-tab="practice"><i class="fas fa-headphones-alt"></i> 每日跟读</button>
+        <button class="eng-tab" data-tab="shadow"><i class="fas fa-comments"></i> 影子跟读</button>
         <button class="eng-tab" data-tab="reading"><i class="fas fa-book-reader"></i> 经典阅读</button>
         <button class="eng-tab" data-tab="bedtime"><i class="fas fa-moon"></i> 睡前跟读</button>
         <button class="eng-tab" data-tab="stats"><i class="fas fa-chart-bar"></i> 学习统计</button>
@@ -2385,6 +2449,7 @@ function renderEngTab() {
   else if (currentEngTab === 'words') renderWords(c);
   else if (currentEngTab === 'speaking') renderSpeaking(c);
   else if (currentEngTab === 'practice') renderPractice(c);
+  else if (currentEngTab === 'shadow') renderShadow(c);
   else if (currentEngTab === 'reading') renderReading(c);
   else if (currentEngTab === 'bedtime') renderBedtime(c);
   else if (currentEngTab === 'stats') renderEnglishStats(c);
@@ -3514,6 +3579,126 @@ function finishBedtime() {
 }
 
 /* ============================================
+   英语角 · 影子跟读（Shadowing）
+   解决"只有孤立短句、没连贯性、手机不能听"三痛点：
+   连贯生活对话 + 本地预生成 mp3（手机 100% 可放）+ 跟读/录音对比。
+   ============================================ */
+let currentShadowScene = null;
+let shadowCurrentLines = [];
+let _shadowPlaying = false;
+let _shadowStream = null, _shadowRec = null, _shadowChunks = [], _shadowUrl = null;
+
+function renderShadow(c) {
+  const scenes = (typeof SHADOW_SCENES !== 'undefined') ? SHADOW_SCENES : [];
+  if (!scenes.length) { c.innerHTML = '<div class="today-done-banner">影子跟读内容建设中…</div>'; return; }
+  if (!currentShadowScene || !scenes.some(s => s.id === currentShadowScene)) currentShadowScene = scenes[0].id;
+  const cur = scenes.find(s => s.id === currentShadowScene);
+  shadowCurrentLines = cur.lines;
+  const practiced = getShadowPracticed(cur.id);
+  const sceneBtns = scenes.map(s => `
+    <button class="shadow-scene-btn ${s.id === cur.id ? 'active' : ''}" onclick="switchShadowScene('${s.id}')">
+      <span class="ss-emoji">${s.emoji}</span> ${s.scene}
+    </button>`).join('');
+  const lines = cur.lines.map((l, i) => `
+    <div class="shadow-line ${practiced[i] ? 'practiced' : ''}" id="shadow-line-${i}">
+      <div class="sl-index">${i + 1}</div>
+      <div class="sl-body">
+        <div class="sl-en">${escapeHtml(l.en)}</div>
+        <div class="sl-cn">${escapeHtml(l.cn)}</div>
+        <div class="sl-controls">
+          <button class="sl-play" onclick="playEnglishOnce('${jsLit(l.en)}', engSpeed, this)"><i class="fas fa-play"></i> 原音</button>
+          <button class="sl-shadow" onclick="shadowDo('${jsLit(l.en)}', ${i}, this)"><i class="fas fa-redo"></i> 跟读</button>
+          <button class="sl-done ${practiced[i] ? 'on' : ''}" onclick="toggleShadowPracticed('${cur.id}', ${i}, this)"><i class="fas fa-check"></i> 我会了</button>
+        </div>
+        <div class="sl-recite" id="sl-recite-${i}" style="display:none">
+          <div class="sl-recite-tip">🔁 轮到你了 — 先听原音，再大声跟读这句</div>
+          <div class="sl-recite-status" id="sl-recite-status-${i}"></div>
+          <div class="sl-recite-acts">
+            <button class="sl-replay" onclick="shadowReplayOrig(${i})"><i class="fas fa-play"></i> 再听原音</button>
+            <button class="sl-mic" id="sl-mic-${i}" onclick="shadowRecordToggle(${i}, this, 'sl-recite-status-${i}')"><i class="fas fa-microphone"></i> 🎤 录我的声音</button>
+          </div>
+        </div>
+      </div>
+    </div>`).join('');
+  c.innerHTML = `
+    <div class="shadow-wrap">
+      <div class="shadow-head">
+        <h2><i class="fas fa-comments"></i> 影子跟读 · Shadowing</h2>
+        <div class="shadow-sub">一段连贯的生活对话，像剧集里摘出来的日常片段。听原音 → 看中文 → 你跟着小声说 → 再听对比。学了就能用。</div>
+      </div>
+      <div class="shadow-scene-tabs">${sceneBtns}</div>
+      <div class="shadow-scene-intro"><i class="fas fa-info-circle"></i> ${escapeHtml(cur.intro)}</div>
+      <div class="shadow-playall">
+        <button class="spa-btn" onclick="playShadowScene()"><i class="fas fa-headphones"></i> ▶ 播放整段对话</button>
+        <span class="shadow-progress">已会 ${practiced.filter(Boolean).length}/${cur.lines.length} 句</span>
+      </div>
+      <div class="shadow-lines">${lines}</div>
+    </div>`;
+}
+
+function switchShadowScene(id) { currentShadowScene = id; renderEngTab(); }
+function getShadowPracticed(id) { return (loadData('shadow_practiced', {})[id]) || []; }
+function toggleShadowPracticed(id, idx, btn) {
+  const m = loadData('shadow_practiced', {});
+  const arr = m[id] || [];
+  arr[idx] = !arr[idx];
+  m[id] = arr; saveData('shadow_practiced', m);
+  btn.classList.toggle('on', arr[idx]);
+  const lineEl = document.getElementById('shadow-line-' + idx);
+  if (lineEl) lineEl.classList.toggle('practiced', arr[idx]);
+}
+function shadowDo(en, idx, btn) {
+  playEnglishOnce(en, engSpeed, btn, () => {
+    const box = document.getElementById('sl-recite-' + idx);
+    if (box) box.style.display = 'block';
+  });
+}
+function shadowReplayOrig(idx) { const l = shadowCurrentLines[idx]; if (l) playEnglishOnce(l.en, engSpeed, null); }
+function playShadowScene() {
+  if (_shadowPlaying) return;
+  const lines = shadowCurrentLines; let i = 0; _shadowPlaying = true;
+  const next = () => {
+    if (i >= lines.length) { _shadowPlaying = false; return; }
+    const idx = i++;
+    const btn = document.querySelector('#shadow-line-' + idx + ' .sl-play');
+    playEnglishOnce(lines[idx].en, engSpeed, btn, () => setTimeout(next, 350));
+  };
+  next();
+}
+function shadowRecordToggle(idx, btn, statusId) {
+  const statusEl = document.getElementById(statusId);
+  if (!statusEl) return;
+  try {
+    if (_shadowRec && _shadowRec.state === 'recording') {
+      try { _shadowRec.stop(); } catch (e) {}
+      btn.innerHTML = '<i class="fas fa-microphone"></i> 🎤 录我的声音';
+      return;
+    }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
+      statusEl.textContent = '当前环境不支持录音，直接大声跟读即可 ✅';
+      return;
+    }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+      _shadowStream = stream; _shadowChunks = [];
+      const mr = new MediaRecorder(stream); _shadowRec = mr;
+      mr.ondataavailable = e => { if (e.data && e.data.size) _shadowChunks.push(e.data); };
+      mr.onstop = () => {
+        try { stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+        const blob = new Blob(_shadowChunks, { type: 'audio/webm' });
+        _shadowUrl = URL.createObjectURL(blob);
+        statusEl.innerHTML = '✅ 录好了：<button class="sl-replay" onclick="shadowPlayMine()">▶ 听我的</button> 再跟原音对比一下';
+      };
+      mr.start();
+      btn.innerHTML = '<i class="fas fa-stop"></i> ⏹ 停止录音';
+      statusEl.textContent = '🎙️ 录音中…说完点「停止录音」';
+    }).catch(err => {
+      statusEl.textContent = '无法使用麦克风（可能未授权），直接大声跟读即可 ✅';
+    });
+  } catch (e) { statusEl.textContent = '录音不可用，直接跟读即可 ✅'; }
+}
+function shadowPlayMine() { if (_shadowUrl) { const a = new Audio(_shadowUrl); a.play(); } }
+
+/* ============================================
    英语学习统计（日 / 周 / 月 / 年）
    ============================================ */
 let currentEngStatPeriod = 'week';
@@ -3636,43 +3821,245 @@ function renderFinance(c) {
 
       <div class="finance-weekly-lesson-panel" id="finance-weekly-lesson"></div>
 
-      <div class="finance-phase-nav">
-        ${FINANCE_PHASES.map((p, i) => {
-          const phaseData = FINANCE_LESSONS[i];
-          const phaseLearned = phaseData.lessons.filter(l => isLearned('finance', l.id)).length;
-          const phaseDone = phaseLearned === phaseData.lessons.length;
-          return `
-            <button class="phase-card ${i === currentFinancePhase ? 'active' : ''} ${phaseDone ? 'completed' : ''}" onclick="switchFinancePhase(${i})">
-              <span class="phase-icon"><i class="fas ${p.icon}"></i></span>
-              <div class="phase-info">
-                <span class="phase-title">${p.title}</span>
-                <span class="phase-progress">${phaseLearned}/${phaseData.lessons.length} 篇</span>
-              </div>
-              ${phaseDone ? '<i class="fas fa-check-circle phase-done-mark"></i>' : ''}
-            </button>
-          `;
-        }).join('')}
+      <div class="finance-view-tabs">
+        <button class="fvt" data-view="course" onclick="setFinanceView('course')"><i class="fas fa-book"></i> 课程体系</button>
+        <button class="fvt" data-view="system" onclick="setFinanceView('system')"><i class="fas fa-project-diagram"></i> 知识体系</button>
+        <button class="fvt" data-view="practice" onclick="setFinanceView('practice')"><i class="fas fa-calculator"></i> 实战工具</button>
       </div>
 
-      <div class="finance-weekly-panel" id="finance-weekly"></div>
-
-      <div class="finance-hot-panel" id="finance-hot"></div>
-
-      <div id="finance-content"></div>
+      <div id="finance-main"></div>
     </div>
+  `;
+  renderFinanceWeeklyLesson();
+  renderFinanceMain();
+}
+
+function setFinanceView(view) {
+  if (view !== 'course' && view !== 'system' && view !== 'practice') return;
+  currentFinanceView = view;
+  const tabs = $$('.fvt');
+  if (tabs) tabs.forEach(b => { try { b.classList.toggle('active', b.getAttribute('data-view') === view); } catch (e) {} });
+  renderFinanceMain();
+}
+
+// 根据当前视图渲染主区：课程体系（原有课程）或 知识体系（系统总览）
+function renderFinanceMain() {
+  const main = document.getElementById('finance-main');
+  if (!main) return;
+  if (currentFinanceView === 'practice') {
+    renderFinancePractice(main);
+    return;
+  }
+  if (currentFinanceView === 'system') {
+    renderFinanceSystem(main);
+    return;
+  }
+  // ===== 课程体系视图（原有布局） =====
+  main.innerHTML = `
+    <div class="finance-phase-nav">
+      ${FINANCE_PHASES.map((p, i) => {
+        const phaseData = FINANCE_LESSONS[i];
+        const phaseLearned = phaseData.lessons.filter(l => isLearned('finance', l.id)).length;
+        const phaseDone = phaseLearned === phaseData.lessons.length;
+        return `
+          <button class="phase-card ${i === currentFinancePhase ? 'active' : ''} ${phaseDone ? 'completed' : ''}" onclick="switchFinancePhase(${i})">
+            <span class="phase-icon"><i class="fas ${p.icon}"></i></span>
+            <div class="phase-info">
+              <span class="phase-title">${p.title}</span>
+              <span class="phase-progress">${phaseLearned}/${phaseData.lessons.length} 篇</span>
+            </div>
+            ${phaseDone ? '<i class="fas fa-check-circle phase-done-mark"></i>' : ''}
+          </button>
+        `;
+      }).join('')}
+    </div>
+
+    <div class="finance-weekly-panel" id="finance-weekly"></div>
+
+    <div class="finance-hot-panel" id="finance-hot"></div>
+
+    <div id="finance-content"></div>
   `;
   renderFinanceLessons();
   renderFinanceWeekly();
   renderFinanceHotTracks();
-  renderFinanceWeeklyLesson();
 }
 
 function switchFinancePhase(phase) {
   if (phase == null || !FINANCE_LESSONS[phase]) { showToast('该阶段暂无可学内容', 'info'); return; }
   currentFinancePhase = phase;
-  const cards = $$('.phase-card');
-  cards.forEach((c, i) => { try { c.classList.toggle('active', i === phase); } catch (e) {} });
-  renderFinanceLessons();
+  if (currentFinanceView !== 'course') { setFinanceView('course'); return; }
+  renderFinanceMain();
+}
+
+// 计算某阶段已学/总篇数
+function finPhaseProgress(i) {
+  const g = FINANCE_LESSONS[i] || { lessons: [] };
+  const total = g.lessons.length;
+  const learned = g.lessons.filter(l => isLearned('finance', l.id)).length;
+  return { total, learned, pct: total ? Math.round(learned / total * 100) : 0 };
+}
+
+/* ============================================
+   知识体系视图：把零散课程拼成系统
+   ① 体系全景（7 阶段主线） ② 核心决策框架（6 步闭环） ③ 心智模型
+   ============================================ */
+/* ---------- 金融「每周聚焦」轮换 + 「时事快评」 ---------- */
+function financeFocusIndex() {
+  const start = Date.UTC(2026, 0, 5); // 2026-01-05 周一 = 第 1 周起点
+  const weeks = Math.floor((Date.now() - start) / (7 * 86400000));
+  const total = (typeof FINANCE_FOCUS !== 'undefined' && FINANCE_FOCUS.length) || 1;
+  return ((weeks % total) + total) % total;
+}
+function renderFinanceFocusBanner() {
+  if (typeof FINANCE_FOCUS === 'undefined' || !FINANCE_FOCUS.length) return '';
+  const idx = financeFocusIndex();
+  const st = FINANCE_FOCUS[idx];
+  const total = FINANCE_FOCUS.length;
+  const idx1 = idx + 1;
+  return `
+    <div class="fin-focus">
+      <div class="ff-top">
+        <span class="ff-tag">📌 本周金融聚焦</span>
+        <span class="ff-step">第 ${idx1} 站 / 共 ${total} 站</span>
+        <span class="ff-theme">主题 · ${st.theme}</span>
+      </div>
+      <div class="ff-title">${st.title}</div>
+      <div class="ff-summary">${st.summary}</div>
+      <div class="ff-goals">${st.goals.map(g => `<span class="ff-goal"><i class="fas fa-check"></i> ${g}</span>`).join('')}</div>
+      <div class="ff-actions">
+        <button class="ff-go" onclick="switchFinancePhase(${st.linkPhase})"><i class="fas fa-arrow-right"></i> 去学这一站</button>
+      </div>
+    </div>`;
+}
+function renderFinanceNews() {
+  const news = (typeof FINANCE_WEEKLY_NEWS !== 'undefined' && Array.isArray(FINANCE_WEEKLY_NEWS)) ? FINANCE_WEEKLY_NEWS : [];
+  if (!news.length) return '';
+  const latest = news[0];
+  const recent = news.slice(1, 5);
+  return `
+    <div class="fs-section">
+      <div class="fs-sec-head">
+        <h2><i class="fas fa-bolt"></i> 时事快评</h2>
+        <span class="fs-sec-sub">每周自动追踪宽基 / 指数 / 长期趋势 / 国情的最新动向，把知识接上真实市场</span>
+      </div>
+      <div class="fn-news">
+        <div class="fn-card">
+          <div class="fn-card-top">
+            <span class="fn-tag">${latest.tag}</span>
+            <span class="fn-date">${latest.date}</span>
+          </div>
+          <div class="fn-title">${latest.title}</div>
+          <p class="fn-summary">${latest.summary}</p>
+          <ul class="fn-points">${latest.points.map(p => `<li>${p}</li>`).join('')}</ul>
+          <div class="fn-source"><i class="fas fa-quote-right"></i> 来源 / 口径：${latest.source}</div>
+        </div>
+        ${recent.length ? `<div class="fn-recent"><span class="fn-recent-label">近期</span>${recent.map(r => `<span class="fn-chip" title="${r.summary.replace(/"/g, '&quot;')}">${r.date} · ${r.tag} · ${r.title}</span>`).join('')}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+function renderFinanceSystem(main) {
+  if (!FINANCE_SYSTEM) { main.innerHTML = '<div class="ov-empty">知识体系数据缺失</div>'; return; }
+  const ov = FINANCE_SYSTEM.overview || [];
+  const fw = FINANCE_SYSTEM.framework || [];
+  const mm = FINANCE_SYSTEM.mentalModels || [];
+
+  // ① 体系全景
+  const overviewHtml = `
+    <div class="fs-section">
+      <div class="fs-sec-head">
+        <h2><i class="fas fa-stream"></i> 体系全景</h2>
+        <span class="fs-sec-sub">7 个阶段串成一条"从认知到实战"的主线，每个节点回答一个核心问题</span>
+      </div>
+      <div class="fs-overview">
+        ${ov.map((o, idx) => {
+          const pr = finPhaseProgress(o.phase);
+          const done = pr.pct === 100;
+          const part = pr.pct > 0 && pr.pct < 100;
+          return `
+            <div class="fs-node ${done ? 'done' : ''} ${part ? 'part' : ''}">
+              <div class="fs-node-role">${o.role}</div>
+              <div class="fs-node-icon"><i class="fas ${o.icon}"></i></div>
+              <div class="fs-node-body">
+                <div class="fs-node-top">
+                  <span class="fs-node-idx">阶段 ${o.phase}</span>
+                  <span class="fs-node-title">${FINANCE_PHASES[o.phase].title}</span>
+                  <span class="fs-node-pct ${done ? 'done' : ''}">${pr.learned}/${pr.total}</span>
+                </div>
+                <div class="fs-node-q"><i class="fas fa-question-circle"></i> ${o.question}</div>
+                <div class="fs-node-kc">
+                  ${o.keyConcepts.map(k => `<span class="fs-kc">${k}</span>`).join('')}
+                </div>
+              </div>
+              <button class="fs-node-go" onclick="switchFinancePhase(${o.phase})"><i class="fas fa-arrow-right"></i> 去学这层</button>
+              ${idx < ov.length - 1 ? '<div class="fs-link"></div>' : ''}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  // ② 核心决策框架
+  const frameworkHtml = `
+    <div class="fs-section">
+      <div class="fs-sec-head">
+        <h2><i class="fas fa-route"></i> 核心决策框架</h2>
+        <span class="fs-sec-sub">学完知识后怎么落地？从 0 构建并维护一套基金组合，6 步闭环、循环迭代</span>
+      </div>
+      <div class="fs-flow">
+        ${fw.map((f, idx) => `
+          <div class="fs-step">
+            <div class="fs-step-head">
+              <span class="fs-step-num">${f.step}</span>
+              <span class="fs-step-name">${f.name}</span>
+            </div>
+            <div class="fs-step-goal"><i class="fas fa-bullseye"></i> ${f.goal}</div>
+            <div class="fs-step-row"><span class="fs-lbl">用到</span><span class="fs-val">${f.uses.join('、')}</span></div>
+            <div class="fs-step-row"><span class="fs-lbl">产出</span><span class="fs-val fs-out">${f.output}</span></div>
+            <button class="fs-step-go" onclick="switchFinancePhase(${f.phase})">复习对应课程 <i class="fas fa-arrow-right"></i></button>
+            ${idx < fw.length - 1 ? '<div class="fs-step-arrow"><i class="fas fa-long-arrow-alt-down"></i></div>' : ''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  // ③ 心智模型
+  const modelsHtml = `
+    <div class="fs-section">
+      <div class="fs-sec-head">
+        <h2><i class="fas fa-brain"></i> 心智模型</h2>
+        <span class="fs-sec-sub">把碎片焊成系统的几条原则，关键时刻拉出来读一遍</span>
+      </div>
+      <div class="fs-models">
+        ${mm.map(m => `
+          <div class="fs-model">
+            <div class="fs-model-title"><i class="fas fa-lightbulb"></i> ${m.title}</div>
+            <p class="fs-model-text">${m.text}</p>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  main.innerHTML = `
+    <div class="finance-system">
+      <div class="fs-intro">
+        <i class="fas fa-project-diagram"></i>
+        <div>
+          <strong>学完课程，用这张图建立全局观。</strong>
+          <span>上面是把 25 篇课拼成系统的三块拼图：先看全景知道"知识长什么样"，再走决策框架把知识变成"自己的投资系统"，最后用心智模型守住纪律。</span>
+        </div>
+      </div>
+      ${renderFinanceFocusBanner()}
+      ${overviewHtml}
+      ${frameworkHtml}
+      ${renderFinanceNews()}
+      ${modelsHtml}
+    </div>
+  `;
 }
 
 function renderFinanceLessons() {
@@ -3936,6 +4323,393 @@ function switchFinanceLesson(dir) {
   renderFinanceWeeklyLesson();
   const c = document.getElementById('finance-weekly-lesson');
   if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ============================================
+   基金实战工具：行业盘面 / 计算工具 / 我的持仓
+   ============================================ */
+let currentPracticeTab = 'sector'; // 'sector' | 'calc' | 'hold'
+
+function fnEsc(s) {
+  return (s || '').replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+}
+function fnFmt(n) {
+  return (Math.round((n || 0) * 100) / 100).toLocaleString('zh-CN');
+}
+
+// 申万一级行业单日表现（真实快照：2026-09-28 收盘，来源 数据宝/同花顺iFinD/证券时报）
+const FINANCE_SECTOR_SNAPSHOT = {
+  date: '2026-09-28',
+  source: '申万一级行业 · 收盘(数据宝)',
+  sectors: [
+    { name: '通信', pct: -7.36 }, { name: '电子', pct: -4.93 }, { name: '建筑材料', pct: -4.44 },
+    { name: '有色金属', pct: -3.77 }, { name: '机械设备', pct: -3.41 }, { name: '基础化工', pct: -2.96 },
+    { name: '社会服务', pct: -2.78 }, { name: '综合', pct: -2.76 }, { name: '国防军工', pct: -2.63 },
+    { name: '传媒', pct: -2.55 }, { name: '计算机', pct: -2.53 }, { name: '环保', pct: -2.14 },
+    { name: '电力设备', pct: -2.27 }, { name: '轻工制造', pct: -2.07 }, { name: '建筑装饰', pct: -1.87 },
+    { name: '非银金融', pct: -1.76 }, { name: '纺织服饰', pct: -1.54 }, { name: '商贸零售', pct: -1.50 },
+    { name: '钢铁', pct: -1.42 }, { name: '美容护理', pct: -1.39 }, { name: '汽车', pct: -1.15 },
+    { name: '家用电器', pct: -0.96 }, { name: '房地产', pct: -0.84 }, { name: '医药生物', pct: -0.25 },
+    { name: '银行', pct: -0.16 }, { name: '食品饮料', pct: -0.13 }, { name: '交通运输', pct: -0.09 },
+    { name: '农林牧渔', pct: -0.02 }, { name: '煤炭', pct: 0.02 }, { name: '公用事业', pct: 0.14 },
+    { name: '石油石化', pct: 0.89 }
+  ]
+};
+
+// 基金费率参考（年化 %）
+const FINANCE_FEE_REF = {
+  manage: { '股票型': 1.5, '混合型': 1.2, '指数型': 0.5, '债券型': 0.7, '货币型': 0.33, 'QDII': 1.2, 'REITs': 0.5, '其他': 1.0 },
+  custodian: 0.25,
+  subscribeOriginal: 1.5,
+  subscribeDiscount: 0.15,
+  sales: 0.0
+};
+const FUND_TYPES = ['股票型', '混合型', '指数型', '债券型', '货币型', 'QDII', 'REITs', '其他'];
+
+function renderFinancePractice(main) {
+  main.innerHTML = `
+    <div class="finance-practice-tabs">
+      <button class="fpt" data-pt="sector" onclick="setPracticeTab('sector')"><i class="fas fa-chart-bar"></i> 行业盘面</button>
+      <button class="fpt" data-pt="calc" onclick="setPracticeTab('calc')"><i class="fas fa-calculator"></i> 计算工具</button>
+      <button class="fpt" data-pt="hold" onclick="setPracticeTab('hold')"><i class="fas fa-wallet"></i> 我的持仓</button>
+    </div>
+    <div id="finance-practice-main"></div>
+  `;
+  const tabs = $$('.fpt');
+  if (tabs) tabs.forEach(b => b.classList.toggle('active', b.getAttribute('data-pt') === currentPracticeTab));
+  renderPracticeContent();
+}
+
+function setPracticeTab(t) {
+  currentPracticeTab = t;
+  const tabs = $$('.fpt');
+  if (tabs) tabs.forEach(b => b.classList.toggle('active', b.getAttribute('data-pt') === t));
+  renderPracticeContent();
+}
+
+function renderPracticeContent() {
+  const el = document.getElementById('finance-practice-main');
+  if (!el) return;
+  if (currentPracticeTab === 'sector') renderFinanceSector(el);
+  else if (currentPracticeTab === 'calc') renderFinanceCalc(el);
+  else renderFinanceHold(el);
+}
+
+/* ---------- 行业单日盘面 ---------- */
+function renderFinanceSector(el) {
+  const s = FINANCE_SECTOR_SNAPSHOT;
+  const list = [...s.sectors].sort((a, b) => a.pct - b.pct); // 跌幅大在前
+  const maxAbs = Math.max(...list.map(x => Math.abs(x.pct)));
+  const rows = list.map(x => {
+    const up = x.pct >= 0;
+    const w = (Math.abs(x.pct) / maxAbs * 100).toFixed(1);
+    return `<div class="sector-row">
+      <span class="sector-name">${x.name}</span>
+      <div class="sector-track"><div class="sector-bar ${up ? 'fn-up' : 'fn-down'}" style="width:${w}%"></div></div>
+      <span class="sector-pct ${up ? 'fn-up' : 'fn-down'}">${up ? '+' : ''}${x.pct.toFixed(2)}%</span>
+    </div>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="sector-panel">
+      <div class="sector-head">
+        <div><span class="sector-date">数据日期 ${s.date}</span><span class="sector-src">${s.source}</span></div>
+        <div class="sector-legend"><i class="dot fn-up"></i>涨 <i class="dot fn-down"></i>跌</div>
+      </div>
+      <p class="sector-note">申万一级行业单日涨跌幅（静态快照）。<b>涨红跌绿</b>。手机端为离线数据，让我在桌面重跑即可更新为最新交易日。</p>
+      ${rows}
+    </div>`;
+}
+
+/* ---------- 计算工具 ---------- */
+function renderFinanceCalc(el) {
+  el.innerHTML = `
+  <div class="calc-wrap">
+    <div class="calc-card">
+      <h3><i class="fas fa-coins"></i> 定投收益测算</h3>
+      <div class="calc-fields">
+        <label>每月定投(元)<input id="dca-month" type="number" value="1000" min="0"></label>
+        <label>预计年化收益(%)<input id="dca-rate" type="number" value="10" step="0.1"></label>
+        <label>定投年限(年)<input id="dca-years" type="number" value="10" min="1"></label>
+      </div>
+      <div class="calc-out" id="dca-out"></div>
+      <div class="calc-chart-box"><canvas id="dca-chart"></canvas></div>
+      <button class="calc-export-btn" onclick="exportDcaResult()"><i class="fas fa-download"></i> 复制 / 导出测算结果</button>
+    </div>
+    <div class="calc-card">
+      <h3><i class="fas fa-piggy-bank"></i> 一次性投入测算</h3>
+      <div class="calc-fields">
+        <label>本金(元)<input id="lump-principal" type="number" value="10000" min="0"></label>
+        <label>预计年化(%)<input id="lump-rate" type="number" value="8" step="0.1"></label>
+        <label>持有年限(年)<input id="lump-years" type="number" value="5" min="1"></label>
+      </div>
+      <div class="calc-out" id="lump-out"></div>
+      <div class="calc-chart-box"><canvas id="lump-chart"></canvas></div>
+    </div>
+    <div class="calc-card">
+      <h3><i class="fas fa-hand-holding-usd"></i> 赎回到手测算</h3>
+      <div class="calc-fields">
+        <label>赎回金额(元)<input id="red-amount" type="number" value="10000" min="0"></label>
+        <label>赎回费率(%)<input id="red-fee" type="number" value="0.5" step="0.05"></label>
+      </div>
+      <div class="calc-out" id="red-out"></div>
+      <p class="calc-tip">基金买卖差价与分红<b>个人免征个税</b>；到账 = 赎回金额 − 赎回费。部分基金持有时长影响费率（如 7 天内 1.5% 惩罚）。</p>
+    </div>
+    <div class="calc-card">
+      <h3><i class="fas fa-percent"></i> 费率成本测算</h3>
+      <div class="calc-fields">
+        <label>持有金额(元)<input id="fee-amount" type="number" value="10000" min="0"></label>
+        <label>基金类型<select id="fee-type">${FUND_TYPES.map(t => `<option>${t}</option>`).join('')}</select></label>
+      </div>
+      <div class="calc-out" id="fee-out"></div>
+      <p class="calc-tip">申购费按平台 1 折(0.15%)估算；管理费/托管费每日计提、年化侵蚀收益。费率是长期复利的隐形杀手。</p>
+    </div>
+  </div>`;
+  ['dca-month', 'dca-rate', 'dca-years', 'lump-principal', 'lump-rate', 'lump-years', 'red-amount', 'red-fee', 'fee-amount', 'fee-type'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) { e.addEventListener('input', recalcFundCalc); e.addEventListener('change', recalcFundCalc); }
+  });
+  recalcFundCalc();
+}
+
+function recalcFundCalc() {
+  // 定投
+  const m = +document.getElementById('dca-month').value || 0;
+  const r = (+document.getElementById('dca-rate').value || 0) / 100;
+  const y = +document.getElementById('dca-years').value || 0;
+  const months = Math.max(1, Math.round(y * 12));
+  const mr = Math.pow(1 + r, 1 / 12) - 1;
+  let bal = 0; const assets = [], invests = []; let invested = 0;
+  for (let i = 1; i <= months; i++) { bal = bal * (1 + mr) + m; invested += m; assets.push(+bal.toFixed(0)); invests.push(invested); }
+  const dcaTotal = invested, dcaFinal = bal, dcaProfit = dcaFinal - dcaTotal;
+  const dcaPct = dcaTotal ? dcaProfit / dcaTotal * 100 : 0;
+  document.getElementById('dca-out').innerHTML = fundCalcOut(dcaTotal, dcaFinal, dcaProfit, dcaPct);
+  const dcaLabels = Array.from({ length: months }, (_, i) => (i + 1) + '月');
+  drawFundLine('dca-chart', dcaLabels, invests, assets, '累计投入', '资产规模');
+  // 一次性
+  const p = +document.getElementById('lump-principal').value || 0;
+  const lr = (+document.getElementById('lump-rate').value || 0) / 100;
+  const ly = +document.getElementById('lump-years').value || 0;
+  const lumpFinal = p * Math.pow(1 + lr, ly);
+  const lumpProfit = lumpFinal - p, lumpPct = p ? lumpProfit / p * 100 : 0;
+  document.getElementById('lump-out').innerHTML = fundCalcOut(p, lumpFinal, lumpProfit, lumpPct);
+  const lumpLabels = Array.from({ length: ly + 1 }, (_, i) => i + '年');
+  const la = [], li = []; for (let i = 0; i <= ly; i++) { li.push(p); la.push(+(p * Math.pow(1 + lr, i)).toFixed(0)); }
+  drawFundLine('lump-chart', lumpLabels, li, la, '本金', '资产规模');
+  // 赎回
+  const ra = +document.getElementById('red-amount').value || 0;
+  const rf = (+document.getElementById('red-fee').value || 0) / 100;
+  const redFee = ra * rf, redGet = ra - redFee;
+  document.getElementById('red-out').innerHTML =
+    `<div class="co-row"><span>赎回费</span><b class="fn-down">−¥${fnFmt(redFee)}</b></div>` +
+    `<div class="co-row co-total"><span>实际到手</span><b class="fn-up">¥${fnFmt(redGet)}</b></div>`;
+  // 费率
+  const fa = +document.getElementById('fee-amount').value || 0;
+  const ft = document.getElementById('fee-type').value;
+  const mg = (FINANCE_FEE_REF.manage[ft] != null) ? FINANCE_FEE_REF.manage[ft] : 1.0;
+  const sub = FINANCE_FEE_REF.subscribeDiscount;
+  const cus = FINANCE_FEE_REF.custodian;
+  const annual = sub + mg + cus + FINANCE_FEE_REF.sales;
+  const feeYear = fa * annual / 100;
+  document.getElementById('fee-out').innerHTML =
+    `<div class="co-row"><span>申购费(1折 ${sub}%)</span><b>¥${fnFmt(fa * sub / 100)}</b></div>` +
+    `<div class="co-row"><span>管理费(${mg}%/年)</span><b>¥${fnFmt(fa * mg / 100)}/年</b></div>` +
+    `<div class="co-row"><span>托管费(${cus}%/年)</span><b>¥${fnFmt(fa * cus / 100)}/年</b></div>` +
+    `<div class="co-row co-total"><span>年化总成本(${annual.toFixed(2)}%)</span><b>¥${fnFmt(feeYear)}/年</b></div>` +
+    `<div class="co-row"><span>10 年累计侵蚀</span><b class="fn-down">¥${fnFmt(feeYear * 10)}</b></div>`;
+}
+
+function exportDcaResult() {
+  const m = +document.getElementById('dca-month').value || 0;
+  const r = (+document.getElementById('dca-rate').value || 0) / 100;
+  const y = +document.getElementById('dca-years').value || 0;
+  const months = Math.max(1, Math.round(y * 12));
+  const mr = Math.pow(1 + r, 1 / 12) - 1;
+  let bal = 0, invested = 0;
+  for (let i = 1; i <= months; i++) { bal = bal * (1 + mr) + m; invested += m; }
+  const finalV = bal, profit = finalV - invested;
+  const pct = invested ? profit / invested * 100 : 0;
+  const sign = profit >= 0 ? '+' : '';
+  const text =
+`基金定投收益测算结果
+━━━━━━━━━━━━━━━━━━
+每月定投：${fnFmt(m)} 元
+预计年化：${(r * 100).toFixed(1)} %
+定投年限：${y} 年（共 ${months} 期）
+━━━━━━━━━━━━━━━━━━
+累计投入：${fnFmt(invested)} 元
+预期总值：${fnFmt(finalV)} 元
+预期收益：${sign}${fnFmt(profit)} 元（${sign}${pct.toFixed(1)}%）
+━━━━━━━━━━━━━━━━━━
+生成时间：${new Date().toLocaleString('zh-CN')}
+（测算为理想年化假设，非实际收益承诺）`;
+
+  // 复制到剪贴板
+  const copyDone = () => {
+    if (typeof showToast === 'function') showToast('已复制到剪贴板，并下载 .txt');
+    else alert('已复制到剪贴板，并下载 .txt');
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(copyDone, () => fallbackCopy(text, copyDone));
+  } else {
+    fallbackCopy(text, copyDone);
+  }
+  // 导出 .txt
+  try {
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `定投测算_${y}年_${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (e) { /* 下载失败不影响复制 */ }
+}
+
+function fallbackCopy(text, cb) {
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta);
+    if (cb) cb();
+  } catch (e) { if (cb) cb(); }
+}
+
+function fundCalcOut(total, finalV, profit, pct) {
+  const cls = profit >= 0 ? 'fn-up' : 'fn-down';
+  const sign = profit >= 0 ? '+' : '';
+  return `<div class="co-row"><span>总投入</span><b>¥${fnFmt(total)}</b></div>` +
+    `<div class="co-row"><span>预期总值</span><b>¥${fnFmt(finalV)}</b></div>` +
+    `<div class="co-row co-total"><span>预期收益</span><b class="${cls}">${sign}¥${fnFmt(profit)} (${sign}${pct.toFixed(1)}%)</b></div>`;
+}
+
+function drawFundLine(id, labels, base, val, l1, l2) {
+  const cv = document.getElementById(id); if (!cv) return;
+  const key = 'fund_' + id;
+  if (charts[key]) charts[key].destroy();
+  charts[key] = new Chart(cv.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: l1, data: base, borderColor: '#B79BD6', backgroundColor: 'rgba(183,155,214,.18)', fill: true, pointRadius: 0, tension: .25 },
+        { label: l2, data: val, borderColor: '#8A6CB0', backgroundColor: 'rgba(138,108,176,.12)', fill: true, pointRadius: 0, tension: .25 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: { x: { ticks: { maxTicksLimit: 6, font: { size: 10 } } }, y: { ticks: { font: { size: 10 } } } }
+    }
+  });
+}
+
+/* ---------- 我的持仓 ---------- */
+function fundHoldings() { return loadData('mw_fund_holdings', []); }
+function saveFundHoldings(a) { saveData('mw_fund_holdings', a); }
+
+function renderFinanceHold(el) {
+  const list = fundHoldings();
+  const totalCost = list.reduce((s, h) => s + (+h.cost || 0), 0);
+  const totalMV = list.reduce((s, h) => s + (+h.mv || 0), 0);
+  const totalProfit = totalMV - totalCost;
+  const totalPct = totalCost ? totalProfit / totalCost * 100 : 0;
+  const summary = `<div class="hold-summary">
+    <div class="hs-card"><span>总市值</span><b>¥${fnFmt(totalMV)}</b></div>
+    <div class="hs-card"><span>总收益</span><b class="${totalProfit >= 0 ? 'fn-up' : 'fn-down'}">${totalProfit >= 0 ? '+' : ''}¥${fnFmt(totalProfit)}</b></div>
+    <div class="hs-card"><span>总收益率</span><b class="${totalProfit >= 0 ? 'fn-up' : 'fn-down'}">${totalProfit >= 0 ? '+' : ''}${totalPct.toFixed(1)}%</b></div>
+  </div>`;
+  let body;
+  if (!list.length) {
+    body = `<div class="hold-empty">还没有持仓记录。<br><button class="btn-primary" style="margin-top:12px" onclick="openFundHoldingForm()"><i class="fas fa-plus"></i> 添加第一笔持仓</button></div>`;
+  } else {
+    const rows = list.map(h => {
+      const mv = +h.mv || 0, cost = +h.cost || 0; const p = mv - cost; const pc = cost ? p / cost * 100 : 0;
+      return `<tr>
+        <td><div class="h-name">${fnEsc(h.name)}</div>${h.code ? `<div class="h-code">${fnEsc(h.code)}</div>` : ''}</td>
+        <td>${h.type || '—'}</td>
+        <td>¥${fnFmt(cost)}</td>
+        <td>¥${fnFmt(mv)}</td>
+        <td class="${p >= 0 ? 'fn-up' : 'fn-down'}">${p >= 0 ? '+' : ''}¥${fnFmt(p)}</td>
+        <td class="${p >= 0 ? 'fn-up' : 'fn-down'}">${p >= 0 ? '+' : ''}${pc.toFixed(1)}%</td>
+        <td class="h-act"><button onclick="openFundHoldingForm('${h.id}')">编辑</button><button class="del" onclick="deleteFundHolding('${h.id}')">删</button></td>
+      </tr>`;
+    }).join('');
+    body = `<div class="hold-actions"><button class="btn-primary" onclick="openFundHoldingForm()"><i class="fas fa-plus"></i> 添加持仓</button></div>
+      <div class="hold-table-wrap"><table class="hold-table"><thead><tr><th>基金</th><th>类型</th><th>成本</th><th>市值</th><th>盈亏</th><th>收益率</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="hold-pie-wrap"><canvas id="hold-pie"></canvas></div>`;
+  }
+  el.innerHTML = `<div class="hold-panel">${summary}${body}</div>`;
+  if (list.length) {
+    if (charts.fundHoldPie) charts.fundHoldPie.destroy();
+    const labels = list.map(h => h.name);
+    const data = list.map(h => +h.mv || 0);
+    const palette = ['#8A6CB0', '#C99BB5', '#B79BD6', '#6B4E8A', '#E0B0C0', '#9A7FB8', '#D8A7C0', '#7E6AA0', '#C0A0D0', '#A98BC0'];
+    charts.fundHoldPie = new Chart(document.getElementById('hold-pie').getContext('2d'), {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data, backgroundColor: palette, borderWidth: 2, borderColor: '#fff' }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } },
+          tooltip: { callbacks: { label: (c) => `${c.label}: ¥${fnFmt(c.parsed)} (${(totalMV ? c.parsed / totalMV * 100 : 0).toFixed(1)}%)` } }
+        }
+      }
+    });
+  }
+}
+
+function openFundHoldingForm(id) {
+  const list = fundHoldings();
+  const h = id ? list.find(x => x.id === id) : null;
+  const opts = FUND_TYPES.map(t => `<option ${h && h.type === t ? 'selected' : ''}>${t}</option>`).join('');
+  const html = `<form id="fund-hold-form" class="fund-form" onsubmit="return false">
+    <label>基金名称<input id="fh-name" value="${h ? fnEsc(h.name) : ''}" placeholder="如 易方达蓝筹精选"></label>
+    <label>代码(选填)<input id="fh-code" value="${h ? fnEsc(h.code || '') : ''}" placeholder="如 005827"></label>
+    <label>类型<select id="fh-type">${opts}</select></label>
+    <label>买入日期<input id="fh-date" type="date" value="${h ? (h.date || '') : ''}"></label>
+    <label>成本金额(元)<input id="fh-cost" type="number" value="${h ? h.cost : ''}" placeholder="实际投入本金"></label>
+    <label>当前市值(元)<input id="fh-mv" type="number" value="${h ? h.mv : ''}" placeholder="份额×净值 或账户市值"></label>
+    <label>持有份额(选填)<input id="fh-shares" type="number" value="${h ? (h.shares || '') : ''}"></label>
+    <label>当前净值(选填)<input id="fh-nav" type="number" step="0.0001" value="${h ? (h.nav || '') : ''}"></label>
+    <div class="fund-form-actions">
+      <button class="btn-primary" onclick="saveFundHolding('${id || ''}')">保存</button>
+      <button class="btn-ghost" onclick="closeZoom()">取消</button>
+    </div>
+    <p class="calc-tip">市值为空时按 份额×净值 自动算；都空则默认 = 成本。数据仅存本机，不上传服务器。</p>
+  </form>`;
+  openZoom(h ? '编辑持仓' : '添加持仓', html);
+}
+
+function saveFundHolding(id) {
+  const name = document.getElementById('fh-name').value.trim();
+  if (!name) { showToast('请填写基金名称', 'warn'); return; }
+  const cost = +document.getElementById('fh-cost').value || 0;
+  const shares = +document.getElementById('fh-shares').value || 0;
+  const nav = +document.getElementById('fh-nav').value || 0;
+  let mv = +document.getElementById('fh-mv').value || 0;
+  if (shares > 0 && nav > 0 && !document.getElementById('fh-mv').value) mv = +(shares * nav).toFixed(2);
+  if (!mv) mv = cost;
+  const rec = {
+    id: id || ('fh_' + Date.now()),
+    name, code: document.getElementById('fh-code').value.trim(),
+    type: document.getElementById('fh-type').value,
+    date: document.getElementById('fh-date').value,
+    cost, mv, shares, nav
+  };
+  const list = fundHoldings();
+  if (id) { const i = list.findIndex(x => x.id === id); if (i >= 0) list[i] = rec; }
+  else list.push(rec);
+  saveFundHoldings(list);
+  closeZoom();
+  renderPracticeContent();
+  showToast('已保存', 'success');
+}
+
+function deleteFundHolding(id) {
+  if (!confirm('确定删除该持仓记录？')) return;
+  saveFundHoldings(fundHoldings().filter(x => x.id !== id));
+  renderPracticeContent();
+  showToast('已删除', 'info');
 }
 
 /* ============================================
@@ -4640,6 +5414,10 @@ function renderNewsGrid(news) {
           <span class="news-tag ${n.category}">${cat ? cat.label : ''}</span>
           <h3>${n.title}</h3>
           <p>${n.summary.substring(0, 100)}...</p>
+          <div class="news-card-badges">
+            ${n.meaning ? `<span class="news-badge meaning"><i class="fas fa-lightbulb"></i> 深度</span>` : ''}
+            ${n.expert ? `<span class="news-badge expert"><i class="fas fa-user-graduate"></i> 专家</span>` : ''}
+          </div>
           <div class="news-footer">
             <span class="news-time"><i class="fas fa-clock"></i> ${n.date || today()} ${n.time}</span>
             <span class="news-link">查看详情 <i class="fas fa-arrow-right"></i></span>
@@ -4667,7 +5445,20 @@ function showNewsDetail(id) {
         <span><i class="fas fa-clock"></i> ${n.date || today()} ${n.time}</span>
         <span><i class="fas fa-newspaper"></i> ${n.source}</span>
       </div>
+      ${n.meaning ? `
+        <div class="news-meaning">
+          <span class="nm-label"><i class="fas fa-lightbulb"></i> 背后的含义</span>
+          <p>${n.meaning}</p>
+        </div>
+      ` : ''}
       ${n.detail.split('\n\n').map(p => `<p>${p}</p>`).join('')}
+      ${n.expert ? `
+        <div class="news-expert">
+          <span class="ne-label"><i class="fas fa-user-graduate"></i> 专家解读</span>
+          <p class="ne-view">${n.expert.view}</p>
+          <div class="ne-who">— ${n.expert.who}${n.expert.role ? `，${n.expert.role}` : ''}</div>
+        </div>
+      ` : ''}
       ${n.links ? `
         <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border-color);">
           <strong style="font-size:14px;">相关链接：</strong>

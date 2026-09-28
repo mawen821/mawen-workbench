@@ -18,6 +18,7 @@
   var filter = "all";
   var query = "";
   var chart = null;
+  var currentMap = "china";   // "china" | "world"，支持中外地点都点亮
 
   // 表单临时态
   var formStatus = "visited";
@@ -54,18 +55,49 @@
     var id = ref.slice(MWImg.PREFIX.length);
     MWImg.get(id).then(function(src){ if(src) openLightbox(encodeURIComponent(src)); });
   };
+  // 省份中心坐标（只填了省份名也能在地图点亮）
+  var PROV_CENTER = { "北京":[116.40,39.90],"天津":[117.20,39.13],"上海":[121.47,31.23],"重庆":[106.55,29.56],
+    "河北":[114.50,38.05],"山西":[112.55,37.87],"内蒙古":[111.70,40.80],"辽宁":[123.43,41.80],"吉林":[125.32,43.82],"黑龙江":[126.53,45.80],
+    "江苏":[119.80,33.00],"浙江":[120.20,29.30],"安徽":[117.27,31.86],"福建":[119.30,26.08],"江西":[115.86,28.68],"山东":[118.00,36.40],
+    "河南":[113.62,34.75],"湖北":[112.30,31.00],"湖南":[111.70,27.60],"广东":[113.40,23.40],"广西":[108.80,23.80],"海南":[109.80,19.20],
+    "四川":[102.80,30.60],"贵州":[106.71,26.65],"云南":[101.50,25.00],"西藏":[88.40,31.50],"陕西":[108.90,35.00],"甘肃":[103.80,37.00],
+    "青海":[96.00,35.60],"宁夏":[106.20,37.30],"新疆":[85.30,41.50],
+    "中国香港":[114.17,22.32],"中国澳门":[113.55,22.20],"中国台湾":[121.00,23.70],"台湾":[121.00,23.70],"香港":[114.17,22.32],"澳门":[113.55,22.20] };
+  // 别名 / 热门境外目的地补充坐标（命中即点亮）
+  var COORD_EXTRA = { "北海道":[142.50,43.30],"冲绳":[127.68,26.21],"济州岛":[126.49,33.36],"济州":[126.49,33.36],
+    "清迈":[98.99,18.79],"普吉岛":[98.34,7.88],"普吉":[98.34,7.88],"芽庄":[109.22,12.25],"塞班岛":[145.75,15.20],"塞班":[145.75,15.20],
+    "圣托里尼":[25.38,36.39],"马尔代夫":[73.22,3.20],"巴厘岛":[115.22,-8.65],"夏威夷":[-157.86,21.31],"新西兰":[174.00,-41.00],"澳大利亚":[149.00,-25.00] };
+  // 合并成完整查表（CITY_COORDS 已含 487 个中外城市）
+  var COORD_ALL = (function(){
+    var m = {};
+    var src = window.CITY_COORDS || {};
+    Object.keys(src).forEach(function(k){ m[k]=src[k]; });
+    Object.keys(PROV_CENTER).forEach(function(k){ if(!m[k]) m[k]=PROV_CENTER[k]; });
+    Object.keys(COORD_EXTRA).forEach(function(k){ if(!m[k]) m[k]=COORD_EXTRA[k]; });
+    return m;
+  })();
+
   function coordOf(city){
     if(!city) return null;
-    var C = window.CITY_COORDS || {};
+    var C = COORD_ALL;
     if(C[city]) return C[city];
     var raw = String(city).trim();
     // 去掉常见前缀/后缀，提升「成都市」「杭州市」「中国香港」等匹配率
     var norm = raw.replace(/^中国/, "").replace(/(市|县|区|镇|盟|自治州|自治区|特别行政区|地区|省|州)$/, "");
     if(norm && C[norm]) return C[norm];
-    var norm2 = raw.replace(/^中国/, "").replace(/(州市|省市|自治县|特区|新区)$/, "");
-    if(norm2 && C[norm2]) return C[norm2];
+    // 别名：台湾 / 香港 / 澳门 / 内蒙 等
+    var alias = { "台湾":"中国台湾","香港":"中国香港","澳门":"中国澳门","内蒙":"内蒙古","黑龙":"黑龙江" };
+    if(alias[raw]) return C[alias[raw]];
+    // 子串兜底：「成都周边」「四川成都」也能命中成都
+    if(raw.length >= 2){
+      var hit = null;
+      Object.keys(C).some(function(k){ if(k.indexOf(raw) >= 0 || raw.indexOf(k) >= 0){ hit = k; return true; } return false; });
+      if(hit) return C[hit];
+    }
     return null;
   }
+  // 判断坐标属于中国视图还是世界视图
+  function scopeOf(c){ return (c && c[0] >= 70 && c[0] <= 140 && c[1] >= 0 && c[1] <= 55) ? "china" : "world"; }
 
   // 照片压缩（仅存本机）
   function compressImage(file){
@@ -110,14 +142,40 @@
 
   // ---------- 地图 ----------
   function initMap(){
-    if(!window.echarts || !window.CHINA_GEO){ return; }
-    chart = echarts.init($("map"));
-    echarts.registerMap("china", window.CHINA_GEO);
-    chart.on("click", function(p){
-      if(p.componentType === "series" && p.data && p.data.city){ openDetail(p.data.city); }
+    try{
+      if(!window.echarts){ console.error("[travel] echarts 未加载，地图不可用"); return; }
+      if(!window.CHINA_GEO){ console.error("[travel] 中国地图数据未加载，地图不可用"); return; }
+      chart = echarts.init($("map"));
+      echarts.registerMap("china", window.CHINA_GEO);
+      if(window.WORLD_GEO) echarts.registerMap("world", window.WORLD_GEO);
+      chart.on("click", function(p){
+        if(p.componentType === "series" && p.data && p.data.city){ openDetail(p.data.city); }
+      });
+      window.addEventListener("resize", function(){ if(chart) chart.resize(); });
+      // 根据已有记录选择默认视图（有境外记录且无境内时默认世界）
+      var hasDomestic = false, hasWorld = false;
+      records.forEach(function(r){ var c = coordOf(r.city); if(c){ if(scopeOf(c)==="china") hasDomestic=true; else hasWorld=true; } });
+      currentMap = (hasWorld && !hasDomestic) ? "world" : "china";
+      syncMapToggle();
+      renderMap();
+    }catch(e){ console.error("[travel] 地图初始化失败：", e); }
+  }
+  // 复位视图（按当前中国/世界视图居中）
+  window.resetMapView = function(){
+    if(!chart) return;
+    if(currentMap === "world") chart.setOption({ geo:{ center:[10,25], zoom:1.2 } });
+    else chart.setOption({ geo:{ center:[104,36], zoom:1.18 } });
+  };
+  // 切换 中国 / 世界 视图
+  function setScope(map){
+    if(map !== "china" && map !== "world") return;
+    currentMap = map; syncMapToggle(); renderMap(); window.resetMapView();
+  }
+  window.setScope = setScope;
+  function syncMapToggle(){
+    Array.prototype.forEach.call(document.querySelectorAll(".mc[data-scope]"), function(b){
+      b.classList.toggle("active", b.dataset.scope === currentMap);
     });
-    window.addEventListener("resize", function(){ if(chart) chart.resize(); });
-    renderMap();
   }
 
   // 按城市聚合
@@ -150,6 +208,7 @@
       if(g.future  > 0) futureData.push({ name:city, value: c.concat(g.future),  city:city });
     });
 
+    try{
     chart.setOption({
       backgroundColor: "transparent",
       tooltip: {
@@ -170,7 +229,7 @@
         }
       },
       geo: {
-        map: "china",
+        map: currentMap,
         roam: true,
         zoom: 1.18,
         scaleLimit:{ min:1, max:8 },
@@ -206,6 +265,7 @@
         }
       ]
     }, true);
+    }catch(e){ console.error("[travel] 地图渲染失败：", e); }
   }
 
   // 复位地图视图
@@ -565,12 +625,18 @@
       };
       if(!editingId){ rec.createdAt = Date.now(); records.push(rec); }
       else { var i = records.findIndex(function(x){return x.id===editingId;}); if(i>=0) records[i]=rec; }
+      // 若该地点为境外，自动切到世界地图，让用户立刻看到标记
+      if(hasCoord){
+        var _sc = scopeOf(coordOf(city));
+        if(_sc !== currentMap){ currentMap = _sc; syncMapToggle(); }
+      }
       save(); renderAll();
+      if(currentMap === "world") window.resetMapView();
       closeModal();
       if(hasCoord){
         toast(formStatus === "visited" ? "🌟 已在地图上点亮 "+city+"！" : "📌 已加入计划："+city);
       } else {
-        toast("已保存「"+city+"」，但该城市暂未在地图坐标库中，不会在地图点亮。可改为标准城市名（如『成都』『杭州』）以便显示。");
+        toast("已保存「"+city+"」，但该地点暂未在地图坐标库中，不会在地图点亮。可改为标准地名（如『成都』『杭州』或『巴黎』）以便显示。");
       }
     });
 

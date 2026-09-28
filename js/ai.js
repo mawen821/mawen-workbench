@@ -10,39 +10,40 @@
 
 // 本周更新 inbox：每周一自动化重研趋势后刷新，5~10 条
 const AI_WEEKLY = [
-  { id: 'w-trend-3', tag: '趋势', t: '阿里 Qwen3.8-Max 发布：2.4 万亿参数，下周开源权重', why: '旗舰 Max 系列首次向社区开权重，还同步开源 27B 小杯——意味着你以后能在自己电脑上跑“接近第一梯队”的模型。', kw: 'Qwen3.8-Max 开源' },
-  { id: 'w-trend-4', tag: '趋势', t: '国产开源模型上半年全球下载破 100 亿次，反超美国', why: '发改委官方口径确认。你现在学 AI 用的免费好模型，大半是国产的，别再默认“得翻墙才有好东西”。', kw: '国产开源大模型 下载量 100亿' },
-  { id: 'w-tool-3',  tag: '工具', t: 'Kimi K3 连训练引擎一起开源（Apache 2.0）', why: '2.8 万亿参数、全球最大开源权重模型，训练/微调/智能体三套框架全放出——行业从“给你熟菜”变成“连灶台一起捐”。', kw: 'Kimi K3 开源 训练框架' },
-  { id: 'w-tool-4',  tag: '工具', t: 'Agent 办公产品扎堆落地：千问办公 / 豆包专业版 / OpenWorker', why: 'AI 从“陪聊”变“交活”。吴恩达开源的 OpenWorker 11 天涨 1.1 万星，本地就能跑，值得试。', kw: 'AI Agent 办公 智能体 2026' },
-  { id: 'w-video-3', tag: '视频', t: 'Sora 已停服，API 也将于 9 月 24 日关闭', why: '别再照着旧教程学 Sora 了。现在真正能长期用的是可灵 3.0 / 即梦 Seedance / Veo 3.1 / Runway 这几家。', kw: 'Sora 停服 替代 AI视频工具' },
-  { id: 'w-video-4', tag: '视频', t: '视频模型打起价格战：海螺登顶能力榜，约 0.8 元/秒', why: '同能力档位里只要同行三分之一价。做视频的成本还在往下掉，现在入场比半年前划算得多。', kw: 'MiniMax 海螺 视频模型 价格' },
-  { id: 'w-man-2',   tag: '漫剧', t: 'AI 漫剧市场 2026 预计破 240 亿，平台分成最高 90%', why: '抖音、红果都在抢原创内容；快手一季度漫剧投流同比涨 100 倍。风口是真的，但卷得也快。', kw: 'AI漫剧 市场规模 分成' },
-  { id: 'w-man-3',   tag: '漫剧', t: 'ComfyUI 漫剧新组合：LTX Video + Qwen-TTS 一站出片', why: '画面不闪、脸型稳，配音也能在 ComfyUI 里直接生成，不用来回导出——本地党的新首选工作流。', kw: 'ComfyUI LTX Video 漫剧 工作流' },
-  { id: 'w-prin-2',  tag: '原理', t: '混合架构上位：Mamba + Transformer 交错成新主流', why: '纯 Transformer 不再是唯一答案。长文本成本能砍到十分之一，这是今年最值得懂的架构变化。', kw: 'Mamba 混合架构 状态空间模型' },
-  { id: 'w-prin-3',  tag: '原理', t: '“上下文工程”接棒“提示词工程”', why: '光会写 prompt 已经不够了；怎么给 AI 组织记忆、工具和反馈闭环，才是 Agent 时代的新基本功。', kw: '上下文工程 Context Engineering' }
+  { id: 'w-trend-5', tag: '趋势', t: '中国开源模型下载量全球第一：HF 2026 春报国产占 41%，累计破 100 亿次', why: 'OpenRouter 开源 token 占比也到 65%。你学 AI 用的免费好模型大半国产，别再默认“得翻墙才有好东西”。', kw: '中国开源大模型 下载量 100亿 Hugging Face 2026' },
+  { id: 'w-trend-6', tag: '趋势', t: '2026 = Agent 规模化落地元年：82% 企业已在业务用生成式 AI', why: '编程产品集体进化成“通用工作 Agent”（ChatGPT Work / Claude Cowork / Kimi Work / Trae Work）。AI 从陪聊变交活，先看懂这事才有竞争力。', kw: 'AI Agent 商用元年 2026 通用工作智能体' },
+  { id: 'w-tool-5',  tag: '工具', t: '编程 Agent 杀疯了：Claude Code 与 OpenAI Codex 并列最完整（9 月横评）', why: 'Cursor 被 SpaceX 收购后继续迭代；中文/免费闭眼选 Trae、通义灵码、文心快码。写代码门槛在降，“审代码对不对”更值钱。', kw: 'Claude Code Codex Trae 通义灵码 AI编程 2026' },
+  { id: 'w-tool-6',  tag: '工具', t: '端侧模型回设备：讯飞开源星火 X2.5、MiniCPM5-2B 把 Agent 塞进手机', why: '阿里 MNN Chat 仅 41.8MB，断网也能跑大模型。隐私+离线成新卖点——以后好模型不只在云上，也在你兜里。', kw: '端侧模型 星火X2.5 MiniCPM MNN Chat 手机跑大模型' },
+  { id: 'w-video-5', tag: '视频', t: '即梦 Seedance 2.5 发布（7 月）：原生 30 秒 + 4K，“导演思维”自动调度分镜', why: '国产视频模型进入“长时长+高画质”阶段，与剪映一键互通。现在做一条带分镜的片比半年前省事太多。', kw: '即梦 Seedance 2.5 4K 30秒 发布 实测' },
+  { id: 'w-video-6', tag: '视频', t: '视频价格战白热化：海螺 H3 约 ¥0.01–0.1/秒，Vidu 单条约 4 分钱', why: 'Sora App 已停服、OpenAI 退出视频消费业务；可灵约 ¥66/月。做视频成本还在往下掉，入场比年初划算。', kw: 'AI视频 价格战 海螺 H3 Vidu 可灵 2026 成本' },
+  { id: 'w-man-5',   tag: '漫剧', t: 'AI 漫剧 2026 全年有望冲 400 亿（前 5 月已破 220 亿，AI 短剧占比超 95%）', why: '红果/抖音分成最高 90%。但真实成本大头是剧本返工+修图+音画对齐，宣传里的“几十块一集”常只算算力。', kw: 'AI漫剧 市场规模 2026 分成 红果 抖音' },
+  { id: 'w-man-6',   tag: '漫剧', t: '漫剧新利器：360 纳米漫剧跨镜头脸一致 92%+，即梦一键锁脸', why: 'ComfyUI+Flux+IP-Adapter+FaceID 本地零成本锁角色。先用免费额度跑通一集，算清时间成本再决定是否加注。', kw: 'AI漫剧 锁角色 纳米漫剧 即梦 ComfyUI Flux 工作流' },
+  { id: 'w-prin-5',  tag: '原理', t: '原生多模态取代“拼接式”：图文音视频同一语义空间统一思考', why: 'Google Gemini Omni / 商汤 SenseNova-U1 去掉独立视觉编码器，跨模态推理更强、信息损耗更少。这是今年最该懂的架构切换。', kw: '原生多模态 统一架构 Gemini Omni SenseNova 拼接式' },
+  { id: 'w-prin-6',  tag: '原理', t: '端侧走“智能密度”路线：不堆参数，2B–4B 小模型在手机跑出好用能力', why: 'MiniCPM5 拿下 4B 以内开源第一。端侧信条变成“够用且高效”，而非“越大越强”——对你意味着离线+隐私可期。', kw: '智能密度 端侧模型 小模型 手机 AI 2026' }
 ];
-const AI_WEEKLY_UPDATED = '2026-08-03';
+const AI_WEEKLY_UPDATED = '2026-09-28';
 
 // AI 视频工具（参考）
 const AI_VIDEO_TOOLS = [
-  { name: '可灵 AI（Kling 3.0）', url: 'https://klingai.com', free: '免费66积分/日(720P)', strength: '4K/60fps，最长约3分钟；运动控制 + 导演模式多镜头，古风与质感国内最强', scene: '高画质短剧 / 广告片' },
-  { name: '即梦 AI（Seedance 2.0）', url: 'https://jimeng.jianying.com', free: '免费66积分/日', strength: '音视频“一次生成”，音素级口型对齐支持8+语言，可挂多张参考素材；与剪映/抖音直通', scene: '抖音短视频 / 对白漫剧' },
-  { name: '海螺 AI（MiniMax）', url: 'https://hailuoai.video', free: '有免费额度', strength: '能力榜登顶且价格约同行三分之一，微表情与复杂场景稳', scene: '性价比首选 / 风格化创意' },
-  { name: 'Vidu Q3', url: 'https://vidu.com', free: '注册80积分+每日签到', strength: '单段最长16秒（业内最长），3~7张参考图锁角色，原生配乐；二次元/国风最佳', scene: '连载漫剧 / 动画' },
-  { name: 'Runway Gen-4.5', url: 'https://runwayml.com', free: '一次性125积分', strength: '4K约20秒；运动笔刷、导演模式、关键帧、局部重绘，编辑体系最完整', scene: '专业影视(需网络/付费)' },
-  { name: 'Pika 2.2', url: 'https://pika.art', free: '有限免费', strength: '1080P/8~10秒，特效模板多、出片最快，局部替换好玩', scene: '新手 / 社媒趣味特效' },
+  { name: '可灵 AI（Kling 3.0）', url: 'https://klingai.com', free: '免费66积分/日(720P)', strength: '单次最长约2分钟、智能分镜+原生音频；物理细节与中文口型国内最强', scene: '高画质短剧 / 广告片' },
+  { name: '即梦 AI（Seedance 2.5）', url: 'https://jimeng.jianying.com', free: '免费约88积分/日', strength: '原生 30 秒 + 4K、“导演思维”自动调度分镜；多图参考+AI对口型，与剪映/抖音直通', scene: '抖音短视频 / 对白漫剧' },
+  { name: '海螺 AI（MiniMax H3）', url: 'https://hailuoai.video', free: '有免费额度', strength: '能力榜登顶且价格约 ¥0.01–0.1/秒（最便宜专业级），人物动作流畅、微表情稳', scene: '性价比首选 / 风格化创意' },
+  { name: 'Vidu Q3', url: 'https://vidu.com', free: '注册80积分+每日签到', strength: '单段最长16秒，最多7张参考图锁角色，原生配乐；单条约4分钱、性价比之王', scene: '连载漫剧 / 动画' },
+  { name: 'Runway Gen-4.5', url: 'https://runwayml.com', free: '一次性125积分', strength: '约12 credits/秒；运动笔刷、导演模式、关键帧、局部重绘，编辑体系最完整', scene: '专业影视(需网络/付费)' },
+  { name: 'Pika 2.5', url: 'https://pika.art', free: '有限免费', strength: '1080P/5~10秒，特效模板多、出片最快，局部替换好玩', scene: '新手 / 社媒趣味特效' },
   { name: 'PixVerse', url: 'https://pixverse.ai', free: '有限免费', strength: '一站式工作空间，转场/延展/原生音频', scene: '综合视频创作' },
-  { name: '通义万相 / Wan', url: 'https://tongyi.aliyun.com', free: '免费额度充足', strength: '国风水墨独家强项，音视频同步输出，阿里云生态联动', scene: '东方美学 / 零成本' },
-  { name: 'Google Veo 3.1', url: 'https://deepmind.google', free: '有免费层', strength: '原生4K最长约30秒，自动音画同步，物理真实感一流', scene: '海外 / 高画质' },
+  { name: '通义万相 / Wan 2.6', url: 'https://tongyi.aliyun.com', free: '免费额度充足', strength: '国风水墨独家强项，单次最长15秒，国内首个角色扮演视频模型；开源可自部署', scene: '东方美学 / 零成本' },
+  { name: 'Google Veo 3.1', url: 'https://deepmind.google', free: '有免费层', strength: '原生4K、单条最长可达148秒、对象级编辑+自动音画同步，物理真实感一流', scene: '海外 / 高画质' },
+  { name: '腾讯元宝（视频）', url: 'https://yuanbao.tencent.com', free: '免费不限次', strength: '一句话生视频（文生+图生），0 门槛，适合先随便试', scene: '零成本入门 / 快速出片' },
   { name: '智谱清影', url: 'https://chatglm.cn', free: '完全免费', strength: '零付费门槛，出片快，够练手', scene: '学生 / 新手零成本起步' }
 ];
 
 // AI 漫剧 / 漫画 工作流（参考）
 const AI_MANHUA_FLOW = [
   { step: '① 剧本 & 分镜', desc: '用 AI 写故事+分镜脚本（景别+画面+台词+镜头运动）。提示词：写3分钟漫剧分镜，古风逆袭，每镜含景别/画面/台词/镜头。', tools: ['豆包', 'DeepSeek', '通义千问', '漫剧工场'] },
-  { step: '② 静态插画', desc: '生成角色+分镜图。关键是“角色一致性”：IP-Adapter 锁风格（权重 0.7~0.9）+ FaceID 锁脸 + ControlNet 控姿势，每个主角备 3~5 张不同角度参考图存进角色库。', tools: ['即梦(多图输入)', 'Midjourney', 'ComfyUI+Flux', 'NanoBanana', '海艺'] },
-  { step: '③ 图生视频', desc: '让分镜动起来。单段 3~10 秒防动作崩坏，运镜用推拉摇移提升质感。本地跑 LTX Video 时把运动强度压到 0.2~0.4，人物最不容易变形。', tools: ['可灵3.0', '即梦(Seedance)', 'LTX Video', 'Vidu Q3', '纳米漫剧'] },
-  { step: '④ 配音 & 音效', desc: '为每个角色建声线档案，剧本标注情绪。剪映/讯飞免费够用，出海用 ElevenLabs；ComfyUI 里可直接挂 Qwen-TTS 节点，不用来回导出。', tools: ['剪映AI配音', '讯飞配音', 'ElevenLabs', 'Qwen-TTS'] },
+  { step: '② 静态插画', desc: '生成角色+分镜图。关键是“角色一致性”：IP-Adapter 锁风格（权重 0.7~0.9）+ FaceID 锁脸 + ControlNet 控姿势，每个主角备 3~5 张不同角度参考图存进角色库；即梦“角色一致性”可一键锁脸。', tools: ['即梦(Seedance 2.5)', 'Midjourney v7', 'ComfyUI+Flux', 'NanoBanana', '海艺'] },
+  { step: '③ 图生视频', desc: '让分镜动起来。单段 3~10 秒防动作崩坏，运镜用推拉摇移提升质感。本地跑 LTX Video 时把运动强度压到 0.2~0.4，人物最不容易变形。', tools: ['可灵3.0', '即梦(Seedance 2.5)', 'LTX Video', 'Vidu Q3', '纳米漫剧'] },
+  { step: '④ 配音 & 音效', desc: '为每个角色建声线档案，剧本标注情绪。剪映/讯飞免费够用，漫剧首选魔音工坊（情绪音色天花板）；出海用 ElevenLabs；ComfyUI 里可直接挂 Qwen-TTS 节点。', tools: ['剪映AI配音', '魔音工坊', '讯飞配音', 'ElevenLabs', 'Qwen-TTS'] },
   { step: '⑤ 剪辑合成', desc: '片段拼接+音画对齐+自动字幕+BGM，9:16 竖屏导出，一键分发抖音/快手/视频号。', tools: ['剪映', '来画', 'PR', '纳米漫剧流水线'] }
 ];
 
@@ -55,7 +56,8 @@ const AI_PRINCIPLES = [
   { t: '预训练 / 微调 / LoRA', d: '预训练=通识功底；微调=针对具体任务再训练；LoRA=极轻量的微调，常用于 AI 漫剧锁定“角色一致性”，避免变脸。' },
   { t: '多模态 & Agent', d: '多模态=图文音视频统一理解与生成；Agent=能自己拆解任务、调用工具“动手干活”的 AI——2026 被称为 Agent 商用元年。' },
   { t: 'MoE 混合专家 & 混合架构', d: '万亿参数模型只激活其中几百亿（MoE），成本大降；2026 更流行“混合架构”——大部分层用线性复杂度的 Mamba 处理长序列，少数层保留注意力做精确回忆，长文本显存能省到十分之一。' },
-  { t: '世界模型 World Model', d: '大模型是“下一个词预测器”，不知道杯子掉地上会碎。世界模型要让 AI 建模时空、物理与因果——它是机器人、自动驾驶和真正智能体的地基，也是当前最前沿的攻坚方向。' }
+  { t: '世界模型 World Model', d: '大模型是“下一个词预测器”，不知道杯子掉地上会碎。世界模型要让 AI 建模时空、物理与因果——它是机器人、自动驾驶和真正智能体的地基，也是当前最前沿的攻坚方向。' },
+  { t: '原生多模态 & 统一架构', d: '2026 主流路线：不再用“视觉编码器+语言模型”拼接，而是图文音视频在同一语义空间统一思考（如 Google Gemini Omni、商汤 SenseNova-U1）。跨模态推理更强、信息损耗更少，是今年最关键的架构切换。' }
 ];
 
 // AI 名词术语表（参考）
@@ -80,52 +82,61 @@ const AI_TERMS = [
   { term: '混合架构 Hybrid', def: '每 7~8 层 Mamba 配 1 层注意力：Mamba 便宜地扛长度，注意力负责精确回忆。今年新发布的大模型很多都是这个路子。' },
   { term: '上下文工程 Context Engineering', def: '比提示词工程更进一步：给 AI 组织好记忆、检索、工具和自我纠错闭环。Agent 时代的核心技能。' },
   { term: 'KV Cache', def: '模型生成时缓存的“已读内容”。上下文越长它越占显存，也是长文本贵的主因——混合架构就是为了压它。' },
-  { term: '世界模型 World Model', def: '让 AI 理解并预测物理世界如何演变，而不只是预测下一个词。具身智能与自动驾驶的地基。' }
+  { term: '世界模型 World Model', def: '让 AI 理解并预测物理世界如何演变，而不只是预测下一个词。具身智能与自动驾驶的地基。' },
+  { term: '原生多模态 Native Multimodal', def: '图文音视频在同一模型、同一语义空间里统一理解与生成（如 Gemini Omni）。区别于旧式“视觉编码器+语言模型”拼接，跨模态推理更强、损耗更少。' },
+  { term: '端侧模型 / 智能密度', def: '直接在手机/PC/车机等本地设备运行的轻量模型，离线+隐私+低延迟。2026 路线从“堆参数”转向“智能密度”——用小而精的模型把具体任务做好。' }
 ];
 
 // 主流 AI 软件（按场景分类，参考）
 const AI_SOFTWARE = [
   { cat: '💬 对话 / 大模型', items: [
-    { name: 'ChatGPT', url: 'https://chatgpt.com', note: 'GPT-5 系列，全球标杆' },
-    { name: 'Claude', url: 'https://claude.ai', note: '4 Opus，长文/代码强' },
-    { name: 'Gemini', url: 'https://gemini.google.com', note: '3 Ultra，多模态+谷歌生态' },
-    { name: 'DeepSeek', url: 'https://chat.deepseek.com', note: 'V4，免费+推理强，小模型极便宜' },
-    { name: '豆包', url: 'https://doubao.com', note: '2.1 Pro，中文/抖音生态' },
-    { name: 'Kimi', url: 'https://kimi.com', note: 'K3，2.8万亿参数开源，长文本神器' },
+    { name: 'ChatGPT', url: 'https://chatgpt.com', note: 'GPT-5/6 系列，全球标杆' },
+    { name: 'Claude', url: 'https://claude.ai', note: 'Opus 4.7，长文/代码强' },
+    { name: 'Gemini', url: 'https://gemini.google.com', note: '3.x Ultra，原生多模态+谷歌生态' },
+    { name: 'DeepSeek', url: 'https://chat.deepseek.com', note: 'V4（MIT），免费+推理强，小模型极便宜' },
+    { name: '豆包', url: 'https://doubao.com', note: '国内 MAU 第一，中文/抖音生态' },
+    { name: 'Kimi', url: 'https://kimi.com', note: 'K3，2.8万亿参数开源，长文本/Agent 神器' },
     { name: '通义千问', url: 'https://tongyi.aliyun.com', note: 'Qwen3.8-Max，2.4万亿参数' },
     { name: '文心一言', url: 'https://yiyan.baidu.com', note: '5.0，百度生态' },
-    { name: '腾讯元宝', url: 'https://yuanbao.tencent.com', note: '微信生态' },
-    { name: '智谱清言', url: 'https://chatglm.cn', note: 'GLM 系列' },
+    { name: '腾讯元宝', url: 'https://yuanbao.tencent.com', note: '微信生态 + 免费视频' },
+    { name: '智谱清言', url: 'https://chatglm.cn', note: 'GLM-5.x 系列' },
     { name: 'Grok', url: 'https://grok.com', note: '实时抓 X 信息' },
     { name: 'Perplexity', url: 'https://perplexity.ai', note: '带引用的 AI 搜索' }
   ] },
   { cat: '🎨 AI 绘画', items: [
-    { name: 'Midjourney V7', url: 'https://midjourney.com', note: '艺术质感公认第一' },
-    { name: '即梦 AI', url: 'https://jimeng.jianying.com', note: '中文友好，操作简单' },
+    { name: 'Midjourney v7', url: 'https://midjourney.com', note: '艺术质感公认第一，V8 编辑模型已出' },
+    { name: '即梦 AI', url: 'https://jimeng.jianying.com', note: 'Seedance 2.5，中文友好' },
+    { name: 'Flux 2', url: 'https://blackforestlabs.ai', note: '开源写实天花板，可自部署' },
+    { name: 'GPT Image 1.5', url: 'https://openai.com/dall-e', note: '含在 ChatGPT 内，文字图/改图强' },
     { name: '可灵(图)', url: 'https://klingai.com', note: '人像/国风强' },
     { name: 'Stable Diffusion', url: 'https://stability.ai', note: '开源可本地部署' },
     { name: 'Adobe Firefly', url: 'https://firefly.adobe.com', note: '嵌 PS/AI，版权干净' },
+    { name: 'Ideogram v3', url: 'https://ideogram.ai', note: '图上文字渲染最准' },
     { name: '海艺 AI', url: 'https://civitai.com', note: '动画风格出色' },
-    { name: 'Canva AI', url: 'https://canva.com', note: '模板多，营销人首选' },
-    { name: 'DALL·E 4', url: 'https://openai.com/dall-e', note: '含在 ChatGPT 内' }
+    { name: 'Canva AI', url: 'https://canva.com', note: '模板多，营销人首选' }
   ] },
   { cat: '🎬 AI 视频', items: [
-    { name: '可灵 Kling 3.0', url: 'https://klingai.com', note: '4K/60fps，最长3分钟' },
-    { name: '即梦(Seedance 2.0)', url: 'https://jimeng.jianying.com', note: '音视频一次生成+口型对齐' },
-    { name: '海螺 AI', url: 'https://hailuoai.video', note: '能力榜登顶，价格约同行1/3' },
-    { name: 'Vidu Q3', url: 'https://vidu.com', note: '16秒最长，多图锁角色' },
+    { name: '可灵 Kling 3.0', url: 'https://klingai.com', note: '最长约2分钟，原生音频' },
+    { name: '即梦(Seedance 2.5)', url: 'https://jimeng.jianying.com', note: '原生30秒+4K，导演思维分镜' },
+    { name: '海螺 AI (H3)', url: 'https://hailuoai.video', note: '能力榜登顶，约¥0.01–0.1/秒' },
+    { name: 'Vidu Q3', url: 'https://vidu.com', note: '16秒最长，单条约4分钱' },
     { name: 'Runway Gen-4.5', url: 'https://runwayml.com', note: '编辑体系最全(需网络)' },
-    { name: 'Pika 2.2', url: 'https://pika.art', note: '易用快速，特效多' },
+    { name: 'Pika 2.5', url: 'https://pika.art', note: '易用快速，特效多' },
     { name: 'PixVerse', url: 'https://pixverse.ai', note: '一站式工作空间' },
-    { name: '通义万相 / Wan', url: 'https://tongyi.aliyun.com', note: '国风水墨，免费额度足' },
-    { name: 'Veo 3.1', url: 'https://deepmind.google', note: '4K/30秒，原生音频' },
+    { name: '通义万相 / Wan 2.6', url: 'https://tongyi.aliyun.com', note: '国风水墨，开源可自部署' },
+    { name: 'Veo 3.1', url: 'https://deepmind.google', note: '4K/最长148秒，原生音频' },
+    { name: '腾讯元宝(视频)', url: 'https://yuanbao.tencent.com', note: '免费不限次，新手试水' },
     { name: '智谱清影', url: 'https://chatglm.cn', note: '完全免费，新手练手' }
   ] },
   { cat: '💻 AI 编程', items: [
-    { name: 'Cursor', url: 'https://cursor.com', note: '理解整个项目，程序员新宠' },
-    { name: 'Claude Code', url: 'https://claude.com/product/claude-code', note: '终端里的编程智能体' },
-    { name: 'GitHub Copilot', url: 'https://github.com/features/copilot', note: '嵌 IDE，老牌稳定' },
-    { name: 'Trae', url: 'https://trae.com', note: '字节出品，国内可直连免费' }
+    { name: 'Cursor', url: 'https://cursor.com', note: 'AI 原生 IDE，被 SpaceX 收购后继续迭代' },
+    { name: 'Claude Code', url: 'https://claude.com/product/claude-code', note: '终端 Agent，大重构天花板' },
+    { name: 'OpenAI Codex', url: 'https://openai.com/codex', note: '云任务+自动代码审查' },
+    { name: 'GitHub Copilot', url: 'https://github.com/features/copilot', note: 'issue→PR，企业治理最稳' },
+    { name: 'Trae', url: 'https://trae.com', note: '字节出品，永久免费+中文，600万用户' },
+    { name: '通义灵码', url: 'https://tongyi.aliyun.com', note: 'Java/Go 企业级首选' },
+    { name: '文心快码 Comate', url: 'https://comate.baidu.com', note: '合规私有化标杆' },
+    { name: 'CodeBuddy', url: 'https://codebuddy.ai', note: '腾讯，微信/小程序生态协同' }
   ] },
   { cat: '📝 AI 办公', items: [
     { name: 'Microsoft Copilot', url: 'https://microsoft.com/copilot', note: '嵌 Office 全家桶' },
@@ -139,12 +150,15 @@ const AI_SOFTWARE = [
     { name: 'HeyGen', url: 'https://heygen.com', note: '数字人视频' },
     { name: '腾讯智影', url: 'https://zenvideo.qq.com', note: '数字人/剪辑' },
     { name: 'Suno v4', url: 'https://suno.com', note: 'AI 写歌' },
-    { name: 'ElevenLabs', url: 'https://elevenlabs.io', note: '顶级 AI 配音' }
+    { name: 'ElevenLabs', url: 'https://elevenlabs.io', note: '顶级 AI 配音' },
+    { name: '魔音工坊', url: 'https://moyin.com', note: '国内情绪音色天花板，漫剧首选' }
   ] },
   { cat: '🦞 AI Agent / 漫剧专用', items: [
+    { name: 'ChatGPT Work', url: 'https://chatgpt.com', note: 'OpenAI 把 Codex 并入的通用办公 Agent' },
+    { name: 'Claude Cowork', url: 'https://claude.ai', note: 'Anthropic“给不写代码的人用的 Claude Code”' },
+    { name: 'Kimi Work', url: 'https://kimi.com', note: '月之暗面 通用本地 Agent' },
+    { name: 'Trae Work', url: 'https://trae.com', note: '字节 办公+开发一体' },
     { name: 'OpenClaw（龙虾）', url: 'https://openclaw.ai', note: '能“动手”的桌面智能体' },
-    { name: 'OpenWorker', url: 'https://github.com/andrewyng/openworker', note: '吴恩达开源「AI 同事」，本地跑' },
-    { name: '千问办公', url: 'https://tongyi.aliyun.com', note: '阿里 Agent 办公，随 Qwen3.8 上线' },
     { name: 'AutoGLM', url: 'https://zhipuai.cn', note: '智谱手机智能体' },
     { name: '纳米漫剧', url: 'https://nano-manju.com', note: '工业级 AI 漫剧流水线' }
   ] }
@@ -155,17 +169,17 @@ const AI_SOFTWARE = [
 // 文档 / 文章：url 直达官网
 const AI_RESOURCES = [
   // —— 视频：最新行业视频 ——
-  { id: 'rv-6', type: '视频', title: '2026 下半年 AI 视频工具横评（可灵3.0 / Seedance / Veo3.1 / Vidu Q3）', source: 'B站·行业盘点', topic: 'AI视频工具选型', why: '价格和版本这半年翻了好几轮，看一遍横评就知道该把钱花在哪家，省得挨个试。', plat: 'bili', kw: '2026 AI视频工具横评 可灵 即梦 Vidu Veo' },
-  { id: 'rv-7', type: '视频', title: 'Kimi K3 全栈开源拆解：2.8 万亿参数怎么练出来的', source: 'B站·大模型', topic: '开源大模型', why: '今年最重磅的开源事件。看完你会明白“开源”已经从放权重变成连训练方法一起给。', plat: 'bili', kw: 'Kimi K3 开源 万亿参数 拆解' },
-  { id: 'rv-8', type: '视频', title: 'Qwen3.8-Max 发布解读 + 千问办公上手实测', source: 'B站·测评', topic: '国产旗舰模型', why: '2.4 万亿参数、下周开源权重，还带了个能替你干活的办公 Agent，值得第一时间跟。', plat: 'bili', kw: 'Qwen3.8 Max 通义千问 发布 实测' },
-  { id: 'rv-9', type: '视频', title: 'AI 漫剧从 0 到成片全流程实录（2026 版工作流）', source: 'B站·漫剧', topic: 'AI漫剧实操', why: '跟着做一遍就能出你的第一支片子；重点看他怎么锁角色、怎么对口型。', plat: 'bili', kw: 'AI漫剧 全流程 教程 2026 角色一致性' },
-  { id: 'rv-10', type: '视频', title: 'Transformer 之后是什么？Mamba 与混合架构讲解', source: 'YouTube·科普', topic: '架构新趋势', why: '今年最值得懂的底层变化。听懂了，你就能判断哪些新模型的“又快又便宜”是真的。', plat: 'youtube', kw: 'Mamba state space model hybrid architecture explained' },
+  { id: 'rv-11', type: '视频', title: '2026 下半年 AI 视频工具横评（可灵3.0 / Seedance2.5 / Veo3.1 / Hailuo H3 / Vidu Q3 / Runway）', source: 'B站·行业盘点', topic: 'AI视频工具选型', why: '价格和版本这半年又翻了几轮，看一遍横评就知道钱该花在哪家，省得挨个试。', plat: 'bili', kw: '2026 AI视频工具横评 可灵 Seedance Veo 海螺 Vidu' },
+  { id: 'rv-12', type: '视频', title: '2026 年 AI 编程 Agent 横评（Claude Code / Codex / Cursor / Trae / 通义灵码）', source: 'B站·编程', topic: '编程智能体选型', why: '从“补全代码”到“自主干活”的 SWE-Agent 范式，按场景选工具比追单个冠军更实用。', plat: 'bili', kw: '2026 AI编程 Agent Claude Code Codex Cursor Trae 横评' },
+  { id: 'rv-13', type: '视频', title: 'AI 漫剧全流程 2026 实拍（即梦+剪映 / ComfyUI+Flux 双线）', source: 'B站·漫剧', topic: 'AI漫剧实操', why: '跟着做一遍就能出第一支片；重点看他怎么锁角色、怎么对口型、怎么压成本。', plat: 'bili', kw: 'AI漫剧 全流程 教程 2026 即梦 ComfyUI Flux 锁角色' },
+  { id: 'rv-14', type: '视频', title: '中国开源大模型 2026 全景（DeepSeek V4 / Qwen3.8 / Kimi K3 / GLM-5 / Hunyuan）', source: 'B站·大模型', topic: '开源大模型格局', why: '为什么国产开源能反超美国、下载量全球第一？这条帮你建立“该信谁”的判断力。', plat: 'bili', kw: '中国开源大模型 2026 DeepSeek Qwen Kimi GLM 全景' },
+  { id: 'rv-15', type: '视频', title: '原生多模态与世界模型：从“拼接式”到统一基座（2026 架构换代）', source: 'YouTube·科普', topic: '架构新趋势', why: '今年最该懂的底层切换：图文音视频同一语义空间统一思考，听明白就能判断新模型真假。', plat: 'youtube', kw: 'native multimodal world model unified architecture 2026 explained' },
 
   // —— 博主：视频解读 / 讲解 ——
   { id: 'rb-7', type: '博主', title: '李宏毅 机器学习 / 深度学习（台大，零基础友好）', source: '李宏毅', topic: 'ML/DL 原理', why: '把梯度下降、注意力、Transformer 讲成人话，建立“技术直觉”。', plat: 'bili', kw: '李宏毅 机器学习 深度学习' },
   { id: 'rb-8', type: '博主', title: '李沐 动手学深度学习（Amazon 首席科学家，带代码）', source: '李沐', topic: 'DL 实战', why: '从听懂到会做的关键一步，每节带 PyTorch 代码，跟着敲就跑通。', plat: 'bili', kw: '李沐 动手学深度学习' },
   { id: 'rb-9', type: '博主', title: 'Andrej Karpathy：Neural Networks Zero to Hero', source: 'Karpathy', topic: '从零手写 GPT', why: 'OpenAI 创始成员，把大模型底层机制掰开揉碎，想吃透 AI 必看。', plat: 'youtube', kw: 'Karpathy Neural Networks Zero to Hero' },
-  { id: 'rb-10', type: '博主', title: '3Blue1Brown：神经网络可视化讲解', source: '3Blue1Brown', topic: '直觉理解', why: '最直观的动画讲清神经网络/梯度下降，看一遍胜过读十篇。', plat: 'youtube', kw: '3Blue1Brown neural networks' },
+  { id: 'rb-10', type: '博主', title: '3Blue1Brown：神经网络可视化讲解', source: '3Blue1Brown', topic: '直觉理解', why: '最直观的动画讲清神经网络/梯度下降，看一遍胜读十篇。', plat: 'youtube', kw: '3Blue1Brown neural networks' },
   { id: 'rb-11', type: '博主', title: '同济子豪兄：中文实战向 AI 教程', source: '同济子豪兄', topic: 'CV/论文复现', why: '中文、代码全、跟得上最新论文，适合想动手做项目的人。', plat: 'bili', kw: '同济子豪兄 深度学习 实战' },
   { id: 'rb-12', type: '博主', title: 'Dwarkesh Patel：对话 AI 顶级大佬的深度访谈', source: 'Dwarkesh Patel', topic: '前沿思想', why: '听一线掌舵者亲述方向，建立对“下一步”的判断力，比看快讯有用得多。', plat: 'youtube', kw: 'Dwarkesh Patel AI interview' },
 
@@ -182,7 +196,7 @@ const AI_RESOURCES = [
   { id: 'ra-9', type: '文章', title: 'TLDR AI（开发者每日速览）', source: 'TLDR', topic: '论文/仓库/工程', why: '头条+两句话+直链，五分钟扫完当天技术信号，是最省时间的日更源。', url: 'https://tldr.tech/ai' },
   { id: 'ra-10', type: '文章', title: '量子位 / 机器之心（中文 AI 媒体）', source: '量子位', topic: '中文前沿快讯', why: '跟进最快的中文 AI 媒体，发布/融资/论文第一时间中文解读，不用等翻译。', url: 'https://www.qbitai.com' }
 ];
-const AI_RESOURCES_UPDATED = '2026-08-03';
+const AI_RESOURCES_UPDATED = '2026-09-28';
 
 /* ============================================================
    系统课程（主线）：入门 → 进阶 → 深入 → 拓展

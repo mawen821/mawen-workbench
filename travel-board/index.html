@@ -71,7 +71,9 @@
 <main class="layout">
   <section class="map-wrap">
     <div class="map-ctrl">
-      <button class="mc active" onclick="resetMapView()">🔍 复位</button>
+      <button class="mc active" data-scope="china" onclick="setScope('china')">🗺️ 中国</button>
+      <button class="mc" data-scope="world" onclick="setScope('world')">🌏 世界</button>
+      <button class="mc" onclick="resetMapView()">🔍 复位</button>
     </div>
     <div id="map"></div>
       <div class="map-legend">
@@ -96,7 +98,7 @@
       <input type="hidden" id="f-id">
       <div class="row">
         <label>城市 *</label>
-        <input type="text" id="f-city" list="city-list" placeholder="如：成都 / 丽江 / 北海道" autocomplete="off" required>
+        <input type="text" id="f-city" list="city-list" placeholder="如：成都 / 丽江 / 巴黎（境外自动进世界地图）" autocomplete="off" required>
         <datalist id="city-list"></datalist>
       </div>
       <div class="row">
@@ -176,6 +178,7 @@
 <script src="js/echarts.min.js"></script>
 <script src="js/cities.js"></script>
 <script src="data/china.geo.js"></script>
+<script src="data/world.geo.js"></script>
 <script src="../js/imgstore.js"></script>
 <script src="js/app.js"></script>
 </body>
