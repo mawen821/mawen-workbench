@@ -718,11 +718,13 @@ const MODULE_UPDATES = {
   overview: { type:'manual',                   label:'总览 · 实时汇总',                     icon:'📊' },
   sport:    { type:'manual',                   label:'本地记录 · 实时保存',                 icon:'🏃' },
   ledger:   { type:'manual',                   label:'记账 · 实时记录支出收益与定投',        icon:'🧾' },
-  country:  { type:'weekly', day:1, hour:9, minute:30, label:'国情与世界 · 每周一自动补充最新战略/趋势', icon:'🌏' },
+  country:  { type:'daily', hour:7, minute:0, label:'国情与世界 · 每日 07:00 更新「今日牌面」（中国 vs 各国的资源与优势），每周一补充战略/趋势', icon:'🌏' },
   travel:   { type:'manual',  label:'旅行地图 · 本地记录实时保存',                  icon:'🧳' },
   'zimeiti-pet':  { type:'manual',  label:'宠物部 · 选题灵感/爆款二创/复盘&选题/预计完成/文案（本地记录）', icon:'🐾' },
   'zimeiti-goods':{ type:'manual',  label:'好物部 · 选题灵感/爆款二创/复盘&选题/预计完成/文案（本地记录）', icon:'🎁' },
-  'ai':          { type:'manual',  label:'AI学习 · 本周更新/学习路径/AI视频/AI漫剧/原理/名词/主流软件（每周自动更新）', icon:'🤖' }
+  'ai':          { type:'manual',  label:'AI学习 · 本周更新/学习路径/AI视频/AI漫剧/原理/名词/主流软件（每周自动更新）', icon:'🤖' },
+  'destiny':     { type:'daily', hour:6, minute:30, label:'东方命理 · 每日 06:30 轮换今日一课/一卦；学完自动解锁下一阶段', icon:'☯️' },
+  'tarot':       { type:'daily', hour:6, minute:40, label:'西方塔罗 · 每日 06:40 轮换今日一牌/一课；学完自动解锁下一阶段', icon:'🔮' }
 };
 
 function nextUpdateDate(cfg) {
@@ -816,6 +818,8 @@ function renderModule(mod) {
     case 'pet': renderPet(container); break;
     case 'ledger': renderLedger(container); break;
     case 'country': renderCountry(container); break;
+    case 'destiny': renderDestiny(container); break;
+    case 'tarot': renderTarot(container); break;
     case 'travel': renderTravel(container); break;
     case 'zimeiti-pet': renderZimeiti(container, 'pet'); break;
     case 'zimeiti-goods': renderZimeiti(container, 'goods'); break;
@@ -868,12 +872,14 @@ function renderCountry(c) {
 
       <div class="country-view-tabs">
         <button class="country-view-tab ${currentCountryView==='cards'?'active':''}" onclick="switchCountryView('cards')"><i class="fas fa-th-large"></i> 卡片浏览</button>
+        <button class="country-view-tab ${currentCountryView==='advantage'?'active':''}" onclick="switchCountryView('advantage')"><i class="fas fa-gem"></i> 资源与优势</button>
         <button class="country-view-tab ${currentCountryView==='tracks'?'active':''}" onclick="switchCountryView('tracks')"><i class="fas fa-route"></i> 学习路径</button>
         <button class="country-view-tab ${currentCountryView==='frameworks'?'active':''}" onclick="switchCountryView('frameworks')"><i class="fas fa-brain"></i> 思维框架</button>
         <button class="country-view-tab ${currentCountryView==='study'?'active':''}" onclick="switchCountryView('study')"><i class="fas fa-pen-nib"></i> 我的研习</button>
       </div>
 
       ${currentCountryView==='cards' ? renderCountryCards() : ''}
+      ${currentCountryView==='advantage' ? renderCountryAdvantage() : ''}
       ${currentCountryView==='tracks' ? renderCountryTracks() : ''}
       ${currentCountryView==='frameworks' ? renderCountryFrameworks() : ''}
       ${currentCountryView==='study' ? renderCountryStudy() : ''}
@@ -1043,6 +1049,135 @@ function renderCountryCards() {
     </div>
   `;
 }
+
+/* ---------- 资源与优势 · 世界牌面 ---------- */
+let advRegion = 'all';
+let advKw = '';
+let advOpen = {};
+
+function advEsc(s) { return escapeHtml(s == null ? '' : String(s)); }
+
+function renderCountryAdvantage() {
+  if (typeof CN_ADVANTAGES === 'undefined') {
+    return '<div class="adv-empty">资源与优势数据未加载</div>';
+  }
+  const today = (typeof advTodayItem === 'function') ? advTodayItem() : ADV_DAILY[0];
+  const updated = (typeof ADV_UPDATED !== 'undefined') ? ADV_UPDATED : '';
+
+  const regions = [];
+  WORLD_ADVANTAGES.forEach(w => { if (w.region && regions.indexOf(w.region) < 0) regions.push(w.region); });
+
+  let list = WORLD_ADVANTAGES.filter(w => {
+    if (advRegion !== 'all' && w.region !== advRegion) return false;
+    if (advKw) {
+      const hay = (w.name + w.headline + (w.cards || []).join('') + w.risk + w.learn).toLowerCase();
+      if (hay.indexOf(advKw.toLowerCase()) < 0) return false;
+    }
+    return true;
+  });
+
+  let html = `
+    <div class="adv-top">
+      <div class="adv-today">
+        <div class="adv-today-h">
+          <span class="adv-today-tag">📌 今日牌面</span>
+          <span class="adv-today-tag2">${advEsc(today.tag)}</span>
+          <span class="adv-today-date">${advEsc(updated)} · 每日自动轮换</span>
+        </div>
+        <div class="adv-today-t">${advEsc(today.title)}</div>
+        <p class="adv-today-p">${advEsc(today.text)}</p>
+        <div class="adv-today-take"><i class="fas fa-lightbulb"></i> 一句带走：${advEsc(today.takeaway)}</div>
+      </div>
+      <div class="adv-today-side">
+        <div class="adv-stat"><b>${CN_ADVANTAGES.length}</b><span>中国优势牌</span></div>
+        <div class="adv-stat"><b>${WORLD_ADVANTAGES.length}</b><span>国家 / 地区</span></div>
+        <div class="adv-stat"><b>${ADV_MATCHUP.length}</b><span>关键对比</span></div>
+        <div class="adv-stat"><b>${ADV_DAILY.length}</b><span>每日牌面库</span></div>
+      </div>
+    </div>
+
+    <div class="adv-sec"><i class="fas fa-flag"></i> 我国的优势在哪：${CN_ADVANTAGES.length} 张硬牌</div>
+    <div class="adv-cn-grid">
+      ${CN_ADVANTAGES.map(c => `
+        <div class="adv-cn ${advOpen[c.id] ? 'open' : ''}">
+          <div class="adv-cn-h" onclick="advToggle('${c.id}')">
+            <span class="adv-cn-ico"><i class="fas ${c.icon || 'fa-gem'}"></i></span>
+            <div class="adv-cn-t"><b>${advEsc(c.title)}</b><em>${advEsc(c.why)}</em></div>
+            <span class="adv-cn-tag">${advEsc(c.tag)}</span>
+            <i class="fas fa-chevron-down adv-chev"></i>
+          </div>
+          ${advOpen[c.id] ? `
+            <div class="adv-cn-b">
+              ${(c.body || []).map(b => (b.h ? `<h4 class="adv-b-h">${advEsc(b.h)}</h4>` : '') + `<p>${advEsc(b.p)}</p>`).join('')}
+              <div class="adv-row"><span class="adv-k">关键数据</span><span class="adv-v">${advEsc(c.data)}</span></div>
+              <div class="adv-row edge"><span class="adv-k">锋利在哪</span><span class="adv-v">${advEsc(c.edge)}</span></div>
+              <div class="adv-row soft"><span class="adv-k">短板与风险</span><span class="adv-v">${advEsc(c.soft)}</span></div>
+              <div class="adv-row watch"><span class="adv-k">未来看点</span><span class="adv-v">${advEsc(c.watch)}</span></div>
+            </div>` : ''}
+        </div>`).join('')}
+    </div>
+
+    <div class="adv-sec"><i class="fas fa-globe"></i> 别的国家手里握着什么牌（${WORLD_ADVANTAGES.length} 个）</div>
+    <div class="adv-tools">
+      <input class="adv-search" placeholder="搜索国家 / 优势，如：石油、美元、芯片、锂" value="${advEsc(advKw)}" oninput="advSearch(this.value)">
+      <div class="adv-chips">
+        <button class="adv-chip ${advRegion === 'all' ? 'on' : ''}" onclick="advSetRegion('all')">全部</button>
+        ${regions.map(r => `<button class="adv-chip ${advRegion === r ? 'on' : ''}" onclick="advSetRegion('${advEsc(r)}')">${advEsc(r)}</button>`).join('')}
+      </div>
+    </div>
+    <div class="adv-world-grid">
+      ${list.map(w => `
+        <div class="adv-world ${advOpen[w.id] ? 'open' : ''}">
+          <div class="adv-w-h" onclick="advToggle('${w.id}')">
+            <span class="adv-w-flag">${w.flag || '🌐'}</span>
+            <div class="adv-w-t"><b>${advEsc(w.name)}</b><em>${advEsc(w.region)}</em></div>
+            <p class="adv-w-hl">${advEsc(w.headline)}</p>
+            <i class="fas fa-chevron-down adv-chev"></i>
+          </div>
+          <div class="adv-w-cards">${(w.cards || []).map(c => `<span class="adv-w-card">${advEsc(c)}</span>`).join('')}</div>
+          ${advOpen[w.id] ? `
+            <div class="adv-w-b">
+              ${(w.body || []).map(b => (b.h ? `<h4 class="adv-b-h">${advEsc(b.h)}</h4>` : '') + `<p>${advEsc(b.p)}</p>`).join('')}
+              <div class="adv-row"><span class="adv-k">关键数据</span><span class="adv-v">${advEsc(w.data)}</span></div>
+              <div class="adv-row soft"><span class="adv-k">软肋与应对</span><span class="adv-v">${advEsc(w.risk)}</span></div>
+              <div class="adv-row watch"><span class="adv-k">对我们意味着什么</span><span class="adv-v">${advEsc(w.learn)}</span></div>
+            </div>` : ''}
+        </div>`).join('')}
+    </div>
+    ${list.length === 0 ? '<div class="adv-empty">没有匹配的国家 / 地区</div>' : ''}
+
+    <div class="adv-sec"><i class="fas fa-balance-scale"></i> 关键牌面对比（${ADV_MATCHUP.length} 组）</div>
+    <div class="adv-match-grid">
+      ${ADV_MATCHUP.map(m => `
+        <div class="adv-match">
+          <div class="adv-m-h"><i class="fas ${m.icon || 'fa-balance-scale'}"></i> ${advEsc(m.title)}</div>
+          <table class="adv-m-tb">
+            <thead><tr><th>维度</th><th>中国</th><th>对方 / 世界</th></tr></thead>
+            <tbody>
+              ${(m.rows || []).map(r => `<tr><td class="adv-td-k">${advEsc(r.k)}</td><td>${advEsc(r.cn)}</td><td>${advEsc(r.other || r.us || '')}</td></tr>`).join('')}
+            </tbody>
+          </table>
+          <div class="adv-m-verdict">${advEsc(m.verdict)}</div>
+        </div>`).join('')}
+    </div>
+
+    <div class="adv-sec"><i class="fas fa-brain"></i> 看懂牌面的分析框架（${ADV_FRAMEWORKS.length} 个）</div>
+    <div class="adv-fw-grid">
+      ${ADV_FRAMEWORKS.map(f => `
+        <div class="adv-fw">
+          <div class="adv-fw-h">${advEsc(f.name)}</div>
+          <div class="adv-fw-d"><b>定义：</b>${advEsc(f.def)}</div>
+          <div class="adv-fw-r"><span class="adv-k">怎么用</span><span class="adv-v">${advEsc(f.how)}</span></div>
+          <div class="adv-fw-r"><span class="adv-k">举例</span><span class="adv-v">${advEsc(f.example)}</span></div>
+        </div>`).join('')}
+    </div>
+  `;
+  return html;
+}
+
+function advToggle(id) { advOpen[id] = !advOpen[id]; renderCountry($('#main-content')); injectUpdateBadge($('#main-content'), 'country'); }
+function advSetRegion(r) { advRegion = r; renderCountry($('#main-content')); injectUpdateBadge($('#main-content'), 'country'); }
+function advSearch(v) { advKw = v; renderCountry($('#main-content')); injectUpdateBadge($('#main-content'), 'country'); }
 
 /* ---------- 学习路径 ---------- */
 function renderCountryTracks() {
@@ -5465,12 +5600,121 @@ function showNewsDetail(id) {
           ${n.links.map(l => `<a href="${l.url}" target="_blank" class="news-link" style="margin-right:16px;">${l.label} <i class="fas fa-external-link-alt"></i></a>`).join('')}
         </div>
       ` : ''}
+
+      <div class="nc-wrap">
+        <div class="nc-head">
+          <span class="nc-title"><i class="fas fa-pen-nib"></i> 我的想法</span>
+          <span class="nc-sub">看完写下你的判断，AI 会帮你看哪句贴题、哪句需要补</span>
+        </div>
+        <textarea class="nc-input" id="nc-input" placeholder="比如：这件事为什么会发生？谁受影响？我该怎么看？写下你的判断…" oninput="ncSave('${n.id}', this.value)">${escapeHtml(ncNoteOf(n.id))}</textarea>
+        <div class="nc-actions">
+          <button class="nc-btn primary" onclick="ncRun('${n.id}')"><i class="fas fa-magic"></i> AI 帮我校正</button>
+          <button class="nc-btn ghost" onclick="ncClear('${n.id}')"><i class="fas fa-eraser"></i> 清空</button>
+          <span class="nc-tip"><i class="fas fa-shield-alt"></i> 分析在你本机完成，不上传任何内容</span>
+        </div>
+        <div id="nc-result">${ncResultHtml(n.id)}</div>
+      </div>
     </div>
   `;
   modal.addEventListener('click', e => {
     if (e.target === modal) modal.remove();
   });
   document.body.appendChild(modal);
+}
+
+/* ============================================
+   每日大事件 · 我的想法 + AI 自动校正（本地引擎，见 js/news-check.js）
+   ============================================ */
+function ncNoteOf(id) { return (loadData('news_notes', {})[id]) || ''; }
+
+function ncSave(id, val) {
+  const m = loadData('news_notes', {});
+  if (val && val.trim()) m[id] = val; else delete m[id];
+  saveData('news_notes', m);
+  const box = document.getElementById('nc-result');
+  if (box) box.innerHTML = ncResultHtml(id);
+}
+
+function ncClear(id) {
+  const m = loadData('news_notes', {});
+  delete m[id];
+  saveData('news_notes', m);
+  const r = loadData('news_check', {});
+  delete r[id];
+  saveData('news_check', r);
+  const ta = document.getElementById('nc-input');
+  if (ta) ta.value = '';
+  const box = document.getElementById('nc-result');
+  if (box) box.innerHTML = '';
+  showToast('已清空这条想法');
+}
+
+function ncRun(id) {
+  const recent = getRecentNews(3);
+  const n = recent.find(x => x.id === id);
+  if (!n) return;
+  const note = ncNoteOf(id);
+  if (!note || !note.trim()) { showToast('先写点什么，再让 AI 校正 ✍️'); return; }
+  const r = ncCheck(n, note);
+  const store = loadData('news_check', {});
+  store[id] = r;
+  saveData('news_check', store);
+  const box = document.getElementById('nc-result');
+  if (box) box.innerHTML = ncResultHtml(id);
+  showToast('校正完成：' + r.level.t);
+}
+
+function ncResultHtml(id) {
+  const r = loadData('news_check', {})[id];
+  if (!r) return '';
+  const dimsOk = r.dims.filter(d => d.ok);
+  const dimsNo = r.dims.filter(d => !d.ok);
+  return `
+    <div class="nc-res">
+      <div class="nc-score-row">
+        <div class="nc-score" style="--c:${r.level.c}">
+          <svg viewBox="0 0 120 120" width="86" height="86">
+            <circle cx="60" cy="60" r="52" fill="none" stroke="#EFE9F2" stroke-width="12"/>
+            <circle cx="60" cy="60" r="52" fill="none" stroke="${r.level.c}" stroke-width="12"
+              stroke-linecap="round" stroke-dasharray="${Math.round(2 * Math.PI * 52 * r.score / 100)} 999"
+              transform="rotate(-90 60 60)"/>
+          </svg>
+          <div class="nc-score-t"><b>${r.score}</b><span>${r.level.t}</span></div>
+        </div>
+        <div class="nc-score-d">
+          <div class="nc-sd-t">贴合度分析</div>
+          <p>共 ${r.len} 字 · 命中关键术语 ${r.hit.length}/${r.terms.length} · 覆盖分析维度 ${dimsOk.length}/${r.dims.length}</p>
+          <div class="nc-bars">
+            ${r.dims.map(d => `<div class="nc-bar ${d.ok ? 'on' : ''}"><span>${d.label}</span><i></i></div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      ${r.hit.length ? `<div class="nc-block ok"><div class="nc-bt"><i class="fas fa-check-circle"></i> 你抓得准的地方</div>
+        <div class="nc-chips">${r.hit.slice(0, 10).map(h => `<span class="nc-chip ok">${escapeHtml(h)}</span>`).join('')}</div>
+        <p class="nc-note">这些关键词和事件核心高度吻合，说明你读进去了。</p></div>` : ''}
+
+      ${dimsNo.length ? `<div class="nc-block add"><div class="nc-bt"><i class="fas fa-plus-circle"></i> 还差这些维度（补上就完整了）</div>
+        ${dimsNo.map(d => `<div class="nc-dim"><b>${d.label}</b><span>${escapeHtml(d.tip)}</span></div>`).join('')}
+      </div>` : `<div class="nc-block ok"><div class="nc-bt"><i class="fas fa-star"></i> 六个维度全覆盖</div>
+        <p class="nc-note">事实、原因、影响、趋势、质疑、个人关联——你都照顾到了，这是一条很完整的批注。</p></div>`}
+
+      ${r.ptMiss.length ? `<div class="nc-block add"><div class="nc-bt"><i class="fas fa-lightbulb"></i> 这条新闻里你可能还没提到的要点</div>
+        <ul class="nc-pts">${r.ptMiss.map(p => `<li>${escapeHtml(p.length > 160 ? p.slice(0, 160) + '…' : p)}</li>`).join('')}</ul>
+        <p class="nc-note">不用照抄，挑一条写进你的想法里，判断会更有依据。</p></div>` : ''}
+
+      <div class="nc-advice">
+        <i class="fas fa-comment-dots"></i>
+        <div><b>一句话建议：</b>${escapeHtml(ncAdvice(r))}</div>
+      </div>
+    </div>`;
+}
+
+function ncAdvice(r) {
+  if (r.score >= 80) return '这条批注已经很扎实了。下次可以试着再往前一步：把"我认为"变成"我要做什么"，给它配一个具体动作。';
+  if (r.score >= 62) return '骨架有了，缺的是追问。挑一个还没覆盖的维度（比如"为什么会这样"或"跟我有什么关系"），再补两句就完整了。';
+  if (r.score >= 42) return '你写到了一些点，但还没形成判断。试试这个顺序：发生了什么 → 为什么会这样 → 谁受影响 → 我该怎么看。';
+  return '现在这段更像感想，不像分析。先用一句话复述事实，再补一句"为什么会这样"，分数会立刻上来。';
 }
 
 /* ============================================

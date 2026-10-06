@@ -67,15 +67,23 @@
   var COORD_EXTRA = { "北海道":[142.50,43.30],"冲绳":[127.68,26.21],"济州岛":[126.49,33.36],"济州":[126.49,33.36],
     "清迈":[98.99,18.79],"普吉岛":[98.34,7.88],"普吉":[98.34,7.88],"芽庄":[109.22,12.25],"塞班岛":[145.75,15.20],"塞班":[145.75,15.20],
     "圣托里尼":[25.38,36.39],"马尔代夫":[73.22,3.20],"巴厘岛":[115.22,-8.65],"夏威夷":[-157.86,21.31],"新西兰":[174.00,-41.00],"澳大利亚":[149.00,-25.00] };
-  // 合并成完整查表（CITY_COORDS 已含 487 个中外城市）
+  // 合并成完整查表：CITY_COORDS(487 中外城市) + COUNTY_COORDS(全国 3185 个市/县/区) + 省中心 + 境外别名
   var COORD_ALL = (function(){
     var m = {};
     var src = window.CITY_COORDS || {};
     Object.keys(src).forEach(function(k){ m[k]=src[k]; });
+    var ct = window.COUNTY_COORDS || {};
+    Object.keys(ct).forEach(function(k){ m[k]=ct[k]; });   // 县区级优先补齐，不覆盖已有
     Object.keys(PROV_CENTER).forEach(function(k){ if(!m[k]) m[k]=PROV_CENTER[k]; });
     Object.keys(COORD_EXTRA).forEach(function(k){ if(!m[k]) m[k]=COORD_EXTRA[k]; });
     return m;
   })();
+  // 行政归属查表（省 / 市）
+  function regionOf(name){
+    var I = window.COUNTY_INFO || {};
+    if(I[name]) return { p:I[name].p, c:I[name].c, lv:I[name].lv };
+    return null;
+  }
 
   function coordOf(city){
     if(!city) return null;
@@ -83,16 +91,25 @@
     if(C[city]) return C[city];
     var raw = String(city).trim();
     // 去掉常见前缀/后缀，提升「成都市」「杭州市」「中国香港」等匹配率
-    var norm = raw.replace(/^中国/, "").replace(/(市|县|区|镇|盟|自治州|自治区|特别行政区|地区|省|州)$/, "");
+    var norm = raw.replace(/^中国/, "").replace(/(市|县|区|旗|镇|盟|自治州|自治县|自治区|特别行政区|地区|省|州|林区|新区)$/, "");
     if(norm && C[norm]) return C[norm];
+    // 二级归一：再去掉一层（"九寨沟风景名胜区" → "九寨沟"）
+    var norm2 = norm.replace(/(风景区|风景名胜区|景区|古镇|古城|老街|新区|开发区)$/, "");
+    if(norm2 && C[norm2]) return C[norm2];
     // 别名：台湾 / 香港 / 澳门 / 内蒙 等
     var alias = { "台湾":"中国台湾","香港":"中国香港","澳门":"中国澳门","内蒙":"内蒙古","黑龙":"黑龙江" };
     if(alias[raw]) return C[alias[raw]];
-    // 子串兜底：「成都周边」「四川成都」也能命中成都
+    if(alias[norm]) return C[alias[norm]];
+    // 子串兜底：「成都周边」「四川成都」也能命中成都（优先选最长的匹配，避免短名误命中）
     if(raw.length >= 2){
-      var hit = null;
-      Object.keys(C).some(function(k){ if(k.indexOf(raw) >= 0 || raw.indexOf(k) >= 0){ hit = k; return true; } return false; });
-      if(hit) return C[hit];
+      var best = null, bestLen = 0;
+      Object.keys(C).forEach(function(k){
+        if(k.length < 2) return;
+        if(k.indexOf(raw) >= 0 || raw.indexOf(k) >= 0){
+          if(k.length > bestLen){ best = k; bestLen = k.length; }
+        }
+      });
+      if(best) return C[best];
     }
     return null;
   }
@@ -141,6 +158,59 @@
   }
 
   // ---------- 地图 ----------
+  // 视图层级：country(全国/世界) | province(某省的市级地图)
+  var mapLevel = "country";
+  var curProv = null;            // {name, code}
+  var provCache = {};            // code -> geojson
+  var provLoading = {};          // code -> promise
+  var pickMode = false;          // 手动选点模式
+  var pickTarget = null;         // {lng,lat}
+
+  // 省名 -> adcode（来自中国地图数据，含台湾省 / 港澳）
+  var PROV_ADCODE = (function(){
+    var m = {};
+    try{
+      (window.CHINA_GEO.features || []).forEach(function(f){
+        var pr = f.properties || {};
+        if(pr.name && pr.adcode) m[pr.name] = String(pr.adcode);
+      });
+    }catch(e){}
+    return m;
+  })();
+  // 省名别名 -> 标准名
+  var PROV_ALIAS = (function(){
+    var m = {};
+    ["北京","天津","河北","山西","内蒙古","辽宁","吉林","黑龙江","上海","江苏","浙江","安徽","福建","江西",
+     "山东","河南","湖北","湖南","广东","广西","海南","重庆","四川","贵州","云南","西藏","陕西","甘肃","青海",
+     "宁夏","新疆","台湾","香港","澳门"].forEach(function(s){
+      m[s] = s;
+      m[s + "省"] = s;
+      m[s + "市"] = s;
+      m[s + "自治区"] = s;
+      m[s + "壮族自治区"] = s;
+      m[s + "回族自治区"] = s;
+      m[s + "维吾尔自治区"] = s;
+      m[s + "特别行政区"] = s;
+    });
+    return m;
+  })();
+  function provStdName(n){
+    if(!n) return "";
+    if(PROV_ADCODE[n]) return n;
+    var s = String(n).replace(/(省|市|自治区|特别行政区|壮族|回族|维吾尔|地区)$/g, "");
+    var keys = Object.keys(PROV_ADCODE);
+    for(var i = 0; i < keys.length; i++){
+      var k = keys[i];
+      if(k === s) return k;
+      if(k.replace(/(省|市|自治区|特别行政区)$/g, "") === s) return k;
+    }
+    return "";
+  }
+  function provCodeOf(n){
+    var std = provStdName(n);
+    return std ? PROV_ADCODE[std] : "";
+  }
+
   function initMap(){
     try{
       if(!window.echarts){ console.error("[travel] echarts 未加载，地图不可用"); return; }
@@ -149,16 +219,122 @@
       echarts.registerMap("china", window.CHINA_GEO);
       if(window.WORLD_GEO) echarts.registerMap("world", window.WORLD_GEO);
       chart.on("click", function(p){
-        if(p.componentType === "series" && p.data && p.data.city){ openDetail(p.data.city); }
+        // 1) 散点：打开城市详情
+        if(p.componentType === "series" && p.data && p.data.city){ openDetail(p.data.city); return; }
+        // 2) 地图区域：全国视图下钻到省；省级视图下提示该市
+        if(p.componentType === "geo" || (p.componentType === "series" && p.seriesType === "map")){
+          var nm = p.name;
+          if(mapLevel === "country" && currentMap === "china"){ drillProvince(nm); }
+          else if(mapLevel === "province"){
+            var hits = records.filter(function(r){ return cityRegionName(r.city) === nm || r.city === nm; });
+            if(hits.length) openDetail(hits[0].city);
+            else toast("「" + nm + "」还没有记录。点右上角「＋ 添加旅行」就能点亮它 ✨");
+          }
+        }
       });
+      // 手动选点：取点击处的经纬度
+      try{
+        chart.getZr().on("click", function(e){
+          if(!pickMode || !chart) return;
+          var pt = [e.offsetX, e.offsetY];
+          var coord = chart.convertFromPixel({ geoIndex: 0 }, pt);
+          if(!coord || !isFinite(coord[0]) || !isFinite(coord[1])) return;
+          pickTarget = [Math.round(coord[0] * 10000) / 10000, Math.round(coord[1] * 10000) / 10000];
+          $("f-lng").value = pickTarget[0];
+          $("f-lat").value = pickTarget[1];
+          setPickMode(false);
+          toast("已选位置 " + pickTarget[0] + ", " + pickTarget[1] + "，可在弹窗里保存");
+          if($("modal").hidden){ openModal(null); }
+        });
+      }catch(e){ console.warn("[travel] 选点事件绑定失败", e); }
       window.addEventListener("resize", function(){ if(chart) chart.resize(); });
       // 根据已有记录选择默认视图（有境外记录且无境内时默认世界）
       var hasDomestic = false, hasWorld = false;
       records.forEach(function(r){ var c = coordOf(r.city); if(c){ if(scopeOf(c)==="china") hasDomestic=true; else hasWorld=true; } });
       currentMap = (hasWorld && !hasDomestic) ? "world" : "china";
-      syncMapToggle();
+      syncMapToggle(); syncCrumb();
       renderMap();
     }catch(e){ console.error("[travel] 地图初始化失败：", e); }
+  }
+
+  // 切换手动选点模式
+  function setPickMode(on){
+    pickMode = !!on;
+    var b = $("mc-pick");
+    if(b) b.classList.toggle("active", pickMode);
+    if(pickMode) toast("在地图上点一下，即可为该地点定位 📍");
+  }
+  window.togglePickMode = function(){ setPickMode(!pickMode); };
+
+  // 某条记录对应的「市级区域名」（用于省级地图着色）
+  function cityRegionName(city){
+    if(!city) return "";
+    var I = window.COUNTY_INFO || {};
+    if(I[city]) return I[city].c || city;
+    if(PROV[city]) return city;               // 地级市老数据
+    var n = String(city).replace(/(市|县|区|自治州|自治县|地区|盟)$/, "");
+    if(I[n]) return I[n].c || n;
+    return city;
+  }
+  // 某条记录所属省
+  function cityProvName(city){
+    var I = window.COUNTY_INFO || {};
+    if(I[city]) return I[city].p || "";
+    if(PROV[city]) return PROV[city];
+    var n = String(city).replace(/(市|县|区|自治州|自治县|地区|盟)$/, "");
+    if(I[n]) return I[n].p || "";
+    return "";
+  }
+
+  // 加载省级边界并下钻
+  function drillProvince(name){
+    var std = provStdName(name);
+    var code = provCodeOf(name);
+    if(!code){ toast("「" + name + "」暂无市级下钻数据"); return; }
+    function go(geo){
+      try{
+        echarts.registerMap("prov_" + code, geo);
+        provCache[code] = geo;
+        curProv = { name: std || name, code: code };
+        mapLevel = "province";
+        currentMap = "china";
+        syncMapToggle();
+        syncCrumb();
+        renderMap();
+        try{ chart.setOption({ geo:{ center: null, zoom: 1.05 } }); }catch(e){}
+        toast("已进入「" + (std || name) + "」市级地图，点区域可看记录");
+      }catch(e){ console.error(e); toast("地图加载失败"); }
+    }
+    if(provCache[code]) { go(provCache[code]); return; }
+    if(provLoading[code]) { provLoading[code].then(go).catch(function(){ toast("地图加载失败"); }); return; }
+    toast("正在加载「" + (std || name) + "」市级地图…");
+    provLoading[code] = fetch("data/prov/" + code + ".json").then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    });
+    provLoading[code].then(go).catch(function(){
+      toast("「" + (std || name) + "」暂无市级边界数据，已留在全国视图");
+    });
+  }
+  window.drillProvince = drillProvince;
+
+  window.backToCountry = function(){
+    mapLevel = "country"; curProv = null; syncCrumb(); renderMap(); window.resetMapView();
+  };
+
+  function syncCrumb(){
+    var box = $("map-crumb");
+    if(!box) return;
+    if(mapLevel === "province" && curProv){
+      box.innerHTML = '<button class="crumb" onclick="backToCountry()">🗺️ 全国</button>' +
+        '<span class="crumb-sep">›</span><span class="crumb cur">📍 ' + esc(curProv.name) +
+        '</span><span class="crumb-tip">点击市区域看记录，返回全国看全部</span>';
+      box.hidden = false;
+    } else {
+      box.innerHTML = '<span class="crumb cur">🗺️ 全国视图</span>' +
+        '<span class="crumb-tip">点任意省份可下钻到它的市级地图</span>';
+      box.hidden = false;
+    }
   }
   // 复位视图（按当前中国/世界视图居中）
   window.resetMapView = function(){
@@ -169,7 +345,8 @@
   // 切换 中国 / 世界 视图
   function setScope(map){
     if(map !== "china" && map !== "world") return;
-    currentMap = map; syncMapToggle(); renderMap(); window.resetMapView();
+    mapLevel = "country"; curProv = null;
+    currentMap = map; syncMapToggle(); syncCrumb(); renderMap(); window.resetMapView();
   }
   window.setScope = setScope;
   function syncMapToggle(){
@@ -194,19 +371,58 @@
     return map;
   }
 
+  // 优先用记录自带的经纬度（手动选点 / 后来补录），其次查坐标库
+  function coordForCity(city){
+    for(var i = 0; i < records.length; i++){
+      var r = records[i];
+      if(r.city === city && r.lng != null && r.lat != null && isFinite(r.lng) && isFinite(r.lat)){
+        return [r.lng, r.lat];
+      }
+    }
+    return null;
+  }
+
+  // 省级视图：把每个市按记录状态着色（已去过 > 计划去 > 未来去）
+  function provRegions(){
+    var stat = {};   // 市级区域名 -> visited/planned/future
+    records.forEach(function(r){
+      var reg = cityRegionName(r.city);
+      if(!reg) return;
+      var pv = cityProvName(r.city);
+      if(curProv && pv && provStdName(pv) !== curProv.name && pv !== curProv.name) return;
+      var s = r.status || "planned";
+      var rank = { visited:3, planned:2, future:1 };
+      if(!stat[reg] || (rank[s] || 0) > (rank[stat[reg]] || 0)) stat[reg] = s;
+    });
+    var color = { visited:"#ffcf7a", planned:"#a9c8f5", future:"#cbb8ec" };
+    return Object.keys(stat).map(function(n){
+      return { name:n, itemStyle:{ areaColor: color[stat[n]] || "#f4f0e8" } };
+    });
+  }
+
   function renderMap(){
     if(!chart) return;
     var agg = aggregate();
     var visitedData = [], plannedData = [], futureData = [];
     Object.keys(agg).forEach(function(city){
-      var c = coordOf(city);
+      var c = coordForCity(city) || coordOf(city);
       if(!c) return; // 无坐标则不在地图点亮
+      // 省级视图只显示属于该省的点，全国视图按视野过滤
+      if(mapLevel === "province" && curProv){
+        var pv = cityProvName(city);
+        if(pv && provStdName(pv) !== curProv.name && pv !== curProv.name) return;
+      } else if(currentMap === "china" && scopeOf(c) !== "china") return;
+      else if(currentMap === "world" && scopeOf(c) !== "world") return;
       var g = agg[city];
       // 三种状态各自独立成序列，确保都显示在地图上
       if(g.visited > 0) visitedData.push({ name:city, value: c.concat(g.visited), city:city });
       if(g.planned > 0) plannedData.push({ name:city, value: c.concat(g.planned), city:city });
       if(g.future  > 0) futureData.push({ name:city, value: c.concat(g.future),  city:city });
     });
+
+    var geoName = (mapLevel === "province" && curProv) ? ("prov_" + curProv.code) : currentMap;
+    var regions = (mapLevel === "province" && curProv) ? provRegions()
+      : [ { name:"南海诸岛", itemStyle:{opacity:0}, label:{show:false} } ];
 
     try{
     chart.setOption({
@@ -225,18 +441,23 @@
             if(g.visited>0){ var top = Object.keys(g.moods).sort(function(a,b){return g.moods[b]-g.moods[a];})[0]; if(top) mood = "　心情 " + top; }
             return "<b>" + p.name + "</b><br>" + st + mood + (g.latest? "<br>最近：" + g.latest : "");
           }
-          return p.name;
+          if(mapLevel === "province"){
+            var hits = records.filter(function(r){ return cityRegionName(r.city) === p.name || r.city === p.name; });
+            if(hits.length) return "<b>" + p.name + "</b><br>有 " + hits.length + " 条记录，点击查看";
+            return "<b>" + p.name + "</b><br>还没有记录" + (p.name ? "<br><span style='font-size:11px;opacity:.7'>点一下可去添加</span>" : "");
+          }
+          return "<b>" + p.name + "</b><br><span style='font-size:11px;opacity:.75'>点一下进入市级地图</span>";
         }
       },
       geo: {
-        map: currentMap,
+        map: geoName,
         roam: true,
         zoom: 1.18,
         scaleLimit:{ min:1, max:8 },
         itemStyle: { areaColor:"#f4f0e8", borderColor:"#cfc7b6", borderWidth:0.6 },
         emphasis: { itemStyle:{ areaColor:"#ffe6cf" }, label:{ show:false } },
-        label: { show:false },
-        regions: [ { name:"南海诸岛", itemStyle:{opacity:0}, label:{show:false} } ]
+        label: { show: (mapLevel === "province"), color:"#6b5a7a", fontSize:10 },
+        regions: regions
       },
       series: [
         {
@@ -272,6 +493,84 @@
   function resetMapView(){
     if(!chart) return;
     chart.setOption({ geo:{ center:[104,36], zoom:1.18 } });
+  }
+
+  /* ================= 地点选择：省 / 市 / 县区 三级联动 ================= */
+  var locMode = "cn";
+  window.setLocMode = function(m){
+    locMode = m;
+    Array.prototype.forEach.call(document.querySelectorAll(".lm"), function(b){
+      b.classList.toggle("active", b.dataset.mode === m);
+    });
+    $("loc-cn").style.display = (m === "cn") ? "" : "none";
+    var ph = (m === "cn") ? "地名，如：九寨沟县 / 大理市（支持到县区一级）"
+                          : "境外地名，如：巴黎 / 东京 / 清迈";
+    $("f-city").placeholder = ph;
+  };
+
+  function fillProvSelect(){
+    var sel = $("f-prov");
+    if(!sel) return;
+    var tree = window.REGION_TREE || {};
+    var names = Object.keys(tree).sort(function(a,b){ return a.localeCompare(b,"zh"); });
+    sel.innerHTML = '<option value="">选择省 / 自治区 / 直辖市</option>' +
+      names.map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join("");
+  }
+  function cityListOf(prov){
+    var tree = window.REGION_TREE || {};
+    return Object.keys(tree[prov] || {}).sort(function(a,b){ return a.localeCompare(b,"zh"); });
+  }
+  window.onProvChange = function(){
+    var p = $("f-prov").value;
+    var cs = $("f-citysel"), ct = $("f-county");
+    if(!p){ cs.innerHTML = '<option value="">选择市 / 地区</option>'; ct.innerHTML = '<option value="">选择县 / 区（可选）</option>'; $("f-city").value = ""; updateLocHint(); return; }
+    var list = cityListOf(p);
+    cs.innerHTML = '<option value="">选择市 / 地区（可选）</option>' +
+      list.map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join("");
+    ct.innerHTML = '<option value="">选择县 / 区（可选）</option>';
+    $("f-city").value = p;
+    $("f-provname").value = p;
+    $("f-region").value = "";
+    updateLocHint();
+  };
+  window.onCityChange = function(){
+    var p = $("f-prov").value, c = $("f-citysel").value;
+    var ct = $("f-county");
+    if(!c){ ct.innerHTML = '<option value="">选择县 / 区（可选）</option>'; $("f-city").value = p || ""; $("f-region").value=""; updateLocHint(); return; }
+    var tree = window.REGION_TREE || {};
+    var subs = (tree[p] && tree[p][c]) ? tree[p][c].slice() : [];
+    // 去掉与市同名的那一项，避免重复
+    subs = subs.filter(function(n){ return n !== c; });
+    ct.innerHTML = '<option value="">选择县 / 区（可选）</option>' +
+      subs.map(function(n){ return '<option value="'+esc(n)+'">'+esc(n)+'</option>'; }).join("");
+    $("f-city").value = c;
+    $("f-region").value = c;
+    updateLocHint();
+  };
+  window.onCountyChange = function(){
+    var v = $("f-county").value;
+    if(v){
+      $("f-city").value = v;
+      $("f-region").value = $("f-citysel").value || "";
+    } else {
+      $("f-city").value = $("f-citysel").value || $("f-prov").value || "";
+      $("f-region").value = $("f-citysel").value || "";
+    }
+    updateLocHint();
+  };
+  function updateLocHint(){
+    var el = $("loc-hint");
+    if(!el) return;
+    var name = $("f-city").value;
+    var c = coordOf(name);
+    var info = regionOf(name);
+    if(!name){ el.innerHTML = "💡 可以直接输入任意地名；也可以上面三级选择，或在地图上「手动选点」。"; return; }
+    var parts = [];
+    if(info) parts.push("归属：" + info.p + (info.c && info.c !== info.p ? " · " + info.c : ""));
+    if(c) parts.push("坐标 " + c[0] + ", " + c[1] + "（✓ 可在地图点亮）");
+    else parts.push("⚠ 坐标库暂无此地名，仍会保存但不在地图点亮——可改填标准地名，或用「手动选点」");
+    el.innerHTML = "💡 " + parts.join("　|　");
+    el.className = "loc-hint" + (c ? " ok" : " warn");
   }
 
   // ---------- 卡片 ----------
@@ -383,7 +682,21 @@
     formAttractions = rec ? (rec.attractions || []).slice() : [];
     formPhotos = rec ? (rec.photos || []).slice() : [];
     $("f-note").value = rec ? (rec.note || "") : "";
+    // 三级联动回填
+    var pv = rec ? (rec.province || "") : "";
+    var rg = rec ? (rec.region || "") : "";
+    $("f-prov").value = pv;
+    onProvChange();
+    if(rg && rg !== pv){
+      var hit = false;
+      Array.prototype.forEach.call($("f-citysel").options, function(o){ if(o.value === rg) hit = true; });
+      if(hit){ $("f-citysel").value = rg; onCityChange(); }
+    }
+    $("f-lng").value = (rec && rec.lng != null) ? rec.lng : "";
+    $("f-lat").value = (rec && rec.lat != null) ? rec.lat : "";
+    if(!rec){ pickTarget = null; }
     renderFormTags(); renderFormPhotos();
+    updateLocHint();
     $("modal").hidden = false;
   }
   function closeModal(){ $("modal").hidden = true; }
@@ -562,8 +875,17 @@
 
   // ---------- 事件绑定 ----------
   function bind(){
-    // 城市 datalist
-    $("city-list").innerHTML = (window.CITY_NAMES||[]).map(function(n){ return '<option value="'+esc(n)+'">'; }).join("");
+    // 城市 datalist：合并原有城市名 + 全国市/县/区名（支持到县区一级）
+    var nm = (window.CITY_NAMES||[]).slice();
+    (window.COUNTY_DATA||[]).forEach(function(r){ nm.push(r[0]); });
+    var seen = {}, uniq = [];
+    nm.forEach(function(n){ if(!seen[n]){ seen[n]=1; uniq.push(n); } });
+    $("city-list").innerHTML = uniq.map(function(n){ return '<option value="'+esc(n)+'">'; }).join("");
+
+    // 省 / 市 / 县区 三级联动
+    fillProvSelect();
+    setLocMode("cn");
+    $("f-city").addEventListener("input", updateLocHint);
 
     $("btn-add").onclick = function(){ openModal(null); };
     $("modal-close").onclick = closeModal;
@@ -610,10 +932,18 @@
       var city = $("f-city").value.trim();
       if(!city){ toast("请填写城市名称"); return; }
       var hasCoord = !!coordOf(city);
+      var info = regionOf(city);
+      var provName = info ? info.p : (PROV[city] || ($("f-provname").value || ""));
+      var regName  = info ? (info.c || info.p) : ($("f-region").value || "");
+      var lng = parseFloat($("f-lng").value), lat = parseFloat($("f-lat").value);
+      if(isFinite(lng) && isFinite(lat)) hasCoord = true;   // 手动选点也算有坐标
       var rec = {
         id: editingId || uid(),
         city: city,
-        province: PROV[city] || "",
+        province: provName || "",
+        region: regName || "",
+        lng: isFinite(lng) ? lng : (coordOf(city) ? coordOf(city)[0] : null),
+        lat: isFinite(lat) ? lat : (coordOf(city) ? coordOf(city)[1] : null),
         status: formStatus,
         date: $("f-date").value || "",
         mood: formMood,

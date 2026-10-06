@@ -1,7 +1,7 @@
 // 马雯的工作台 · Service Worker（v7 · 离线可用 + 更新必达版）
 // 目标：手机只要成功加载过一次，之后云端休眠 / 电脑关机也能离线秒开；
 //       联网时后台静默更新，保证内容不断更；新版本部署后强制重新缓存，更新必达。
-const CACHE = 'mw-workbench-v21';
+const CACHE = 'mw-workbench-v22';
 
 // 应用外壳：全部需要离线打开的同源资源
 const CORE = [
@@ -20,7 +20,15 @@ const CORE = [
   './js/data-country.js',
   './js/data-country-auto.js',
   './js/data-country-deep.js',
+  './js/data-country-focus.js',
   './js/data-country-track.js',
+  './js/data-country-advantage.js',
+  './js/news-check.js',
+  './js/data-gua64.js',
+  './js/data-destiny.js',
+  './js/data-tarot.js',
+  './js/destiny.js',
+  './js/tarot.js',
   './js/data-english.js',
   './js/data-finance.js',
   './js/data-geography.js',
@@ -58,7 +66,18 @@ const CORE = [
   './assets/board-icons/beauty.svg',
   './assets/board-icons/pet.svg',
   './assets/board-icons/country.svg',
-  './assets/board-icons/travel.svg'
+  './assets/board-icons/travel.svg',
+  './assets/board-icons/destiny.svg',
+  './assets/board-icons/tarot.svg',
+  // 旅行地图子应用（iframe，离线也要能开）
+  './travel-board/index.html',
+  './travel-board/css/style.css',
+  './travel-board/js/app.js',
+  './travel-board/js/cities.js',
+  './travel-board/js/county-coords.js',
+  './travel-board/js/echarts.min.js',
+  './travel-board/data/china.geo.js',
+  './travel-board/data/world.geo.js'
 ];
 
 self.addEventListener('install', (event) => {

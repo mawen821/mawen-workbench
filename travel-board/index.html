@@ -74,13 +74,15 @@
       <button class="mc active" data-scope="china" onclick="setScope('china')">🗺️ 中国</button>
       <button class="mc" data-scope="world" onclick="setScope('world')">🌏 世界</button>
       <button class="mc" onclick="resetMapView()">🔍 复位</button>
+      <button class="mc" id="mc-pick" onclick="togglePickMode()">📍 手动选点</button>
     </div>
+    <div class="map-crumb" id="map-crumb"></div>
     <div id="map"></div>
       <div class="map-legend">
         <span><i class="dot visited"></i>已去过（点亮）</span>
         <span><i class="dot planned"></i>计划去</span>
         <span><i class="dot future"></i>未来去</span>
-        <span class="hint">点亮点查看城市详情，鼠标悬停看状态与心情</span>
+        <span class="hint">点省份可下钻到市级地图；点亮点看详情；地名支持到县 / 区一级</span>
       </div>
   </section>
 
@@ -97,9 +99,21 @@
     <form id="trip-form" class="form">
       <input type="hidden" id="f-id">
       <div class="row">
-        <label>城市 *</label>
-        <input type="text" id="f-city" list="city-list" placeholder="如：成都 / 丽江 / 巴黎（境外自动进世界地图）" autocomplete="off" required>
+        <label>地点 *</label>
+        <div class="loc-mode">
+          <button type="button" class="lm active" data-mode="cn" onclick="setLocMode('cn')">🇨🇳 国内（省 / 市 / 县区）</button>
+          <button type="button" class="lm" data-mode="world" onclick="setLocMode('world')">🌏 境外 / 其他</button>
+        </div>
+        <div class="loc-cn" id="loc-cn">
+          <select id="f-prov" onchange="onProvChange()"><option value="">选择省 / 自治区 / 直辖市</option></select>
+          <select id="f-citysel" onchange="onCityChange()"><option value="">选择市 / 地区</option></select>
+          <select id="f-county" onchange="onCountyChange()"><option value="">选择县 / 区（可选）</option></select>
+        </div>
+        <input type="text" id="f-city" list="city-list" placeholder="地名，如：九寨沟县 / 大理市 / 巴黎（支持到县区一级）" autocomplete="off" required>
         <datalist id="city-list"></datalist>
+        <div class="loc-hint" id="loc-hint">💡 可以直接输入任意地名；也可以上面三级选择，或在地图上「手动选点」。</div>
+        <input type="hidden" id="f-lng"><input type="hidden" id="f-lat">
+        <input type="hidden" id="f-region"><input type="hidden" id="f-provname">
       </div>
       <div class="row">
         <label>状态</label>
@@ -177,6 +191,7 @@
 
 <script src="js/echarts.min.js"></script>
 <script src="js/cities.js"></script>
+<script src="js/county-coords.js"></script>
 <script src="data/china.geo.js"></script>
 <script src="data/world.geo.js"></script>
 <script src="../js/imgstore.js"></script>
