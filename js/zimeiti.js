@@ -652,6 +652,39 @@ function delZmHot(id) {
 }
 
 // ===== 板块三：复盘&选题（本周灵感 inbox + 复盘） =====
+function saveZmReview() {
+  var date = (document.getElementById('zm-rv-date') || {}).value || zmDateKey();
+  var platform = (document.getElementById('zm-rv-platform') || {}).value || '抖音';
+  var type = (document.getElementById('zm-rv-type') || {}).value || '宠物';
+  var topic = (document.getElementById('zm-rv-topic') || {}).value.trim();
+  if (!topic) { showToast('先填选题 / 产品名', 'error'); return; }
+  var link = (document.getElementById('zm-rv-link') || {}).value.trim();
+  var views = parseInt((document.getElementById('zm-rv-views') || {}).value, 10) || 0;
+  var likes = parseInt((document.getElementById('zm-rv-likes') || {}).value, 10) || 0;
+  var comments = parseInt((document.getElementById('zm-rv-comments') || {}).value, 10) || 0;
+  var strength = (document.getElementById('zm-rv-strength') || {}).value.trim();
+  var weak = (document.getElementById('zm-rv-weak') || {}).value.trim();
+  var suggestions = [];
+  ZM_REVIEW_CHECKS.forEach(function (ck) {
+    var el = document.getElementById('zmck-' + ck.key);
+    if (!el || !el.checked) suggestions.push(ck.tip);
+  });
+  var nextOpt = suggestions.length
+    ? '下次优先补强：' + suggestions[0]
+    : '本次做得不错，保持每周复盘节奏，用数据持续迭代。';
+  var reviews = loadData('mw_zm_review', []);
+  reviews.unshift({
+    id: 'zr-' + Date.now(),
+    date: date, platform: platform, type: type, topic: topic, link: link,
+    views: views, likes: likes, comments: comments,
+    strength: strength, weak: weak,
+    suggestions: suggestions, nextOpt: nextOpt
+  });
+  saveData('mw_zm_review', reviews);
+  showToast('复盘已保存');
+  if (zmContainer) renderZimeiti(zmContainer);
+}
+
 function zmReviewHTML() {
   var reviews = loadData('mw_zm_review', []);
   var __h = `
