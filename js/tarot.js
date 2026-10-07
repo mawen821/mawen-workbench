@@ -8,6 +8,7 @@
 var tarotTab = 'today';
 var tarotStage = '';
 var tarotOpen = {};
+var tarotTouched = false;     // 用户是否手动操作过课程展开
 var tarotArcana = 'all';
 var tarotSuit = 'all';
 var tarotKw = '';
@@ -46,7 +47,7 @@ function renderTarot(c) {
     '<div class="module-content">' +
       '<div class="module-header"><div>' +
         '<h1><i class="fas fa-moon"></i> 西方塔罗</h1>' +
-        '<div class="subtitle">78 张牌 · 从新手到能给人解读 —— 系统课程学完自动解锁下一阶段</div>' +
+        '<div class="subtitle">78 张牌 · 从新手到能给人解读 —— 全部课程随时可学，今日一牌每日自动更新</div>' +
       '</div></div>' +
       '<div class="mw-tabs">' +
         tabs.map(function (t) {
@@ -74,9 +75,14 @@ function renderTarotBody() {
     spread: renderTarotSpread, skill: renderTarotSkill, combo: renderTarotCombo, fav: renderTarotFav
   }[tarotTab];
   box.innerHTML = f ? f() : '';
-  if (tarotTab === 'course') {
+  // 首次进入某阶段、且用户还没手动展开任何课程时，默认展开第一课（用标志位防止递归）
+  if (tarotTab === 'course' && !tarotTouched) {
     var first = TAROT_COURSE.filter(function (x) { return x.stage === tarotStage; })[0];
-    if (first && !tarotOpen[first.id]) toggleTarotCourse(first.id, true);
+    if (first) {
+      tarotTouched = true;
+      tarotOpen[first.id] = true;
+      renderTarotBody();
+    }
   }
 }
 
@@ -198,9 +204,11 @@ function renderTarotLessonBody(c, nt, isDone) {
       }).join('') + '</div>' : '') +
     '<div class="mw-note"><div class="mw-note-l"><i class="fas fa-pen-nib"></i> 我的笔记（写完自动保存）</div>' +
       '<textarea class="mw-note-i" placeholder="这一课你记住了什么？" oninput="trSave(\'tar_notes\',\'' + c.id + '\',this.value)">' + escapeHtml(nt) + '</textarea></div>' +
-    '<div class="mw-actions"><button class="mw-btn ' + (isDone ? 'ghost' : 'primary') + '" onclick="trToggleDone(\'' + c.id + '\')">' +
-      (isDone ? '↩ 取消「已学完」' : '✓ 标记学完，推进下一阶段') + '</button>' +
-      (c.keywords || []).length ? '<div class="mw-kws">' + c.keywords.map(function (k) { return '<i>' + escapeHtml(k) + '</i>'; }).join('') + '</div>' : '' +
+    '<div class="mw-actions">' +
+      '<button class="mw-btn ' + (isDone ? 'ghost' : 'primary') + '" onclick="trToggleDone(\'' + c.id + '\')">' +
+        (isDone ? '↩ 取消「已学完」' : '✓ 标记学完，推进下一阶段') +
+      '</button>' +
+      (((c.keywords || []).length) ? ('<div class="mw-kws">' + c.keywords.map(function (k) { return '<i>' + escapeHtml(k) + '</i>'; }).join('') + '</div>') : '') +
     '</div></div>';
 }
 function trSave(ns, k, v) { var m = loadData(ns, {}); if (v && v.trim()) m[k] = v; else delete m[k]; saveData(ns, m); }

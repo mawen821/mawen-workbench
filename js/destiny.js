@@ -35,18 +35,14 @@ function mwStageState(ns, stages, courses) {
     list.forEach(function (c) { if (done[c.id]) d++; });
     var total = list.length;
     var pct = total ? d / total : 0;
-    var unlocked = false, reason = '';
-    if (i === 0) { unlocked = true; reason = '起始阶段'; }
-    else {
-      var prev = out[i - 1];
-      if (prev.pct >= 0.6) { unlocked = true; reason = '上一阶段完成 ' + Math.round(prev.pct * 100) + '%'; }
-      else if (startDays >= i * 7) { unlocked = true; reason = '学习第 ' + startDays + ' 天，自动开放'; }
-      else {
-        reason = '还需再学 ' + Math.max(1, Math.ceil(prev.total * 0.6) - prev.done) +
-          ' 课解锁（或 ' + (i * 7 - startDays) + ' 天后自动开放）';
-      }
-    }
-    out.push({ stage: st, list: list, total: total, done: d, pct: pct, unlocked: unlocked, reason: reason });
+    /* 全部阶段一律开放：不再要求"学完上一阶段"才能进入下一阶段。
+       顺序只是「建议路径」，进度照常记录，可随时跳读任意课程。 */
+    var unlocked = true, reason = '';
+    var prev = i > 0 ? out[i - 1] : null;
+    if (i === 0) reason = '建议从这里开始';
+    else if (prev && prev.pct >= 0.6) reason = '上一阶段已完成 ' + Math.round(prev.pct * 100) + '%，继续推进';
+    else reason = '建议先学前一阶段，但也可以直接跳读';
+    out.push({ stage: st, list: list, total: total, done: d, pct: pct, unlocked: unlocked, reason: reason, suggested: (i === 0 || (prev && prev.pct >= 0.6)) });
   }
   return out;
 }
@@ -72,6 +68,7 @@ function mwTodayLesson(ns, stages, courses, dailyPool) {
 var destinyTab = 'today';
 var destinyStage = '';
 var destinyOpen = {};
+var destinyTouched = false;   // 用户是否手动操作过课程展开
 var destinyGuaKw = '';
 var destinyGuaArcana = 'all';
 
@@ -101,7 +98,7 @@ function renderDestiny(c) {
     '<div class="module-content">' +
       '<div class="module-header"><div>' +
         '<h1><i class="fas fa-yin-yang"></i> 东方命理</h1>' +
-        '<div class="subtitle">小六壬 · 易经八卦 · 五行干支 —— 从新手到能实践的系统课（学完自动解锁下一阶段）</div>' +
+        '<div class="subtitle">小六壬 · 易经八卦 · 五行干支 —— 从新手到能实践的系统课（全部课程随时可学，今日内容每日自动更新）</div>' +
       '</div></div>' +
       '<div class="mw-tabs">' +
         tabs.map(function (t) {
@@ -134,9 +131,14 @@ function renderDestinyBody() {
     case: renderDestinyCase, note: renderDestinyNote
   }[destinyTab];
   box.innerHTML = f ? f() : '';
-  if (destinyTab === 'course') {
+  // 首次进入某阶段、且用户还没手动展开任何课程时，默认展开第一课（用标志位防止递归）
+  if (destinyTab === 'course' && !destinyTouched) {
     var first = DESTINY_COURSE.filter(function (x) { return x.stage === destinyStage; })[0];
-    if (first && !destinyOpen[first.id]) toggleDestinyCourse(first.id, true);
+    if (first) {
+      destinyTouched = true;
+      destinyOpen[first.id] = true;
+      renderDestinyBody();
+    }
   }
 }
 
@@ -181,12 +183,12 @@ function renderDestinyToday() {
         '</div></div>';
   }
 
-  html += '<div class="mw-sec-t"><i class="fas fa-route"></i> 学习路径（学完自动解锁下一阶段）</div><div class="mw-stage-list">';
+  html += '<div class="mw-sec-t"><i class="fas fa-route"></i> 学习路径（全部开放，按建议顺序读效果最好）</div><div class="mw-stage-list">';
   ss.forEach(function (s, i) {
     var pctN = Math.round(s.pct * 100);
-    html += '<div class="mw-stage ' + (s.unlocked ? '' : 'locked') + '" onclick="switchDestinyStage(\'' + s.stage.id + '\')">' +
+    html += '<div class="mw-stage ' + (s.suggested ? '' : 'locked') + '" onclick="switchDestinyStage(\'' + s.stage.id + '\')">' +
       '<div class="mw-stage-h"><i class="fas ' + s.stage.icon + '"></i> ' + escapeHtml(s.stage.label) +
-        (s.unlocked ? '' : ' <span class="mw-lock">🔒</span>') + '</div>' +
+        (s.pct >= 1 ? ' <span class="mw-lock">✅</span>' : '') + '</div>' +
       '<div class="mw-stage-bar"><i style="width:' + pctN + '%"></i></div>' +
       '<div class="mw-stage-f"><span>' + s.done + '/' + s.total + ' 课 · ' + pctN + '%</span>' +
         '<span class="mw-stage-r">' + (s.unlocked ? '已开放' : escapeHtml(s.reason)) + '</span></div>' +
