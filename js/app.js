@@ -5585,6 +5585,216 @@ function formatDate(ts) {
 /* ============================================
    每日大事件板块
    ============================================ */
+
+
+/* ============================================================
+   每日大事件 · 前沿速递（新兴行业前沿资料，每日自动轮换）
+   ------------------------------------------------------------
+   说明：工作台是纯离线 PWA，抓不到实时新闻。这里的做法是
+   ① 前沿「知识卡」库按天轮换 —— 每天都有新内容，且不过时
+   ② 每条配权威信息源链接 —— 点一下就能看到当下真实最新的消息
+   ============================================================ */
+let currentNewsView = 'news';          // 'news' | 'frontier'
+let frontierSector = 'all';
+let frontierOpen = {};
+let frontierLevel = 'all';
+
+function frEsc(s) {
+  return (s == null ? '' : String(s)).replace(/[&<>"]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[m]));
+}
+function frSector(id) {
+  return (typeof FRONTIER_SECTORS !== 'undefined')
+    ? FRONTIER_SECTORS.find(s => s.id === id) || { id: id, name: id, emoji: '🔹' } : { id: id, name: id, emoji: '🔹' };
+}
+function frFavs() { return loadData('mw_frontier_fav', {}); }
+
+/* 今日前沿：按天取 3 条，逐日推进 */
+function frontierTodayItems(n) {
+  const d = new Date();
+  const start = Date.UTC(d.getUTCFullYear(), 0, 0);
+  const day = Math.floor((d.getTime() - start) / 86400000);
+  const len = FRONTIER_DAILY.length;
+  const out = [];
+  for (let i = 0; i < (n || 3); i++) out.push(FRONTIER_DAILY[(day * (n || 3) + i) % len]);
+  return out;
+}
+
+/* 大事件页顶部那张「今日前沿」小卡 */
+function renderNewsFrontierTeaser() {
+  if (typeof FRONTIER_DAILY === 'undefined' || !FRONTIER_DAILY.length) return '';
+  const items = frontierTodayItems(1);
+  const it = items[0];
+  const sec = frSector(it.sector);
+  return `
+    <div class="fr-teaser">
+      <div class="fr-teaser-h">
+        <span class="fr-t-tag">🚀 今日前沿</span>
+        <span class="fr-t-sec">${sec.emoji} ${frEsc(sec.name)}</span>
+        <span class="fr-t-lv">${frEsc(it.level)}</span>
+        <button class="fr-t-more" onclick="switchNewsView('frontier')">看全部前沿 <i class="fas fa-arrow-right"></i></button>
+      </div>
+      <div class="fr-teaser-t">${frEsc(it.title)}</div>
+      <p class="fr-teaser-p">${frEsc(it.text)}</p>
+      <div class="fr-teaser-take"><i class="fas fa-lightbulb"></i> ${frEsc(it.takeaway)}</div>
+    </div>`;
+}
+
+function switchNewsView(v) {
+  currentNewsView = v;
+  renderNews($('#main-content'));
+  injectUpdateBadge($('#main-content'), 'news');
+}
+
+/* ---------- 前沿速递主页 ---------- */
+function renderNewsFrontier() {
+  const items = frontierTodayItems(3);
+  const fav = frFavs();
+  const levels = [];
+  FRONTIER_DAILY.forEach(d => { if (levels.indexOf(d.level) < 0) levels.push(d.level); });
+
+  // 行业全景
+  let secList = FRONTIER_SECTORS.slice();
+  if (frontierSector !== 'all') secList = secList.filter(s => s.id === frontierSector);
+
+  // 知识卡池（筛选后可浏览全部）
+  let pool = FRONTIER_DAILY.filter(d => {
+    if (frontierSector !== 'all' && d.sector !== frontierSector) return false;
+    if (frontierLevel !== 'all' && d.level !== frontierLevel) return false;
+    return true;
+  });
+  const poolShown = pool.slice(0, 12);
+
+  const srcCats = [];
+  FRONTIER_SOURCES.forEach(s => { if (srcCats.indexOf(s.cat) < 0) srcCats.push(s.cat); });
+
+  return `
+    <div class="fr-panel">
+      <div class="fr-hero">
+        <div class="fr-hero-h"><i class="fas fa-rocket"></i> 今日前沿 · 3 条</div>
+        <div class="fr-hero-s">每天自动换新 · 共 ${FRONTIER_DAILY.length} 条前沿知识卡 · ${FRONTIER_SECTORS.length} 个新兴行业</div>
+        <div class="fr-hero-grid">
+          ${items.map(it => {
+            const sec = frSector(it.sector);
+            const isFav = !!fav[it.id];
+            return `<div class="fr-card">
+              <div class="fr-card-h">
+                <span class="fr-c-sec">${sec.emoji} ${frEsc(sec.name)}</span>
+                <span class="fr-c-lv">${frEsc(it.level)}</span>
+                <button class="fr-fav ${isFav ? 'on' : ''}" onclick="frontierFav('${it.id}')" title="${isFav ? '取消收藏' : '收藏'}">${isFav ? '★' : '☆'}</button>
+              </div>
+              <h3>${frEsc(it.title)}</h3>
+              <p>${frEsc(it.text)}</p>
+              <div class="fr-take"><i class="fas fa-lightbulb"></i> ${frEsc(it.takeaway)}</div>
+              ${(it.links && it.links.length) ? `<div class="fr-links">${it.links.map(l => `<a href="${frEsc(l.url)}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> ${frEsc(l.label)} · 看最新</a>`).join('')}</div>` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+        <div class="fr-note"><i class="fas fa-info-circle"></i> 工作台是离线的，抓不到实时新闻。上面是<b>不过时的前沿知识卡</b>（每天轮换），下面每条都配了<b>权威源链接</b>——点「看最新」就能跳到当下真实的消息。</div>
+      </div>
+
+      <div class="fr-sec-t"><i class="fas fa-sitemap"></i> 新兴行业全景（${FRONTIER_SECTORS.length} 个）</div>
+      <div class="fr-sec-chips">
+        <button class="fr-chip ${frontierSector === 'all' ? 'on' : ''}" onclick="setFrontierSector('all')">全部</button>
+        ${FRONTIER_SECTORS.map(s => `<button class="fr-chip ${frontierSector === s.id ? 'on' : ''}" onclick="setFrontierSector('${s.id}')">${s.emoji} ${frEsc(s.name)}</button>`).join('')}
+      </div>
+      <div class="fr-sector-grid">
+        ${secList.map(s => {
+          const open = !!frontierOpen[s.id];
+          return `<div class="fr-sector ${open ? 'open' : ''}">
+            <div class="fr-s-head" onclick="frontierToggle('${s.id}')">
+              <span class="fr-s-emoji">${s.emoji}</span>
+              <div class="fr-s-t"><b>${frEsc(s.name)}</b><span class="fr-s-stage">${frEsc(s.stage)}</span></div>
+              <i class="fas fa-chevron-down fr-s-chev"></i>
+            </div>
+            <p class="fr-s-intro">${frEsc(s.intro)}</p>
+            ${open ? `<div class="fr-s-body">
+              <div class="fr-s-row"><span class="fr-s-k">最前沿在争什么</span><p>${frEsc(s.frontier)}</p></div>
+              <div class="fr-s-players"><span class="fr-s-k">关键玩家</span><div>${(s.players || []).map(p => `<i>${frEsc(p)}</i>`).join('')}</div></div>
+              <div class="fr-s-sig"><span class="fr-s-k">要盯的信号</span><ul>${(s.signals || []).map(g => `<li>${frEsc(g)}</li>`).join('')}</ul></div>
+              <div class="fr-s-risk"><span class="fr-s-k">不确定性</span><p>${frEsc(s.risk)}</p></div>
+              ${(s.links && s.links.length) ? `<div class="fr-links">${s.links.map(l => `<a href="${frEsc(l.url)}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> ${frEsc(l.label)} · 看最新</a>`).join('')}</div>` : ''}
+            </div>` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+
+      <div class="fr-sec-t"><i class="fas fa-book-open"></i> 前沿知识卡库（${pool.length} 条）</div>
+      <div class="fr-sec-chips">
+        <button class="fr-chip ${frontierLevel === 'all' ? 'on' : ''}" onclick="setFrontierLevel('all')">全部类型</button>
+        ${levels.map(l => `<button class="fr-chip ${frontierLevel === l ? 'on' : ''}" onclick="setFrontierLevel('${frEsc(l)}')">${frEsc(l)}</button>`).join('')}
+      </div>
+      <div class="fr-pool">
+        ${poolShown.map(it => {
+          const sec = frSector(it.sector);
+          const isFav = !!fav[it.id];
+          return `<div class="fr-pool-item">
+            <div class="fr-p-h"><span class="fr-p-sec">${sec.emoji} ${frEsc(sec.name)}</span><span class="fr-p-lv">${frEsc(it.level)}</span>
+              <button class="fr-fav ${isFav ? 'on' : ''}" onclick="frontierFav('${it.id}')">${isFav ? '★' : '☆'}</button></div>
+            <b>${frEsc(it.title)}</b>
+            <p>${frEsc(it.text)}</p>
+            <div class="fr-take sm"><i class="fas fa-lightbulb"></i> ${frEsc(it.takeaway)}</div>
+            ${(it.links && it.links.length) ? `<div class="fr-links sm">${it.links.map(l => `<a href="${frEsc(l.url)}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> ${frEsc(l.label)}</a>`).join('')}</div>` : ''}
+          </div>`;
+        }).join('')}
+      </div>
+      ${pool.length > poolShown.length ? `<div class="fr-more-tip">共 ${pool.length} 条，已显示前 ${poolShown.length} 条。换上面的行业 / 类型筛选可看更多。</div>` : ''}
+
+      <div class="fr-sec-t"><i class="fas fa-satellite-dish"></i> 一键看最新（${FRONTIER_SOURCES.length} 个权威源）</div>
+      <div class="fr-src-note">点开就是当下真实最新的报道——这是"实时"的部分，工作台负责帮你整理入口。</div>
+      <div class="fr-src-wrap">
+        ${srcCats.map(cat => {
+          const list = FRONTIER_SOURCES.filter(s => s.cat === cat);
+          return `<div class="fr-src-group">
+            <div class="fr-src-cat">${frEsc(cat)}</div>
+            <div class="fr-src-list">${list.map(s => `<a class="fr-src" href="${frEsc(s.url)}" target="_blank" rel="noopener">
+              <b>${frEsc(s.name)}</b><span>${frEsc(s.desc)}</span><i class="fas fa-external-link-alt"></i></a>`).join('')}</div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <div class="fr-sec-t"><i class="fas fa-binoculars"></i> 怎么自己跟踪前沿（${FRONTIER_HOWTO.length} 条）</div>
+      <div class="fr-howto">
+        ${FRONTIER_HOWTO.map(h => `<div class="fr-ht"><b>${frEsc(h.t)}</b><p>${frEsc(h.d)}</p></div>`).join('')}
+      </div>
+
+      <div class="fr-sec-t"><i class="fas fa-star"></i> 我收藏的前沿卡</div>
+      ${renderFrontierFavs()}
+    </div>`;
+}
+
+function renderFrontierFavs() {
+  const fav = frFavs();
+  const keys = Object.keys(fav);
+  if (!keys.length) return '<div class="fr-empty">还没有收藏。看到有用的知识点点右上角的 ☆ 就能存下来。</div>';
+  return `<div class="fr-pool">${keys.map(id => {
+    const it = FRONTIER_DAILY.find(d => d.id === id);
+    if (!it) return '';
+    const sec = frSector(it.sector);
+    return `<div class="fr-pool-item">
+      <div class="fr-p-h"><span class="fr-p-sec">${sec.emoji} ${frEsc(sec.name)}</span><span class="fr-p-lv">${frEsc(it.level)}</span>
+        <button class="fr-fav on" onclick="frontierFav('${it.id}')">★</button></div>
+      <b>${frEsc(it.title)}</b><p>${frEsc(it.text)}</p>
+      <div class="fr-take sm"><i class="fas fa-lightbulb"></i> ${frEsc(it.takeaway)}</div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+function setFrontierSector(s) {
+  frontierSector = s;
+  frontierOpen[s] = true;
+  renderNews($('#main-content'));
+  injectUpdateBadge($('#main-content'), 'news');
+}
+function setFrontierLevel(l) { frontierLevel = l; renderNews($('#main-content')); injectUpdateBadge($('#main-content'), 'news'); }
+function frontierToggle(id) { frontierOpen[id] = !frontierOpen[id]; renderNews($('#main-content')); injectUpdateBadge($('#main-content'), 'news'); }
+function frontierFav(id) {
+  const f = frFavs();
+  if (f[id]) { delete f[id]; showToast('已取消收藏'); } else { f[id] = 1; showToast('★ 已收藏，去页面底部「我收藏的前沿卡」查看'); }
+  saveData('mw_frontier_fav', f);
+  renderNews($('#main-content'));
+  injectUpdateBadge($('#main-content'), 'news');
+}
+
 function renderNews(c) {
   const todayStr = today();
   const news = getNewsByDate(todayStr);
@@ -5607,6 +5817,13 @@ function renderNews(c) {
         `).join('')}
       </div>
 
+      <div class="news-view-tabs">
+        <button class="nvt ${currentNewsView==='news'?'active':''}" onclick="switchNewsView('news')"><i class="fas fa-newspaper"></i> 今日大事件</button>
+        <button class="nvt ${currentNewsView==='frontier'?'active':''}" onclick="switchNewsView('frontier')"><i class="fas fa-rocket"></i> 前沿速递</button>
+      </div>
+      ${currentNewsView==='frontier'?renderNewsFrontier():''}
+      ${currentNewsView==='news'?renderNewsFrontierTeaser():''}
+
       <div id="news-grid"></div>
 
       <div style="margin-top:32px;">
@@ -5622,7 +5839,7 @@ function renderNews(c) {
     </div>
   `;
 
-  renderNewsGrid(recentNews);
+  if (currentNewsView === 'news') renderNewsGrid(recentNews);
 }
 
 function filterNews(cat) {
