@@ -1645,6 +1645,29 @@ body {
 
 .fr-empty { font-size: 13px; color: var(--text-secondary); text-align: center; padding: 20px; background: var(--bg-card); border-radius: var(--radius-md, 12px); }
 
+/* ====== 前沿速递 · 我关注的（个性化置顶） ====== */
+.fr-watch-wrap { background: linear-gradient(135deg, #fff7fb, #f3edfb); border: 1.5px solid #ecd9ef; border-radius: var(--radius-lg, 16px); padding: 18px; margin-bottom: 24px; }
+.fr-watch-t { font-size: 16px; font-weight: 800; color: var(--primary); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.fr-watch { margin-bottom: 14px; }
+.fr-watch:last-of-type { margin-bottom: 0; }
+.fr-watch-h { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.fr-w-emoji { font-size: 22px; }
+.fr-watch-h b { font-size: 15px; color: var(--text-main, #2c2438); }
+.fr-w-more { margin-left: auto; background: var(--primary); color: #fff; border: none; border-radius: 16px; padding: 5px 13px; cursor: pointer; font-size: 12px; font-family: inherit; }
+.fr-w-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.fr-w-card { background: #fff; border: 1px solid #f0e3ee; border-radius: var(--radius-md, 12px); padding: 13px 15px; display: flex; flex-direction: column; }
+.fr-w-c-h { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+.fr-w-sec { font-size: 12px; color: var(--text-secondary); font-weight: 600; }
+.fr-w-lv { font-size: 11px; background: #f4eefb; border-radius: 9px; padding: 2px 9px; color: var(--primary); }
+.fr-w-card b { font-size: 13.5px; color: var(--text-main, #2c2438); display: block; margin-bottom: 5px; }
+.fr-w-card p { font-size: 12px; line-height: 1.7; color: var(--text-secondary); margin: 0 0 8px; flex: 1; }
+.fr-fav.sm { align-self: flex-start; margin-top: 2px; background: none; border: 1px solid #ecd9ef; border-radius: 12px; cursor: pointer; font-size: 12px; color: var(--accent, #C99BB5); padding: 3px 12px; font-family: inherit; }
+.fr-fav.sm.on { background: #fff6e0; color: #e0a800; border-color: #f0d98a; }
+.fr-nl-row { margin-top: 6px; }
+.fr-nl { display: inline-flex; align-items: center; gap: 8px; background: var(--primary); color: #fff; text-decoration: none; border-radius: 16px; padding: 8px 16px; font-size: 13px; font-weight: 600; transition: var(--transition); }
+.fr-nl:hover { background: var(--accent, #C99BB5); }
+.fr-nl i { font-size: 15px; }
+
 
 .news-grid {
   display: grid;

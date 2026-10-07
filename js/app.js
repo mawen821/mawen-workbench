@@ -5692,6 +5692,8 @@ function renderNewsFrontier() {
         <div class="fr-note"><i class="fas fa-info-circle"></i> 工作台是离线的，抓不到实时新闻。上面是<b>不过时的前沿知识卡</b>（每天轮换），下面每条都配了<b>权威源链接</b>——点「看最新」就能跳到当下真实的消息。</div>
       </div>
 
+      ${renderNewsWatch()}
+
       <div class="fr-sec-t"><i class="fas fa-sitemap"></i> 新兴行业全景（${FRONTIER_SECTORS.length} 个）</div>
       <div class="fr-sec-chips">
         <button class="fr-chip ${frontierSector === 'all' ? 'on' : ''}" onclick="setFrontierSector('all')">全部</button>
@@ -5793,6 +5795,54 @@ function frontierFav(id) {
   saveData('mw_frontier_fav', f);
   renderNews($('#main-content'));
   injectUpdateBadge($('#main-content'), 'news');
+}
+
+function frontierTodayBySectors(sectors, n) {
+  const d = new Date();
+  const start = Date.UTC(d.getUTCFullYear(), 0, 0);
+  const day = Math.floor((d.getTime() - start) / 86400000);
+  const pool = FRONTIER_DAILY.filter(x => sectors.indexOf(x.sector) >= 0);
+  const len = pool.length;
+  if (!len) return [];
+  const out = [];
+  for (let i = 0; i < (n || 2); i++) out.push(pool[((day + i * 7) % len)]);
+  return out;
+}
+
+function renderNewsWatch() {
+  if (typeof FRONTIER_WATCH === 'undefined' || !FRONTIER_WATCH.length) return '';
+  const fav = frFavs();
+  const parts = FRONTIER_WATCH.map(w => {
+    const items = frontierTodayBySectors(w.sectors, 2);
+    if (!items.length) return '';
+    return `<div class="fr-watch">
+      <div class="fr-watch-h">
+        <span class="fr-w-emoji">${w.emoji}</span><b>${frEsc(w.label)}</b>
+        <button class="fr-w-more" onclick="setFrontierSector('${w.sectors[0]}')">看该领域全部 <i class="fas fa-arrow-right"></i></button>
+      </div>
+      <div class="fr-w-cards">
+        ${items.map(it => {
+          const sec = frSector(it.sector);
+          const isFav = !!fav[it.id];
+          return `<div class="fr-w-card">
+            <div class="fr-w-c-h"><span class="fr-w-sec">${sec.emoji} ${frEsc(sec.name)}</span><span class="fr-w-lv">${frEsc(it.level)}</span></div>
+            <b>${frEsc(it.title)}</b>
+            <p>${frEsc(it.text)}</p>
+            <div class="fr-take sm"><i class="fas fa-lightbulb"></i> ${frEsc(it.takeaway)}</div>
+            ${(it.links && it.links.length) ? `<div class="fr-links sm">${it.links.map(l => `<a href="${frEsc(l.url)}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> ${frEsc(l.label)}</a>`).join('')}</div>` : ''}
+            <button class="fr-fav sm ${isFav ? 'on' : ''}" onclick="frontierFav('${it.id}')">${isFav ? '★ 已收藏' : '☆ 收藏'}</button>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+  const nl = (typeof FRONTIER_WATCH_NEWS !== 'undefined' && FRONTIER_WATCH_NEWS)
+    ? `<a class="fr-nl" href="${frEsc(FRONTIER_WATCH_NEWS)}" target="_blank" rel="noopener"><i class="fas fa-tv"></i> 看《新闻联播》每日要闻</a>` : '';
+  return `<div class="fr-watch-wrap">
+    <div class="fr-watch-t"><i class="fas fa-star"></i> 我关注的（${FRONTIER_WATCH.length} 类）</div>
+    ${parts}
+    <div class="fr-nl-row">${nl}</div>
+  </div>`;
 }
 
 function renderNews(c) {
