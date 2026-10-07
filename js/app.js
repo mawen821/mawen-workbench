@@ -3919,6 +3919,29 @@ function renderEngStatsChart() {
 /* ============================================
    金融投资板块
    ============================================ */
+/* 基础课程学完后的「毕业引导」：告诉用户后面还有源源不断的每周新课 */
+function finGradBanner(learned, total) {
+  if (!total) return '';
+  if (learned < total) {
+    const left = total - learned;
+    return `<div class="fin-grad fin-grad-ing">
+      <i class="fas fa-book-open"></i>
+      <div class="fg-body">
+        <b>基础认知课程还剩 ${left} 篇</b>
+        <p>学完这 ${total} 篇地基课后，系统会自动把你接上「每周基金新课」，每周一更新一篇，持续学新东西。</p>
+      </div>
+    </div>`;
+  }
+  return `<div class="fin-grad fin-grad-done">
+    <span class="fg-ico">🎓</span>
+    <div class="fg-body">
+      <b>基础认知课程已全部学完（${total}/${total}）</b>
+      <p>你已自动进入<b>持续更新模式</b>：下面这篇「每周基金新课」<b>每周一自动换新</b>，往期可回看重温。想复习基础课去「课程体系」随时回看。</p>
+    </div>
+    <button class="fg-btn" onclick="setFinanceView('course')"><i class="fas fa-rotate-left"></i> 回看基础课</button>
+  </div>`;
+}
+
 function renderFinance(c) {
   let totalLessons = 0, learnedLessons = 0;
   FINANCE_LESSONS.forEach(phase => {
@@ -3953,6 +3976,8 @@ function renderFinance(c) {
           <p>${dailyTip}</p>
         </div>
       </div>
+
+      ${finGradBanner(learnedLessons, totalLessons)}
 
       <div class="finance-weekly-lesson-panel" id="finance-weekly-lesson"></div>
 
@@ -4507,6 +4532,7 @@ function renderFinancePractice(main) {
       <button class="fpt" data-pt="sector" onclick="setPracticeTab('sector')"><i class="fas fa-chart-bar"></i> 行业盘面</button>
       <button class="fpt" data-pt="calc" onclick="setPracticeTab('calc')"><i class="fas fa-calculator"></i> 计算工具</button>
       <button class="fpt" data-pt="hold" onclick="setPracticeTab('hold')"><i class="fas fa-wallet"></i> 我的持仓</button>
+      <button class="fpt" data-pt="trend" onclick="setPracticeTab('trend')"><i class="fas fa-wind"></i> 趋势风口</button>
     </div>
     <div id="finance-practice-main"></div>
   `;
@@ -4527,251 +4553,331 @@ function renderPracticeContent() {
   if (!el) return;
   if (currentPracticeTab === 'sector') renderFinanceSector(el);
   else if (currentPracticeTab === 'calc') renderFinanceCalc(el);
+  else if (currentPracticeTab === 'trend') renderFinanceTrend(el);
   else renderFinanceHold(el);
 }
 
-/* ---------- 行业单日盘面 ---------- */
+
+/* ============================================================
+   基金 · 涨跌幅分级 + 今日盘面手动更新 + 趋势风口 + 持仓联动
+   ============================================================ */
+
+/* ---------- 涨跌幅分级 ---------- */
+function finChgLevel(pct) {
+  var L = (typeof FINANCE_CHG_LEVELS !== 'undefined') ? FINANCE_CHG_LEVELS : [];
+  for (var i = 0; i < L.length; i++) {
+    if (pct >= L[i].min && pct < L[i].max) return L[i];
+  }
+  return L.length ? (pct >= 0 ? L[0] : L[L.length - 1]) : { id: 'flat', label: '—', color: '#8A8A9A', bg: '#F2F2F5', desc: '' };
+}
+
+/* 今日盘面：优先用用户手动录入的数据，否则用静态快照 */
+function finSectorData() {
+  var mine = loadData('mw_sector_today', null);
+  if (mine && mine.sectors && mine.sectors.length) {
+    return { date: mine.date || '手动录入', source: '我录入的今日数据', sectors: mine.sectors, isMine: true };
+  }
+  return FINANCE_SECTOR_SNAPSHOT;
+}
+function finSectorMap() {
+  var m = {};
+  finSectorData().sectors.forEach(function (s) { m[s.name] = s.pct; });
+  return m;
+}
+
+/* ---------- 行业盘面（带分级标注） ---------- */
+let financeSectorSort = 'pct';   // 'pct' | 'level'
+let financeSectorFilter = 'all'; // all | up | down | flat
+
 function renderFinanceSector(el) {
-  const s = FINANCE_SECTOR_SNAPSHOT;
-  const list = [...s.sectors].sort((a, b) => a.pct - b.pct); // 跌幅大在前
-  const maxAbs = Math.max(...list.map(x => Math.abs(x.pct)));
+  const s = finSectorData();
+  const L = (typeof FINANCE_CHG_LEVELS !== 'undefined') ? FINANCE_CHG_LEVELS : [];
+  let list = s.sectors.slice();
+
+  // 筛选
+  if (financeSectorFilter === 'up') list = list.filter(x => x.pct > 0.1);
+  else if (financeSectorFilter === 'down') list = list.filter(x => x.pct < -0.1);
+  else if (financeSectorFilter === 'flat') list = list.filter(x => Math.abs(x.pct) <= 0.1);
+
+  // 排序
+  list.forEach(x => { x._lv = finChgLevel(x.pct); });
+  if (financeSectorSort === 'pct') list.sort((a, b) => a.pct - b.pct);           // 跌幅大在前
+  else list.sort((a, b) => L.map(l => l.id).indexOf(a._lv.id) - L.map(l => l.id).indexOf(b._lv.id));
+
+  const maxAbs = Math.max.apply(null, list.map(x => Math.abs(x.pct)).concat([0.01]));
+
+  // 统计
+  const all = s.sectors;
+  const upN = all.filter(x => x.pct > 0.1).length;
+  const dnN = all.filter(x => x.pct < -0.1).length;
+  const flN = all.length - upN - dnN;
+  const avg = all.reduce((t, x) => t + x.pct, 0) / (all.length || 1);
+  const avgLv = finChgLevel(avg);
+
   const rows = list.map(x => {
+    const lv = x._lv;
     const up = x.pct >= 0;
     const w = (Math.abs(x.pct) / maxAbs * 100).toFixed(1);
-    return `<div class="sector-row">
-      <span class="sector-name">${x.name}</span>
-      <div class="sector-track"><div class="sector-bar ${up ? 'fn-up' : 'fn-down'}" style="width:${w}%"></div></div>
-      <span class="sector-pct ${up ? 'fn-up' : 'fn-down'}">${up ? '+' : ''}${x.pct.toFixed(2)}%</span>
+    return `<div class="sector-row" title="${fnEsc(lv.desc)}">
+      <span class="sector-name">${fnEsc(x.name)}</span>
+      <div class="sector-track"><div class="sector-bar" style="width:${w}%;background:${up ? lv.color : lv.color}"></div></div>
+      <span class="sector-pct" style="color:${lv.color}">${up ? '+' : ''}${x.pct.toFixed(2)}%</span>
+      <span class="sector-lv" style="color:${lv.color};background:${lv.bg}">${lv.label}</span>
     </div>`;
   }).join('');
+
+  const legend = L.map(l => `<span class="chg-leg" style="color:${l.color};background:${l.bg}" title="${fnEsc(l.desc)}">${l.label}</span>`).join('');
+
   el.innerHTML = `
     <div class="sector-panel">
       <div class="sector-head">
-        <div><span class="sector-date">数据日期 ${s.date}</span><span class="sector-src">${s.source}</span></div>
-        <div class="sector-legend"><i class="dot fn-up"></i>涨 <i class="dot fn-down"></i>跌</div>
+        <div>
+          <span class="sector-date">数据日期 ${fnEsc(s.date)}</span>
+          <span class="sector-src">${fnEsc(s.source)}${s.isMine ? ' <b class="mine-flag">· 我自己录入</b>' : ''}</span>
+        </div>
+        <div class="sector-tools">
+          <button class="mini-btn" onclick="openSectorEditor()"><i class="fas fa-pen"></i> 录入今日涨跌</button>
+          ${s.isMine ? '<button class="mini-btn ghost" onclick="clearSectorToday()"><i class="fas fa-undo"></i> 还原快照</button>' : ''}
+        </div>
       </div>
-      <p class="sector-note">申万一级行业单日涨跌幅（静态快照）。<b>涨红跌绿</b>。手机端为离线数据，让我在桌面重跑即可更新为最新交易日。</p>
-      ${rows}
+
+      <div class="sector-stats">
+        <div class="ss-item up"><b>${upN}</b><span>上涨</span></div>
+        <div class="ss-item dn"><b>${dnN}</b><span>下跌</span></div>
+        <div class="ss-item fl"><b>${flN}</b><span>平盘</span></div>
+        <div class="ss-item avg"><b style="color:${avgLv.color}">${avg >= 0 ? '+' : ''}${avg.toFixed(2)}%</b><span>平均 · ${avgLv.label}</span></div>
+      </div>
+
+      <div class="chg-legend">${legend}</div>
+
+      <div class="sector-filters">
+        <button class="sf-chip ${financeSectorFilter === 'all' ? 'on' : ''}" onclick="setSectorFilter('all')">全部 ${all.length}</button>
+        <button class="sf-chip ${financeSectorFilter === 'up' ? 'on' : ''}" onclick="setSectorFilter('up')">涨 ${upN}</button>
+        <button class="sf-chip ${financeSectorFilter === 'down' ? 'on' : ''}" onclick="setSectorFilter('down')">跌 ${dnN}</button>
+        <button class="sf-chip ${financeSectorFilter === 'flat' ? 'on' : ''}" onclick="setSectorFilter('flat')">平 ${flN}</button>
+        <span class="sf-sep"></span>
+        <button class="sf-chip ${financeSectorSort === 'pct' ? 'on' : ''}" onclick="setSectorSort('pct')">按涨跌排序</button>
+        <button class="sf-chip ${financeSectorSort === 'level' ? 'on' : ''}" onclick="setSectorSort('level')">按档位分组</button>
+      </div>
+
+      <p class="sector-note"><b style="color:#C0392B">涨红</b> / <b style="color:#2E7D4F">跌绿</b>（中国习惯）。共 ${list.length} 个行业。悬停档位标签可看这一档该怎么理解。</p>
+      ${rows || '<div class="sector-empty">该筛选下没有行业</div>'}
+
+      <div class="sector-scale">
+        <div class="sc-title"><i class="fas fa-ruler-horizontal"></i> 涨跌档位说明（单日）</div>
+        <div class="sc-grid">
+          ${L.slice().reverse().map(l => `<div class="sc-item" style="border-left:4px solid ${l.color}">
+            <div class="sc-range" style="color:${l.color}">${l.id === 'boom' ? '≥ +3%' : l.id === 'crash' ? '≤ -5%' : (l.min > 0 ? '+' : '') + l.min + '% ~ ' + (l.max > 0 && l.max < 900 ? '+' : '') + (l.max > 900 ? '' : l.max) + '%'}</div>
+            <b>${l.label}</b><p>${fnEsc(l.desc)}</p>
+          </div>`).join('')}
+        </div>
+      </div>
     </div>`;
 }
+function setSectorFilter(f) { financeSectorFilter = f; renderPracticeContent(); }
+function setSectorSort(s) { financeSectorSort = s; renderPracticeContent(); }
 
-/* ---------- 计算工具 ---------- */
-function renderFinanceCalc(el) {
+/* ---------- 录入今日涨跌 ---------- */
+function openSectorEditor() {
+  const cur = finSectorMap();
+  const names = FINANCE_SECTOR_SNAPSHOT.sectors.map(s => s.name);
+  const html = `<form id="sector-edit-form" class="fund-form sector-form" onsubmit="return false">
+    <p class="calc-tip">按今天的收盘数据填一遍，填完盘面表、持仓今日盈亏都会立刻跟着变。只填你关注的行业也行，留空的会沿用快照。</p>
+    <label>数据日期<input id="se-date" type="date" value="${new Date().toISOString().slice(0, 10)}"></label>
+    <div class="se-grid">
+      ${names.map(n => `<div class="se-cell">
+        <span class="se-name">${fnEsc(n)}</span>
+        <input class="se-pct" data-name="${fnEsc(n)}" type="number" step="0.01" value="${cur[n] != null ? cur[n] : ''}" placeholder="0.00">
+      </div>`).join('')}
+    </div>
+    <div class="fund-form-actions">
+      <button class="btn-primary" onclick="saveSectorToday()">保存今日盘面</button>
+      <button class="btn-ghost" onclick="closeZoom()">取消</button>
+    </div>
+  </form>`;
+  openZoom('录入今��行业涨跌', html);
+}
+function saveSectorToday() {
+  const date = document.getElementById('se-date').value || new Date().toISOString().slice(0, 10);
+  const sectors = [];
+  document.querySelectorAll('#sector-edit-form .se-pct').forEach(inp => {
+    const v = inp.value.trim();
+    if (v === '') return;
+    const n = parseFloat(v);
+    if (!isNaN(n)) sectors.push({ name: inp.getAttribute('data-name'), pct: n });
+  });
+  if (!sectors.length) { showToast('至少填一个行业', 'warn'); return; }
+  saveData('mw_sector_today', { date: date, sectors: sectors, at: Date.now() });
+  closeZoom();
+  renderPracticeContent();
+  showToast('今日盘面已更新 ' + sectors.length + ' 个行业');
+}
+function clearSectorToday() {
+  saveData('mw_sector_today', null);
+  renderPracticeContent();
+  showToast('已还原为静态快照');
+}
+
+/* ---------- 趋势风口 ---------- */
+let financeTrendLevel = 'all';
+let financeTrendOpen = {};
+
+function renderFinanceTrend(el) {
+  if (typeof FINANCE_TRENDS === 'undefined') { el.innerHTML = '<div class="hold-empty">趋势数据未加载</div>'; return; }
+  const smap = finSectorMap();
+  const holds = fundHoldings();
+  const mySectors = holds.map(h => h.sector).filter(Boolean);
+  const mySectorSet = {};
+  mySectors.forEach(s => { mySectorSet[s] = 1; });
+
+  let list = FINANCE_TRENDS.filter(t => financeTrendLevel === 'all' || t.level === financeTrendLevel);
+  // 与我持仓相关的排前面
+  list.sort((a, b) => {
+    const ra = (a.related || []).some(r => mySectorSet[r]) ? 0 : 1;
+    const rb = (b.related || []).some(r => mySectorSet[r]) ? 0 : 1;
+    return ra - rb;
+  });
+
+  const levels = [];
+  FINANCE_TRENDS.forEach(t => { if (levels.indexOf(t.level) < 0) levels.push(t.level); });
+
+  const myHits = FINANCE_TRENDS.filter(t => (t.related || []).some(r => mySectorSet[r]));
+
   el.innerHTML = `
-  <div class="calc-wrap">
-    <div class="calc-card">
-      <h3><i class="fas fa-coins"></i> 定投收益测算</h3>
-      <div class="calc-fields">
-        <label>每月定投(元)<input id="dca-month" type="number" value="1000" min="0"></label>
-        <label>预计年化收益(%)<input id="dca-rate" type="number" value="10" step="0.1"></label>
-        <label>定投年限(年)<input id="dca-years" type="number" value="10" min="1"></label>
+    <div class="trend-panel">
+      <div class="trend-head">
+        <h2><i class="fas fa-wind"></i> 趋势风口 · 行业优劣势</h2>
+        <span class="trend-sub">每个赛道：为什么动 · 政策面 · 消息面 · 优势 · 劣势 · 短中期判断 · 我该怎么办</span>
       </div>
-      <div class="calc-out" id="dca-out"></div>
-      <div class="calc-chart-box"><canvas id="dca-chart"></canvas></div>
-      <button class="calc-export-btn" onclick="exportDcaResult()"><i class="fas fa-download"></i> 复制 / 导出测算结果</button>
-    </div>
-    <div class="calc-card">
-      <h3><i class="fas fa-piggy-bank"></i> 一次性投入测算</h3>
-      <div class="calc-fields">
-        <label>本金(元)<input id="lump-principal" type="number" value="10000" min="0"></label>
-        <label>预计年化(%)<input id="lump-rate" type="number" value="8" step="0.1"></label>
-        <label>持有年限(年)<input id="lump-years" type="number" value="5" min="1"></label>
+
+      ${myHits.length ? `<div class="trend-myhold">
+        <div class="tmh-t"><i class="fas fa-wallet"></i> 和我的持仓相关（${myHits.length}）</div>
+        <div class="tmh-chips">${myHits.map(t => `<span class="tmh-chip" onclick="finTrendJump('${t.id}')">${t.emoji} ${fnEsc(t.sector)}</span>`).join('')}</div>
+      </div>` : '<div class="trend-tip"><i class="fas fa-info-circle"></i> 在「我的持仓」里给基金填上所属行业，这里就会自动标出和你相关的赛道。</div>'}
+
+      <div class="trend-filters">
+        <button class="tf-chip ${financeTrendLevel === 'all' ? 'on' : ''}" onclick="setTrendLevel('all')">全部 ${FINANCE_TRENDS.length}</button>
+        ${levels.map(l => `<button class="tf-chip ${financeTrendLevel === l ? 'on' : ''}" onclick="setTrendLevel('${fnEsc(l)}')">${fnEsc(l)} ${FINANCE_TRENDS.filter(t => t.level === l).length}</button>`).join('')}
       </div>
-      <div class="calc-out" id="lump-out"></div>
-      <div class="calc-chart-box"><canvas id="lump-chart"></canvas></div>
-    </div>
-    <div class="calc-card">
-      <h3><i class="fas fa-hand-holding-usd"></i> 赎回到手测算</h3>
-      <div class="calc-fields">
-        <label>赎回金额(元)<input id="red-amount" type="number" value="10000" min="0"></label>
-        <label>赎回费率(%)<input id="red-fee" type="number" value="0.5" step="0.05"></label>
+
+      <div class="trend-grid">
+        ${list.map(t => {
+          const rel = (t.related || []).map(r => {
+            const p = smap[r];
+            if (p == null) return `<span class="rel-chip">${fnEsc(r)}</span>`;
+            const lv = finChgLevel(p);
+            return `<span class="rel-chip" style="color:${lv.color};background:${lv.bg}">${fnEsc(r)} ${p >= 0 ? '+' : ''}${p.toFixed(2)}% ${lv.label}</span>`;
+          }).join('');
+          const open = !!financeTrendOpen[t.id];
+          const mine = (t.related || []).some(r => mySectorSet[r]);
+          return `<div class="trend-card ${open ? 'open' : ''} ${mine ? 'mine' : ''}" id="trend-${t.id}">
+            <div class="tc-head" onclick="finTrendToggle('${t.id}')">
+              <span class="tc-emoji">${t.emoji}</span>
+              <div class="tc-t">
+                <b>${fnEsc(t.sector)}</b>
+                <span class="tc-level lv-${fnEsc(t.level)}">${fnEsc(t.level)}</span>
+                ${mine ? '<span class="tc-mine">我持有</span>' : ''}
+              </div>
+              <i class="fas fa-chevron-down tc-chev"></i>
+            </div>
+            <div class="tc-rel">${rel || '<span class="rel-chip">—</span>'}</div>
+            ${open ? `<div class="tc-body">
+              <div class="tc-row drv"><span class="tc-k"><i class="fas fa-rocket"></i> 核心驱动</span><p>${fnEsc(t.driver)}</p></div>
+              <div class="tc-row pol"><span class="tc-k"><i class="fas fa-landmark"></i> 政策面</span><p>${fnEsc(t.policy)}</p></div>
+              <div class="tc-row nws"><span class="tc-k"><i class="fas fa-newspaper"></i> 消息面</span><p>${fnEsc(t.news)}</p></div>
+              <div class="tc-two">
+                <div class="tc-pros"><b><i class="fas fa-thumbs-up"></i> 优势</b><ul>${t.pros.map(p => `<li>${fnEsc(p)}</li>`).join('')}</ul></div>
+                <div class="tc-cons"><b><i class="fas fa-triangle-exclamation"></i> 劣势 / 风险</b><ul>${t.cons.map(p => `<li>${fnEsc(p)}</li>`).join('')}</ul></div>
+              </div>
+              <div class="tc-row hor"><span class="tc-k"><i class="fas fa-binoculars"></i> 短中期判断</span><p>${fnEsc(t.horizon)}</p></div>
+              <div class="tc-row act"><span class="tc-k"><i class="fas fa-user-check"></i> 我该怎么办</span><p>${fnEsc(t.action)}</p></div>
+              <div class="tc-watch"><b><i class="fas fa-eye"></i> 要盯的信号</b><div>${t.watch.map(w => `<span>${fnEsc(w)}</span>`).join('')}</div></div>
+              <div class="tc-upd">更新 ${fnEsc(t.updated || '')} · 仅供参考，不构成投资建议</div>
+            </div>` : ''}
+          </div>`;
+        }).join('')}
       </div>
-      <div class="calc-out" id="red-out"></div>
-      <p class="calc-tip">基金买卖差价与分红<b>个人免征个税</b>；到账 = 赎回金额 − 赎回费。部分基金持有时长影响费率（如 7 天内 1.5% 惩罚）。</p>
-    </div>
-    <div class="calc-card">
-      <h3><i class="fas fa-percent"></i> 费率成本测算</h3>
-      <div class="calc-fields">
-        <label>持有金额(元)<input id="fee-amount" type="number" value="10000" min="0"></label>
-        <label>基金类型<select id="fee-type">${FUND_TYPES.map(t => `<option>${t}</option>`).join('')}</select></label>
-      </div>
-      <div class="calc-out" id="fee-out"></div>
-      <p class="calc-tip">申购费按平台 1 折(0.15%)估算；管理费/托管费每日计提、年化侵蚀收益。费率是长期复利的隐形杀手。</p>
-    </div>
-  </div>`;
-  ['dca-month', 'dca-rate', 'dca-years', 'lump-principal', 'lump-rate', 'lump-years', 'red-amount', 'red-fee', 'fee-amount', 'fee-type'].forEach(id => {
-    const e = document.getElementById(id);
-    if (e) { e.addEventListener('input', recalcFundCalc); e.addEventListener('change', recalcFundCalc); }
-  });
-  recalcFundCalc();
+      <div class="trend-disclaimer"><i class="fas fa-shield-alt"></i> 以上为公开信息整理的方向性分析，<b>不构成投资建议</b>。市场有风险，任何决策请结合自身风险承受能力，并以官方披露为准。</div>
+    </div>`;
+}
+function setTrendLevel(l) { financeTrendLevel = l; renderPracticeContent(); }
+function finTrendToggle(id) { financeTrendOpen[id] = !financeTrendOpen[id]; renderPracticeContent(); }
+function finTrendJump(id) {
+  financeTrendOpen[id] = true;
+  renderPracticeContent();
+  setTimeout(function () { const el = document.getElementById('trend-' + id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
 }
 
-function recalcFundCalc() {
-  // 定投
-  const m = +document.getElementById('dca-month').value || 0;
-  const r = (+document.getElementById('dca-rate').value || 0) / 100;
-  const y = +document.getElementById('dca-years').value || 0;
-  const months = Math.max(1, Math.round(y * 12));
-  const mr = Math.pow(1 + r, 1 / 12) - 1;
-  let bal = 0; const assets = [], invests = []; let invested = 0;
-  for (let i = 1; i <= months; i++) { bal = bal * (1 + mr) + m; invested += m; assets.push(+bal.toFixed(0)); invests.push(invested); }
-  const dcaTotal = invested, dcaFinal = bal, dcaProfit = dcaFinal - dcaTotal;
-  const dcaPct = dcaTotal ? dcaProfit / dcaTotal * 100 : 0;
-  document.getElementById('dca-out').innerHTML = fundCalcOut(dcaTotal, dcaFinal, dcaProfit, dcaPct);
-  const dcaLabels = Array.from({ length: months }, (_, i) => (i + 1) + '月');
-  drawFundLine('dca-chart', dcaLabels, invests, assets, '累计投入', '资产规模');
-  // 一次性
-  const p = +document.getElementById('lump-principal').value || 0;
-  const lr = (+document.getElementById('lump-rate').value || 0) / 100;
-  const ly = +document.getElementById('lump-years').value || 0;
-  const lumpFinal = p * Math.pow(1 + lr, ly);
-  const lumpProfit = lumpFinal - p, lumpPct = p ? lumpProfit / p * 100 : 0;
-  document.getElementById('lump-out').innerHTML = fundCalcOut(p, lumpFinal, lumpProfit, lumpPct);
-  const lumpLabels = Array.from({ length: ly + 1 }, (_, i) => i + '年');
-  const la = [], li = []; for (let i = 0; i <= ly; i++) { li.push(p); la.push(+(p * Math.pow(1 + lr, i)).toFixed(0)); }
-  drawFundLine('lump-chart', lumpLabels, li, la, '本金', '资产规模');
-  // 赎回
-  const ra = +document.getElementById('red-amount').value || 0;
-  const rf = (+document.getElementById('red-fee').value || 0) / 100;
-  const redFee = ra * rf, redGet = ra - redFee;
-  document.getElementById('red-out').innerHTML =
-    `<div class="co-row"><span>赎回费</span><b class="fn-down">−¥${fnFmt(redFee)}</b></div>` +
-    `<div class="co-row co-total"><span>实际到手</span><b class="fn-up">¥${fnFmt(redGet)}</b></div>`;
-  // 费率
-  const fa = +document.getElementById('fee-amount').value || 0;
-  const ft = document.getElementById('fee-type').value;
-  const mg = (FINANCE_FEE_REF.manage[ft] != null) ? FINANCE_FEE_REF.manage[ft] : 1.0;
-  const sub = FINANCE_FEE_REF.subscribeDiscount;
-  const cus = FINANCE_FEE_REF.custodian;
-  const annual = sub + mg + cus + FINANCE_FEE_REF.sales;
-  const feeYear = fa * annual / 100;
-  document.getElementById('fee-out').innerHTML =
-    `<div class="co-row"><span>申购费(1折 ${sub}%)</span><b>¥${fnFmt(fa * sub / 100)}</b></div>` +
-    `<div class="co-row"><span>管理费(${mg}%/年)</span><b>¥${fnFmt(fa * mg / 100)}/年</b></div>` +
-    `<div class="co-row"><span>托管费(${cus}%/年)</span><b>¥${fnFmt(fa * cus / 100)}/年</b></div>` +
-    `<div class="co-row co-total"><span>年化总成本(${annual.toFixed(2)}%)</span><b>¥${fnFmt(feeYear)}/年</b></div>` +
-    `<div class="co-row"><span>10 年累计侵蚀</span><b class="fn-down">¥${fnFmt(feeYear * 10)}</b></div>`;
-}
-
-function exportDcaResult() {
-  const m = +document.getElementById('dca-month').value || 0;
-  const r = (+document.getElementById('dca-rate').value || 0) / 100;
-  const y = +document.getElementById('dca-years').value || 0;
-  const months = Math.max(1, Math.round(y * 12));
-  const mr = Math.pow(1 + r, 1 / 12) - 1;
-  let bal = 0, invested = 0;
-  for (let i = 1; i <= months; i++) { bal = bal * (1 + mr) + m; invested += m; }
-  const finalV = bal, profit = finalV - invested;
-  const pct = invested ? profit / invested * 100 : 0;
-  const sign = profit >= 0 ? '+' : '';
-  const text =
-`基金定投收益测算结果
-━━━━━━━━━━━━━━━━━━
-每月定投：${fnFmt(m)} 元
-预计年化：${(r * 100).toFixed(1)} %
-定投年限：${y} 年（共 ${months} 期）
-━━━━━━━━━━━━━━━━━━
-累计投入：${fnFmt(invested)} 元
-预期总值：${fnFmt(finalV)} 元
-预期收益：${sign}${fnFmt(profit)} 元（${sign}${pct.toFixed(1)}%）
-━━━━━━━━━━━━━━━━━━
-生成时间：${new Date().toLocaleString('zh-CN')}
-（测算为理想年化假设，非实际收益承诺）`;
-
-  // 复制到剪贴板
-  const copyDone = () => {
-    if (typeof showToast === 'function') showToast('已复制到剪贴板，并下载 .txt');
-    else alert('已复制到剪贴板，并下载 .txt');
-  };
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(copyDone, () => fallbackCopy(text, copyDone));
-  } else {
-    fallbackCopy(text, copyDone);
-  }
-  // 导出 .txt
-  try {
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `定投测算_${y}年_${new Date().toISOString().slice(0, 10)}.txt`;
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a); setTimeout(() => URL.revokeObjectURL(url), 1000);
-  } catch (e) { /* 下载失败不影响复制 */ }
-}
-
-function fallbackCopy(text, cb) {
-  try {
-    const ta = document.createElement('textarea');
-    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta); ta.select();
-    document.execCommand('copy'); document.body.removeChild(ta);
-    if (cb) cb();
-  } catch (e) { if (cb) cb(); }
-}
-
-function fundCalcOut(total, finalV, profit, pct) {
-  const cls = profit >= 0 ? 'fn-up' : 'fn-down';
-  const sign = profit >= 0 ? '+' : '';
-  return `<div class="co-row"><span>总投入</span><b>¥${fnFmt(total)}</b></div>` +
-    `<div class="co-row"><span>预期总值</span><b>¥${fnFmt(finalV)}</b></div>` +
-    `<div class="co-row co-total"><span>预期收益</span><b class="${cls}">${sign}¥${fnFmt(profit)} (${sign}${pct.toFixed(1)}%)</b></div>`;
-}
-
-function drawFundLine(id, labels, base, val, l1, l2) {
-  const cv = document.getElementById(id); if (!cv) return;
-  const key = 'fund_' + id;
-  if (charts[key]) charts[key].destroy();
-  charts[key] = new Chart(cv.getContext('2d'), {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        { label: l1, data: base, borderColor: '#B79BD6', backgroundColor: 'rgba(183,155,214,.18)', fill: true, pointRadius: 0, tension: .25 },
-        { label: l2, data: val, borderColor: '#8A6CB0', backgroundColor: 'rgba(138,108,176,.12)', fill: true, pointRadius: 0, tension: .25 }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
-      scales: { x: { ticks: { maxTicksLimit: 6, font: { size: 10 } } }, y: { ticks: { font: { size: 10 } } } }
-    }
-  });
-}
-
-/* ---------- 我的持仓 ---------- */
+/* ---------- 持仓：加行业归属 / 今日涨跌 / 备注 ---------- */
 function fundHoldings() { return loadData('mw_fund_holdings', []); }
 function saveFundHoldings(a) { saveData('mw_fund_holdings', a); }
 
+function finSectorOptions(sel) {
+  const names = FINANCE_SECTOR_SNAPSHOT.sectors.map(s => s.name);
+  return '<option value="">不关联</option>' + names.map(n => `<option ${sel === n ? 'selected' : ''}>${n}</option>`).join('');
+}
+
 function renderFinanceHold(el) {
   const list = fundHoldings();
+  const smap = finSectorMap();
   const totalCost = list.reduce((s, h) => s + (+h.cost || 0), 0);
   const totalMV = list.reduce((s, h) => s + (+h.mv || 0), 0);
   const totalProfit = totalMV - totalCost;
   const totalPct = totalCost ? totalProfit / totalCost * 100 : 0;
+
+  // 今日盈亏：优先用持仓自带的 dayChg，没有则用它所属行业的今日涨跌
+  let dayProfit = 0;
+  list.forEach(h => {
+    const mv = +h.mv || 0;
+    let c = (h.dayChg != null && h.dayChg !== '') ? +h.dayChg : null;
+    if (c == null && h.sector && smap[h.sector] != null) c = smap[h.sector];
+    if (c != null && mv) dayProfit += mv * c / 100;
+  });
+  const dayPct = totalMV ? dayProfit / (totalMV - dayProfit) * 100 : 0;
+  const dayLv = finChgLevel(dayPct);
+
   const summary = `<div class="hold-summary">
     <div class="hs-card"><span>总市值</span><b>¥${fnFmt(totalMV)}</b></div>
     <div class="hs-card"><span>总收益</span><b class="${totalProfit >= 0 ? 'fn-up' : 'fn-down'}">${totalProfit >= 0 ? '+' : ''}¥${fnFmt(totalProfit)}</b></div>
-    <div class="hs-card"><span>总收益率</span><b class="${totalProfit >= 0 ? 'fn-up' : 'fn-down'}">${totalProfit >= 0 ? '+' : ''}${totalPct.toFixed(1)}%</b></div>
+    <div class="hs-card"><span>总收益率</span><b class="${totalProfit >= 0 ? 'fn-up' : 'fn-down'}">${totalProfit >= 0 ? '+' : ''}${totalPct.toFixed(2)}%</b></div>
+    <div class="hs-card hl"><span>今日估算</span><b style="color:${dayLv.color}">${dayProfit >= 0 ? '+' : ''}¥${fnFmt(dayProfit)}</b><em style="color:${dayLv.color}">${dayPct >= 0 ? '+' : ''}${dayPct.toFixed(2)}% · ${dayLv.label}</em></div>
   </div>`;
+
   let body;
   if (!list.length) {
-    body = `<div class="hold-empty">还没有持仓记录。<br><button class="btn-primary" style="margin-top:12px" onclick="openFundHoldingForm()"><i class="fas fa-plus"></i> 添加第一笔持仓</button></div>`;
+    body = `<div class="hold-empty">还没有持仓记录。<br>记一笔就能看到：总收益、今日估算盈亏，以及它所属行业的趋势与政策面。<br><button class="btn-primary" style="margin-top:12px" onclick="openFundHoldingForm()"><i class="fas fa-plus"></i> 添加第一笔持仓</button></div>`;
   } else {
     const rows = list.map(h => {
-      const mv = +h.mv || 0, cost = +h.cost || 0; const p = mv - cost; const pc = cost ? p / cost * 100 : 0;
+      const mv = +h.mv || 0, cost = +h.cost || 0;
+      const p = mv - cost, pc = cost ? p / cost * 100 : 0;
+      let dc = (h.dayChg != null && h.dayChg !== '') ? +h.dayChg : null;
+      const fromSector = (dc == null && h.sector && smap[h.sector] != null);
+      if (dc == null && h.sector && smap[h.sector] != null) dc = smap[h.sector];
+      const dProfit = dc != null ? mv * dc / 100 : null;
+      const dlv = dc != null ? finChgLevel(dc) : null;
+      const secTxt = h.sector ? `<div class="h-sec">${fnEsc(h.sector)}${fromSector ? '<i title="沿用行业今日涨跌">·行业</i>' : ''}</div>` : '';
       return `<tr>
-        <td><div class="h-name">${fnEsc(h.name)}</div>${h.code ? `<div class="h-code">${fnEsc(h.code)}</div>` : ''}</td>
-        <td>${h.type || '—'}</td>
+        <td><div class="h-name">${fnEsc(h.name)}</div>${h.code ? `<div class="h-code">${fnEsc(h.code)}</div>` : ''}${secTxt}${h.note ? `<div class="h-note">${fnEsc(h.note)}</div>` : ''}</td>
+        <td>${fnEsc(h.type || '—')}</td>
         <td>¥${fnFmt(cost)}</td>
         <td>¥${fnFmt(mv)}</td>
         <td class="${p >= 0 ? 'fn-up' : 'fn-down'}">${p >= 0 ? '+' : ''}¥${fnFmt(p)}</td>
-        <td class="${p >= 0 ? 'fn-up' : 'fn-down'}">${p >= 0 ? '+' : ''}${pc.toFixed(1)}%</td>
+        <td class="${p >= 0 ? 'fn-up' : 'fn-down'}">${p >= 0 ? '+' : ''}${pc.toFixed(2)}%</td>
+        <td class="${dc != null ? '' : 'muted'}">${dc != null ? `<span style="color:${dlv.color}">${dc >= 0 ? '+' : ''}${dc.toFixed(2)}%</span><div class="h-daylv" style="color:${dlv.color};background:${dlv.bg}">${dlv.label}</div>` : '—'}</td>
+        <td class="${dProfit != null ? (dProfit >= 0 ? 'fn-up' : 'fn-down') : 'muted'}">${dProfit != null ? (dProfit >= 0 ? '+' : '') + '¥' + fnFmt(dProfit) : '—'}</td>
         <td class="h-act"><button onclick="openFundHoldingForm('${h.id}')">编辑</button><button class="del" onclick="deleteFundHolding('${h.id}')">删</button></td>
       </tr>`;
     }).join('');
-    body = `<div class="hold-actions"><button class="btn-primary" onclick="openFundHoldingForm()"><i class="fas fa-plus"></i> 添加持仓</button></div>
-      <div class="hold-table-wrap"><table class="hold-table"><thead><tr><th>基金</th><th>类型</th><th>成本</th><th>市值</th><th>盈亏</th><th>收益率</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
-      <div class="hold-pie-wrap"><canvas id="hold-pie"></canvas></div>`;
+    body = `<div class="hold-actions">
+        <button class="btn-primary" onclick="openFundHoldingForm()"><i class="fas fa-plus"></i> 添加持仓</button>
+        <button class="btn-ghost" onclick="openSectorEditor()"><i class="fas fa-pen"></i> 更新今日涨跌</button>
+        <span class="hold-tip">今日估算 = 市值 × 今日涨跌%；没填今日涨跌时，自动沿用该基金所属行业的盘面涨跌。</span>
+      </div>
+      <div class="hold-table-wrap"><table class="hold-table"><thead><tr>
+        <th>基金</th><th>类型</th><th>成本</th><th>市值</th><th>盈亏</th><th>收益率</th><th>今日</th><th>今日盈亏</th><th></th>
+      </tr></thead><tbody>${rows}</tbody></table></div>
+      <div class="hold-pie-wrap"><canvas id="hold-pie"></canvas></div>
+      <div class="hold-next"><i class="fas fa-wind"></i> 想看这些行业最近为什么涨跌？去 <button class="lnk" onclick="setPracticeTab('trend')">趋势风口</button> 看政策面与消息面。</div>`;
   }
   el.innerHTML = `<div class="hold-panel">${summary}${body}</div>`;
   if (list.length) {
@@ -4801,11 +4907,14 @@ function openFundHoldingForm(id) {
     <label>基金名称<input id="fh-name" value="${h ? fnEsc(h.name) : ''}" placeholder="如 易方达蓝筹精选"></label>
     <label>代码(选填)<input id="fh-code" value="${h ? fnEsc(h.code || '') : ''}" placeholder="如 005827"></label>
     <label>类型<select id="fh-type">${opts}</select></label>
+    <label>所属��业（选填，填了就能联动行业盘面与趋势）<select id="fh-sector">${finSectorOptions(h ? h.sector : '')}</select></label>
     <label>买入日期<input id="fh-date" type="date" value="${h ? (h.date || '') : ''}"></label>
     <label>成本金额(元)<input id="fh-cost" type="number" value="${h ? h.cost : ''}" placeholder="实际投入本金"></label>
     <label>当前市值(元)<input id="fh-mv" type="number" value="${h ? h.mv : ''}" placeholder="份额×净值 或账户市值"></label>
     <label>持有份额(选填)<input id="fh-shares" type="number" value="${h ? (h.shares || '') : ''}"></label>
     <label>当前净值(选填)<input id="fh-nav" type="number" step="0.0001" value="${h ? (h.nav || '') : ''}"></label>
+    <label>今日涨跌%(选填，从APP抄过来最准)<input id="fh-daychg" type="number" step="0.01" value="${h && h.dayChg != null ? h.dayChg : ''}" placeholder="如 -1.25（留空则沿用所属行业）"></label>
+    <label>备注(选填)<input id="fh-note" value="${h ? fnEsc(h.note || '') : ''}" placeholder="如：定投中 / 目标仓位10%"></label>
     <div class="fund-form-actions">
       <button class="btn-primary" onclick="saveFundHolding('${id || ''}')">保存</button>
       <button class="btn-ghost" onclick="closeZoom()">取消</button>
@@ -4824,12 +4933,16 @@ function saveFundHolding(id) {
   let mv = +document.getElementById('fh-mv').value || 0;
   if (shares > 0 && nav > 0 && !document.getElementById('fh-mv').value) mv = +(shares * nav).toFixed(2);
   if (!mv) mv = cost;
+  const dcRaw = document.getElementById('fh-daychg').value.trim();
   const rec = {
     id: id || ('fh_' + Date.now()),
     name, code: document.getElementById('fh-code').value.trim(),
     type: document.getElementById('fh-type').value,
+    sector: document.getElementById('fh-sector').value || '',
     date: document.getElementById('fh-date').value,
-    cost, mv, shares, nav
+    cost, mv, shares, nav,
+    dayChg: dcRaw === '' ? null : parseFloat(dcRaw),
+    note: document.getElementById('fh-note').value.trim()
   };
   const list = fundHoldings();
   if (id) { const i = list.findIndex(x => x.id === id); if (i >= 0) list[i] = rec; }
