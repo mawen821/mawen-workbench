@@ -270,6 +270,142 @@ function pickEnglishVoice() {
   } catch (e) { return null; }
 }
 
+/* ===== 中文朗读（供新闻听单 / 申论等中文内容） ===== */
+// 优先用浏览器 SpeechSynthesis(zh-CN)，失败再走有道中文(type=1)，再降级文字放大。
+function pickZhVoice() {
+  try {
+    const vs = (window.speechSynthesis && window.speechSynthesis.getVoices()) || [];
+    if (!vs.length) return null;
+    return vs.find(v => /zh[-_]CN/i.test(v.lang)) || vs.find(v => /^zh/i.test(v.lang)) || null;
+  } catch (e) { return null; }
+}
+// 有道中文音频（type=1 为中文女声），国内免 key、mp3 直链
+function speakYoudaoZh(text, btn, onEnd) {
+  try {
+    if (_currentTtsAudio) { try { _currentTtsAudio.pause(); } catch (e) {} _currentTtsAudio = null; }
+    const audio = new Audio(`https://dict.youdao.com/dictvoice?type=1&audio=${encodeURIComponent(text)}`);
+    audio.preload = 'auto';
+    if (btn) { if (!btn.dataset.orig) btn.dataset.orig = btn.innerHTML; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 播放中'; }
+    const done = () => { if (btn) btn.innerHTML = btn.dataset.orig || btn.innerHTML; if (onEnd) onEnd(); };
+    audio.onended = done;
+    audio.onerror = () => { done(); speakFallback(text); };
+    _currentTtsAudio = audio;
+    const p = audio.play();
+    if (p && p.catch) p.catch(() => { done(); speakFallback(text); });
+    return true;
+  } catch (e) { speakFallback(text); return false; }
+}
+// 朗读一段中文。btn 可选（用于回显"播放中"）。onEnd 在播放完成后回调（用于连播）。
+function speakZh(text, btn, onEnd) {
+  if (!text || !text.trim()) { if (onEnd) onEnd(); return; }
+  const restore = () => { if (btn && btn.dataset.orig) btn.innerHTML = btn.dataset.orig; };
+  try {
+    if (window.speechSynthesis && window.SpeechSynthesisUtterance) {
+      const synth = window.speechSynthesis;
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'zh-CN'; u.rate = 1; u.pitch = 1;
+      const v = pickZhVoice(); if (v) u.voice = v;
+      let handed = false;
+      const fallback = () => {
+        if (handed) return; handed = true;
+        try { synth.cancel(); } catch (e) {}
+        speakYoudaoZh(text, btn, onEnd);
+      };
+      u.onstart = () => { handed = true; };
+      u.onend = () => { if (handed) { restore(); if (onEnd) onEnd(); } };
+      u.onerror = (ev) => { if (handed) return; if (ev && ev.error === 'canceled') return; fallback(); };
+      synth.cancel(); synth.speak(u);
+      setTimeout(fallback, 1500);
+      return;
+    }
+  } catch (e) {}
+  speakYoudaoZh(text, btn, onEnd);
+}
+
+// 单条朗读：若正在连播则先停止，避免两路语音重叠
+function speakZhOne(text, btn) {
+  if (_newsListenPlaying) stopNewsListen(false);
+  speakZh(text, btn);
+}
+
+/* ===== 新闻听单：顺序连播队列 + 悬浮播放条 ===== */
+let _newsListenQueue = [];      // [{sep:Boolean, text, domBtn}]
+let _newsListenIdx = -1;
+let _newsListenPlaying = false;
+let _newsListenBar = null;
+
+function showNewsListenBar() {
+  if (_newsListenBar && _newsListenBar.parentNode) return;
+  _newsListenBar = document.createElement('div');
+  _newsListenBar.id = 'news-listen-bar';
+  _newsListenBar.className = 'news-listen-bar';
+  _newsListenBar.innerHTML = `
+    <i class="fas fa-volume-up bar-icon"></i>
+    <div class="bar-text">
+      <span class="bar-label">正在朗读</span>
+      <span class="bar-now">…</span>
+    </div>
+    <div class="bar-progress"><div class="bar-fill"></div></div>
+    <button class="bar-stop" onclick="stopNewsListen(false)"><i class="fas fa-stop"></i> 停止</button>
+  `;
+  document.body.appendChild(_newsListenBar);
+}
+function updateNewsListenBar(nowText, idx, total) {
+  if (!_newsListenBar) return;
+  const now = _newsListenBar.querySelector('.bar-now');
+  const fill = _newsListenBar.querySelector('.bar-fill');
+  if (now) now.textContent = nowText || '…';
+  if (fill) fill.style.width = (total ? Math.round((idx + 1) / total * 100) : 0) + '%';
+}
+function hideNewsListenBar() {
+  if (_newsListenBar && _newsListenBar.parentNode) { _newsListenBar.parentNode.removeChild(_newsListenBar); _newsListenBar = null; }
+}
+function _newsListenRestoreAll() {
+  // 还原所有被标记为播放中的按钮
+  document.querySelectorAll('.li-play.playing, .slot-play.playing, .listen-playall.playing').forEach(b => {
+    if (b.dataset.orig) b.innerHTML = b.dataset.orig;
+    b.classList.remove('playing');
+  });
+}
+function playNewsListenChain() {
+  _newsListenIdx++;
+  if (_newsListenIdx >= _newsListenQueue.length) { stopNewsListen(true); return; }
+  const item = _newsListenQueue[_newsListenIdx];
+  updateNewsListenBar(item.sep ? item.text : item.text.substring(0, 28), _newsListenIdx, _newsListenQueue.length);
+  if (item.domBtn) {
+    if (!item.domBtn.dataset.orig) item.domBtn.dataset.orig = item.domBtn.innerHTML;
+    item.domBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    item.domBtn.classList.add('playing');
+  }
+  const cur = item.domBtn;
+  speakZh(item.text, item.domBtn, () => {
+    if (cur) { if (cur.dataset.orig) cur.innerHTML = cur.dataset.orig; cur.classList.remove('playing'); }
+    if (_newsListenPlaying) playNewsListenChain();
+  });
+}
+// items: [{sep, text, domBtn}]
+function startNewsListen(items, btn) {
+  if (!items || !items.length) { showToast('暂无可朗读的内容', 'info'); return; }
+  stopNewsListen(false); // 先清掉上一次
+  _newsListenQueue = items;
+  _newsListenIdx = -1;
+  _newsListenPlaying = true;
+  showNewsListenBar();
+  if (btn) { if (!btn.dataset.orig) btn.dataset.orig = btn.innerHTML; btn.classList.add('playing'); }
+  playNewsListenChain();
+}
+function stopNewsListen(finished) {
+  _newsListenPlaying = false;
+  try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
+  if (_currentTtsAudio) { try { _currentTtsAudio.pause(); } catch (e) {} _currentTtsAudio = null; }
+  _newsListenRestoreAll();
+  hideNewsListenBar();
+  if (finished === true) {
+    if (newsListenCheckedToday()) showToast('已播报完毕 🎧', 'success');
+    else showToast('已播报完毕 🎧 别忘了「今日听新闻打卡」✅', 'success');
+  }
+}
+
 /* ===== 数据备份：导出/导入，保证换手机可一键转移全部手动数据 ===== */
 // 主数据使用 mw_ 前缀；少数独立子应用（如旅行地图）用专属 key，也要一并备份
 const EXTRA_BACKUP_KEYS = ['travelBoard.v1'];
@@ -724,6 +860,7 @@ const MODULE_UPDATES = {
   'zimeiti-goods':{ type:'manual',  label:'好物部 · 选题灵感/爆款二创/复盘&选题/预计完成/文案（本地记录）', icon:'🎁' },
   'ai':          { type:'manual',  label:'AI学习 · 本周更新/学习路径/AI视频/AI漫剧/原理/名词/主流软件（每周自动更新）', icon:'🤖' },
   'destiny':     { type:'daily', hour:6, minute:30, label:'东方命理 · 每日 06:30 轮换今日一课/一卦；学完自动解锁下一阶段', icon:'☯️' },
+  'shisanwu':    { type:'manual',                   label:'十五五规划 · 政策认知地图（国情与世界之后）', icon:'🗺️' },
   'tarot':       { type:'daily', hour:6, minute:40, label:'西方塔罗 · 每日 06:40 轮换今日一牌/一课；学完自动解锁下一阶段', icon:'🔮' }
 };
 
@@ -821,6 +958,7 @@ function renderModule(mod) {
     case 'destiny': renderDestiny(container); break;
     case 'tarot': renderTarot(container); break;
     case 'travel': renderTravel(container); break;
+    case 'shisanwu': renderShisanwu(container); break;
     case 'zimeiti-pet': renderZimeiti(container, 'pet'); break;
     case 'zimeiti-goods': renderZimeiti(container, 'goods'); break;
     case 'ai': renderAi(container); break;
@@ -835,6 +973,14 @@ function renderModule(mod) {
    ============================================ */
 function renderTravel(c) {
   c.innerHTML = '<div class="travel-frame-wrap"><iframe src="travel-board/index.html" style="width:100%;height:100%;min-height:82vh;border:0;display:block" title="旅行地图" loading="lazy"></iframe></div>';
+}
+
+/* ============================================
+   十五五规划 板块（2026-10-17 新增，位于「国情与世界」之后）
+   以 iframe 嵌入 shisanwu（独立子应用：十五五发展方向优先级总览，基于纲要18篇62章）
+   ============================================ */
+function renderShisanwu(c) {
+  c.innerHTML = '<div class="travel-frame-wrap"><iframe src="shisanwu/index.html" style="width:100%;height:100%;min-height:82vh;border:0;display:block" title="十五五规划" loading="lazy"></iframe></div>';
 }
 
 /* ============================================
@@ -5594,7 +5740,7 @@ function formatDate(ts) {
    ① 前沿「知识卡」库按天轮换 —— 每天都有新内容，且不过时
    ② 每条配权威信息源链接 —— 点一下就能看到当下真实最新的消息
    ============================================================ */
-let currentNewsView = 'news';          // 'news' | 'frontier'
+let currentNewsView = 'news';          // 'news' | 'frontier' | 'listen'
 let frontierSector = 'all';
 let frontierOpen = {};
 let frontierLevel = 'all';
@@ -5859,20 +6005,23 @@ function renderNews(c) {
         </div>
       </div>
 
+      ${currentNewsView==='listen' ? '' : `
       <div class="news-filters">
         ${NEWS_CATEGORIES.map(cat => `
           <button class="news-filter ${cat.id === 'all' ? 'active' : ''}" data-cat="${cat.id}" onclick="filterNews('${cat.id}')">
             <i class="fas ${cat.icon}"></i> ${cat.label}
           </button>
         `).join('')}
-      </div>
+      </div>`}
 
       <div class="news-view-tabs">
         <button class="nvt ${currentNewsView==='news'?'active':''}" onclick="switchNewsView('news')"><i class="fas fa-newspaper"></i> 今日大事件</button>
         <button class="nvt ${currentNewsView==='frontier'?'active':''}" onclick="switchNewsView('frontier')"><i class="fas fa-rocket"></i> 前沿速递</button>
+        <button class="nvt ${currentNewsView==='listen'?'active':''}" onclick="switchNewsView('listen')"><i class="fas fa-headphones"></i> 听新闻</button>
       </div>
       ${currentNewsView==='frontier'?renderNewsFrontier():''}
       ${currentNewsView==='news'?renderNewsFrontierTeaser():''}
+      ${currentNewsView==='listen'?renderNewsListen():''}
 
       <div id="news-grid"></div>
 
@@ -5890,6 +6039,228 @@ function renderNews(c) {
   `;
 
   if (currentNewsView === 'news') renderNewsGrid(recentNews);
+}
+
+/* ===== 听新闻：按时段聚合（当天 / 次日 × 早间 / 午间 / 晚间） ===== */
+function _newsHourOf(t) {
+  const m = /(\d{1,2})[:：]\d{1,2}/.exec(t || '');
+  return m ? parseInt(m[1], 10) : -1;
+}
+function _newsBucket(items) {
+  const slots = { morning: [], noon: [], evening: [] };
+  (items || []).forEach(n => {
+    const h = _newsHourOf(n.time);
+    if (h >= 0 && h < 11) slots.morning.push(n);
+    else if (h >= 11 && h < 17) slots.noon.push(n);
+    else if (h >= 17) slots.evening.push(n);
+    else slots.morning.push(n); // 无时间字段默认归早间
+  });
+  return slots;
+}
+function _newsSlotsForDay(dayKey) {
+  let items, label;
+  if (dayKey === 'tomorrow') {
+    const tmr = new Date(); tmr.setDate(tmr.getDate() + 1);
+    const mStr = tmr.getFullYear() + '-' + String(tmr.getMonth() + 1).padStart(2, '0') + '-' + String(tmr.getDate()).padStart(2, '0');
+    items = getNewsByDate(mStr); label = '明天';
+    if (!items.length) { items = []; label = '明天（暂无）'; }
+  } else if (dayKey && dayKey !== 'today') {
+    // 具体日期（回顾模式）：dayKey 形如 'YYYY-MM-DD'
+    items = getNewsByDate(dayKey); label = dayKey;
+    if (!items.length) { items = []; label = dayKey + '（暂无）'; }
+  } else {
+    const tStr = todayStr();
+    items = getNewsByDate(tStr); label = '今天';
+    if (!items.length) {
+      const all = Object.keys(NEWS_DATA).sort().reverse();
+      for (const ds of all) { const x = getNewsByDate(ds); if (x.length) { items = x; label = ds + '（最新可用）'; break; } }
+    }
+  }
+  return { label: label, slots: _newsBucket(items) };
+}
+const _NEWS_SLOT_NAMES = { morning: '早间新闻', noon: '午间新闻', evening: '晚间新闻' };
+function _newsListenItemsForDay(slots, dayLabel) {
+  const items = [];
+  ['morning', 'noon', 'evening'].forEach(key => {
+    const arr = slots[key];
+    if (!arr.length) return;
+    items.push({ sep: true, text: (dayLabel || '') + '，' + _NEWS_SLOT_NAMES[key] + '，共 ' + arr.length + ' 条。' });
+    arr.forEach(n => items.push({ sep: false, text: (n.title || '') + '。' + (n.summary || ''), domBtn: null }));
+  });
+  return items;
+}
+
+/* ===== 听新闻：日期回顾 + 每日打卡 ===== */
+let currentNewsReviewDate = null;   // null = 默认（今天/明天）；'YYYY-MM-DD' = 单日回顾
+
+function newsListenAllDates() { return Object.keys(NEWS_DATA).sort().reverse(); }
+function newsListenLatestDate() { const d = newsListenAllDates(); return d.length ? d[0] : null; }
+function newsListenHasToday() { return !!NEWS_DATA[todayStr()]; }
+
+// 打卡数据：mw_news_listen_checkin = ['YYYY-MM-DD', ...]
+function newsListenSet() { return loadData('news_listen_checkin', []); }
+function newsListenCheckedToday() { return newsListenSet().includes(todayStr()); }
+function newsListenStreak() {
+  const set = new Set(newsListenSet());
+  let streak = 0;
+  const d = new Date();
+  if (!set.has(todayStr())) d.setDate(d.getDate() - 1); // 今天未打卡则从昨天起算
+  while (set.has(d.toISOString().split('T')[0])) { streak++; d.setDate(d.getDate() - 1); }
+  return streak;
+}
+function newsListenMonthCount() {
+  const ym = todayStr().slice(0, 7);
+  return newsListenSet().filter(x => x.indexOf(ym) === 0).length;
+}
+function newsListenCheckin() {
+  const set = newsListenSet();
+  const t = todayStr();
+  if (!set.includes(t)) set.push(t);
+  saveData('news_listen_checkin', set);
+  showToast('打卡成功 🎧 已连续 ' + newsListenStreak() + ' 天', 'success');
+  renderNews($('#main-content'));
+}
+function switchNewsListenDate(d) { currentNewsReviewDate = d; renderNews($('#main-content')); }
+function backToTodayListen() { currentNewsReviewDate = null; renderNews($('#main-content')); }
+
+function renderNewsListen() {
+  const t = _newsSlotsForDay('today');
+  const m = _newsSlotsForDay('tomorrow');
+  const dates = newsListenAllDates();
+  const latest = newsListenLatestDate();
+  const hasToday = newsListenHasToday();
+  const reviewMode = !!currentNewsReviewDate;
+  const todayKey = todayStr();
+
+  const slotHtml = (slots, dayKey) => {
+    const defs = [
+      ['morning', '🌅', '早间新闻', 'slot-morning'],
+      ['noon', '☀️', '午间新闻', 'slot-noon'],
+      ['evening', '🌙', '晚间新闻', 'slot-evening']
+    ];
+    return defs.map(([key, emoji, name, cls]) => {
+      const arr = slots[key];
+      const rows = arr.map(n => {
+        const cat = NEWS_CATEGORIES.find(c => c.id === n.category);
+        const spk = n.title + '。' + n.summary;
+        return `
+          <div class="listen-item">
+            <span class="li-cat news-tag ${n.category}">${cat ? cat.label : ''}</span>
+            <span class="li-title">${escapeHtml(n.title)}</span>
+            <button class="li-play" title="朗读这条" onclick="speakZhOne('${jsLit(spk)}', this)"><i class="fas fa-volume-up"></i></button>
+          </div>`;
+      }).join('');
+      return `
+        <div class="listen-slot ${cls}">
+          <div class="slot-head">
+            <span class="slot-emoji">${emoji}</span>
+            <span class="slot-name">${name}</span>
+            <span class="slot-count">${arr.length} 条</span>
+            <button class="slot-play" title="朗读本段" onclick="playNewsListenSlot('${dayKey}','${key}',this)"><i class="fas fa-volume-up"></i> 本段</button>
+          </div>
+          <div class="slot-items">${rows || '<div class="slot-empty">该时段暂无新闻</div>'}</div>
+        </div>`;
+    }).join('');
+  };
+
+  // 日期回顾条：今天 + 所有有数据的历史日期
+  const dateStrip = `
+    <div class="listen-dates">
+      <button class="ld-chip ${!reviewMode ? 'active' : ''}" onclick="backToTodayListen()"><i class="fas fa-calendar-day"></i> 今天</button>
+      ${dates.map(d => {
+        const mm = d.slice(5);
+        const isToday = d === todayKey;
+        const active = reviewMode && currentNewsReviewDate === d ? 'active' : '';
+        return `<button class="ld-chip ${active}" onclick="switchNewsListenDate('${d}')">${isToday ? '今天' : mm}</button>`;
+      }).join('')}
+    </div>`;
+
+  // 打卡卡
+  const checkedToday = newsListenCheckedToday();
+  const streak = newsListenStreak();
+  const monthCnt = newsListenMonthCount();
+  const set = newsListenSet();
+  let dots = '';
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const dd = new Date(now); dd.setDate(now.getDate() - i);
+    const ds = dd.toISOString().split('T')[0];
+    dots += `<span class="ld-dot ${set.includes(ds) ? 'on' : ''}" title="${ds}"></span>`;
+  }
+  const checkinCard = `
+    <div class="listen-checkin">
+      <div class="lc-left">
+        <div class="lc-streak">连续 <strong>${streak}</strong> 天</div>
+        <div class="lc-sub">本月已打卡 ${monthCnt} 天 · 最近 7 天</div>
+        <div class="lc-dots">${dots}</div>
+      </div>
+      <div class="lc-right">
+        <button class="lc-btn ${checkedToday ? 'done' : ''}" onclick="newsListenCheckin()" ${checkedToday ? 'disabled' : ''}>
+          ${checkedToday ? '<i class="fas fa-check"></i> 今日已打卡' : '<i class="fas fa-check-circle"></i> 今日听新闻打卡'}
+        </button>
+        <div class="lc-hint">听完新闻点这里，养成每日听政经的习惯 ✨</div>
+      </div>
+    </div>`;
+
+  // 顶部 hero（含每日自动更新提示）
+  const hero = `
+    <div class="listen-hero">
+      <div class="listen-hero-icon">🎧</div>
+      <div class="listen-hero-text">
+        <h2>${reviewMode ? '新闻回顾 · ' + currentNewsReviewDate : '起床听新闻'}</h2>
+        <p>${reviewMode
+          ? '正在回看 <strong>' + currentNewsReviewDate + '</strong> 的新闻。点任意 🔊 听一条，或一键连播当天全部。'
+          : '按<strong>早间 / 午间 / 晚间</strong>分段汇总今天与明天的新闻。点任意 🔊 听一条，或一键连播全部，睁眼就能听。'}</p>
+        ${reviewMode ? '' : `<p class="listen-update">🗓 数据更新至 <strong>${latest || '—'}</strong> · 每天 08:00 自动更新${hasToday ? ' · <span class="up-ok">今日已更新</span>' : ' · <span class="up-wait">今日待更新</span>'}</p>`}
+      </div>
+      ${reviewMode
+        ? `<button class="btn-speak listen-playall" onclick="backToTodayListen()"><i class="fas fa-arrow-left"></i> 返回今天</button>`
+        : `<button class="btn-speak listen-playall" onclick="playNewsListenAll(this)"><i class="fas fa-play"></i> 一键连播</button>`}
+    </div>`;
+
+  // 内容区：回顾模式显示单日；默认显示今天+明天
+  let dayContent;
+  if (reviewMode) {
+    const items = getNewsByDate(currentNewsReviewDate);
+    dayContent = `<div class="listen-day"><div class="listen-day-head"><i class="fas fa-calendar-day"></i> ${currentNewsReviewDate}（共 ${items.length} 条）</div>${slotHtml(_newsBucket(items), currentNewsReviewDate)}</div>`;
+  } else {
+    dayContent = `
+      <div class="listen-day"><div class="listen-day-head"><i class="fas fa-calendar-day"></i> ${t.label}</div>${slotHtml(t.slots, 'today')}</div>
+      <div class="listen-day"><div class="listen-day-head"><i class="fas fa-calendar-plus"></i> ${m.label}</div>${slotHtml(m.slots, 'tomorrow')}</div>`;
+  }
+
+  return `
+    <div class="listen-wrap">
+      ${hero}
+      ${checkinCard}
+      ${dateStrip}
+      ${dayContent}
+      <p class="listen-tip"><i class="fas fa-info-circle"></i> 朗读优先调用系统中文语音；若设备无声音，可在手机「设置 → 语言 → 文字转语音」开启系统 TTS。点击上方日期可回看任意一天的新闻，新闻每天 08:00 自动更新。</p>
+    </div>
+  `;
+}
+function playNewsListenSlot(dayKey, slotKey, btn) {
+  const { label, slots } = _newsSlotsForDay(dayKey);
+  const arr = slots[slotKey] || [];
+  if (!arr.length) { showToast('该时段暂无新闻', 'info'); return; }
+  const items = [{ sep: true, text: label + '，' + _NEWS_SLOT_NAMES[slotKey] + '，共 ' + arr.length + ' 条。' }]
+    .concat(arr.map(n => ({ sep: false, text: (n.title || '') + '。' + (n.summary || ''), domBtn: null })));
+  startNewsListen(items, btn);
+}
+function playNewsListenAll(btn) {
+  stopNewsListen(false);
+  let items;
+  if (currentNewsReviewDate) {
+    // 回顾模式：连播所选当天
+    const arr = getNewsByDate(currentNewsReviewDate);
+    items = _newsListenItemsForDay(_newsBucket(arr), currentNewsReviewDate);
+  } else {
+    const t = _newsSlotsForDay('today');
+    const m = _newsSlotsForDay('tomorrow');
+    items = _newsListenItemsForDay(t.slots, t.label).concat(_newsListenItemsForDay(m.slots, m.label));
+  }
+  if (!items.length) { showToast('暂无可朗读的新闻', 'info'); return; }
+  startNewsListen(items, btn);
 }
 
 function filterNews(cat) {
