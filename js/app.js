@@ -428,17 +428,54 @@ function speakZhSystem(text, btn, onEnd) {
   if (onEnd) onEnd();
 }
 
+// 中文内容的音频 key（与 _gen_news_audio.py 的 djb2 算法保持一致），映射到 ./audio/news/<key>.mp3
+function zhAudioKey(text) {
+  const t = (text || '').trim();
+  let bytes;
+  try { bytes = new TextEncoder().encode(t); }
+  catch (e) { bytes = []; for (let i = 0; i < t.length; i++) bytes.push(t.charCodeAt(i) & 0xff); }
+  let h = 5381;
+  for (let i = 0; i < bytes.length; i++) h = (((h << 5) + h) + bytes[i]) >>> 0;
+  return 'news-' + h.toString(16).padStart(8, '0');
+}
+
+// 播放预生成的同源 mp3（最可靠：不依赖手机语音包、不依赖第三方接口、离线也能放）
+// 本地没有该文件时（404）立刻回调 onFail，由上层转在线合成
+function playLocalZhAudio(text, btn, onEnd, onFail) {
+  let a;
+  try { a = new Audio('./audio/news/' + zhAudioKey(text) + '.mp3'); } catch (e) { onFail(); return; }
+  a.preload = 'auto';
+  if (_currentTtsAudio) { try { _currentTtsAudio.pause(); } catch (e) {} }
+  _currentTtsAudio = a;
+  if (btn && !btn.dataset.orig) btn.dataset.orig = btn.innerHTML;
+  if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 播放中';
+  let settled = false;
+  const restore = () => { if (btn && btn.dataset.orig) btn.innerHTML = btn.dataset.orig; };
+  const done = () => { if (settled) return; settled = true; restore(); if (onEnd) onEnd(); };
+  const miss = () => { if (settled) return; settled = true; restore(); onFail(); };
+  a.onended = done;
+  a.onerror = miss;
+  const p = a.play();
+  if (p && p.catch) p.catch(miss);
+}
+
 // 朗读一段中文。btn 可选（用于回显"播放中"）。onEnd 在播放完成后回调（用于连播）。
-// 顺序：① 在线分段音频（不依赖语音包，手机有网就能出声）→ ② 系统语音 → ③ 原文放大
+// 顺序：① 预生成本地 mp3（同源，最稳）→ ② 在线分段合成 → ③ 系统语音 → ④ 原文放大
 function speakZh(text, btn, onEnd) {
   if (!text || !String(text).trim()) { if (onEnd) onEnd(); return; }
+  const onlineThenSystem = () => {
+    try {
+      if (typeof Audio !== 'undefined') {
+        speakZhOnline(text, btn, onEnd, () => speakZhSystem(text, btn, onEnd));
+        return;
+      }
+    } catch (e) {}
+    speakZhSystem(text, btn, onEnd);
+  };
   try {
-    if (typeof Audio !== 'undefined') {
-      speakZhOnline(text, btn, onEnd, () => speakZhSystem(text, btn, onEnd));
-      return;
-    }
+    if (typeof Audio !== 'undefined') { playLocalZhAudio(text, btn, onEnd, onlineThenSystem); return; }
   } catch (e) {}
-  speakZhSystem(text, btn, onEnd);
+  onlineThenSystem();
 }
 
 // 单条朗读：若正在连播则先停止，避免两路语音重叠
