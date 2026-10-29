@@ -102,15 +102,13 @@ function jsLit(s) {
     .replace(/</g, '\\u003C'); // 防 </script> 逃逸
 }
 function speakFallback(text) {
-  // 最后兜底：仅在 TTS 与有道音频都不可用时调用
+  // 最后兜底：在线音频与系统语音都不可用时调用
   // 长文本（>60 字符）一般是阅读段落，用更小字号便于一次性看完整段
   const isLongText = text.length > 60;
   const fontSize = isLongText ? '15px' : '20px';
   const lineHeight = isLongText ? 1.9 : 2;
-  const title = isLongText ? '📖 原文（当前环境无 TTS 引擎）' : '🔊 朗读（文字版）';
-  const toast = isLongText
-    ? '当前环境无 TTS 引擎，已为你显示原文。建议在手机「设置→语言→文字转语音」启用系统 TTS'
-    : '当前环境无法播放英语音频，已为你放大文字';
+  const title = isLongText ? '📖 原文（音频暂时放不出）' : '🔊 朗读（文字版）';
+  const toast = '这一段没能合成语音，已为你显示文字。请检查手机网络后重试（联网即可朗读，无需安装语音包）';
   showToast(toast, 'info');
   openZoom(title, `<p style="font-size:${fontSize};line-height:${lineHeight};color:var(--text-primary)">${escapeHtml(text)}</p>`);
 }
@@ -295,9 +293,115 @@ function speakYoudaoZh(text, btn, onEnd) {
     return true;
   } catch (e) { speakFallback(text); return false; }
 }
-// 朗读一段中文。btn 可选（用于回显"播放中"）。onEnd 在播放完成后回调（用于连播）。
-function speakZh(text, btn, onEnd) {
-  if (!text || !text.trim()) { if (onEnd) onEnd(); return; }
+/* ----- 中文在线分段朗读：不依赖手机系统语音引擎 -----
+   背景：很多安卓机（小米/部分 WebView）没有装中文 TTS 语音包，speechSynthesis 完全不出声；
+   而有道 dictvoice / 百度 gettts 这类公共接口是 GET 请求，中文超过二三十字就报错或返回空音频。
+   所以这里把长文本按句子切成短片段，逐段合成播放 —— 只要有网就一定能出声，与系统语音包无关。 */
+let _zhPlayToken = 0;   // 递增令牌：新一次播放会作废旧队列，实现"点一下立刻切"
+
+// 把中文长文本切成适合 GET 请求的短片段（优先按句号/问号/分号，其次按逗号，最后硬切）
+function splitZhSegments(text, maxLen) {
+  maxLen = maxLen || 50;
+  const clean = String(text == null ? '' : text)
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/[“”"「」]/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  if (!clean) return [];
+  const out = [];
+  const push = (s) => { s = (s || '').trim(); if (s) out.push(s); };
+  const sentences = clean.match(/[^。！？；!?;]+[。！？；!?;]?/g) || [clean];
+  let buf = '';
+  for (let s of sentences) {
+    s = s.trim();
+    if (!s) continue;
+    if (s.length > maxLen) {              // 单句过长 → 再按逗号细拆
+      push(buf); buf = '';
+      const parts = s.match(/[^，、,]+[，、,]?/g) || [s];
+      let b2 = '';
+      for (const p of parts) {
+        if ((b2 + p).length > maxLen) { push(b2); b2 = p; }
+        else b2 += p;
+      }
+      push(b2);
+      continue;
+    }
+    if ((buf + s).length > maxLen) { push(buf); buf = s; }
+    else buf += s;
+  }
+  push(buf);
+  // 极端情况（整段没标点）硬切，避免个别句子过长导致接口 500
+  const final = [];
+  for (const s of out) {
+    if (s.length <= maxLen * 1.8) { final.push(s); continue; }
+    for (let i = 0; i < s.length; i += maxLen) final.push(s.substr(i, maxLen));
+  }
+  return final;
+}
+
+// 一个片段的候选音源（按优先级）：百度翻译中文 TTS → 有道中文
+function zhSegUrls(seg) {
+  const q = encodeURIComponent(seg);
+  return [
+    'https://fanyi.baidu.com/gettts?lan=zh&text=' + q + '&spd=3&source=wise',
+    'https://dict.youdao.com/dictvoice?type=1&audio=' + q
+  ];
+}
+
+// 播放单个片段：依次尝试候选音源，成功即回调 true，全部失败回调 false
+function playZhSegAudio(seg, cb) {
+  const urls = zhSegUrls(seg);
+  let i = 0;
+  const next = () => {
+    if (i >= urls.length) { cb(false); return; }
+    const url = urls[i++];
+    let a;
+    try { a = new Audio(url); } catch (e) { next(); return; }
+    a.preload = 'auto';
+    _currentTtsAudio = a;
+    let settled = false;
+    const ok = () => { if (settled) return; settled = true; clearTimeout(guard); cb(true); };
+    const bad = () => { if (settled) return; settled = true; clearTimeout(guard); try { a.pause(); } catch (e) {} next(); };
+    const guard = setTimeout(() => { if (!settled && (a.paused || a.currentTime === 0)) bad(); }, 9000);
+    a.onended = ok;
+    a.onerror = bad;
+    const p = a.play();
+    if (p && p.catch) p.catch(bad);
+  };
+  next();
+}
+
+// 在线逐段朗读整段中文；onAllFail 仅在「一段都没播出来」时调用（用于再降级到系统语音）
+function speakZhOnline(text, btn, onEnd, onAllFail) {
+  const segs = splitZhSegments(text, 90);
+  const token = ++_zhPlayToken;
+  if (_currentTtsAudio) { try { _currentTtsAudio.pause(); } catch (e) {} _currentTtsAudio = null; }
+  if (btn && !btn.dataset.orig) btn.dataset.orig = btn.innerHTML;
+  if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 播放中';
+  const restore = () => { if (btn && btn.dataset.orig) btn.innerHTML = btn.dataset.orig; };
+  if (!segs.length) { restore(); if (onAllFail) onAllFail(); return; }
+
+  let idx = 0, played = 0, failStreak = 0;
+  const step = () => {
+    if (token !== _zhPlayToken) return;                 // 已被新的播放打断
+    if (idx >= segs.length || failStreak >= 2) {        // 播完 / 连续失败则收尾
+      restore();
+      if (played === 0) { if (onAllFail) onAllFail(); return; }
+      if (onEnd) onEnd();
+      return;
+    }
+    playZhSegAudio(segs[idx++], (ok) => {
+      if (token !== _zhPlayToken) return;
+      if (ok) { played++; failStreak = 0; } else { failStreak++; }
+      step();
+    });
+  };
+  step();
+}
+
+// 系统语音朗读（仅作最后手段：设备确实装了中文语音包时才有声）
+function speakZhSystem(text, btn, onEnd) {
+  if (!text) { if (onEnd) onEnd(); return; }
   const restore = () => { if (btn && btn.dataset.orig) btn.innerHTML = btn.dataset.orig; };
   try {
     if (window.speechSynthesis && window.SpeechSynthesisUtterance) {
@@ -309,17 +413,32 @@ function speakZh(text, btn, onEnd) {
       const fallback = () => {
         if (handed) return; handed = true;
         try { synth.cancel(); } catch (e) {}
-        speakYoudaoZh(text, btn, onEnd);
+        speakFallback(text);
+        if (onEnd) onEnd();
       };
       u.onstart = () => { handed = true; };
       u.onend = () => { if (handed) { restore(); if (onEnd) onEnd(); } };
       u.onerror = (ev) => { if (handed) return; if (ev && ev.error === 'canceled') return; fallback(); };
       synth.cancel(); synth.speak(u);
-      setTimeout(fallback, 1500);
+      setTimeout(fallback, 2000);
       return;
     }
   } catch (e) {}
-  speakYoudaoZh(text, btn, onEnd);
+  speakFallback(text);
+  if (onEnd) onEnd();
+}
+
+// 朗读一段中文。btn 可选（用于回显"播放中"）。onEnd 在播放完成后回调（用于连播）。
+// 顺序：① 在线分段音频（不依赖语音包，手机有网就能出声）→ ② 系统语音 → ③ 原文放大
+function speakZh(text, btn, onEnd) {
+  if (!text || !String(text).trim()) { if (onEnd) onEnd(); return; }
+  try {
+    if (typeof Audio !== 'undefined') {
+      speakZhOnline(text, btn, onEnd, () => speakZhSystem(text, btn, onEnd));
+      return;
+    }
+  } catch (e) {}
+  speakZhSystem(text, btn, onEnd);
 }
 
 // 单条朗读：若正在连播则先停止，避免两路语音重叠
@@ -396,6 +515,7 @@ function startNewsListen(items, btn) {
 }
 function stopNewsListen(finished) {
   _newsListenPlaying = false;
+  _zhPlayToken++;   // 作废正在进行的在线分段队列，避免"停止"后还继续念下一段
   try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
   if (_currentTtsAudio) { try { _currentTtsAudio.pause(); } catch (e) {} _currentTtsAudio = null; }
   _newsListenRestoreAll();
