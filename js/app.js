@@ -349,6 +349,9 @@ function zhSegUrls(seg) {
 }
 
 // 播放单个片段：依次尝试候选音源，成功即回调 true，全部失败回调 false
+// 关键修复：原实现仅用 9s "未开始" 守卫，若音频开始播放后中途卡死（currentTime 不再前进）
+// 则永远卡在"播放中"。这里增加：① ended 属性兜底（部分手机不触发 onended）；② 周期性
+// 进度监测，进度停住即判定卡死并切换到下一音源，杜绝无限转圈。
 function playZhSegAudio(seg, cb) {
   const urls = zhSegUrls(seg);
   let i = 0;
@@ -359,10 +362,20 @@ function playZhSegAudio(seg, cb) {
     try { a = new Audio(url); } catch (e) { next(); return; }
     a.preload = 'auto';
     _currentTtsAudio = a;
-    let settled = false;
-    const ok = () => { if (settled) return; settled = true; clearTimeout(guard); cb(true); };
-    const bad = () => { if (settled) return; settled = true; clearTimeout(guard); try { a.pause(); } catch (e) {} next(); };
-    const guard = setTimeout(() => { if (!settled && (a.paused || a.currentTime === 0)) bad(); }, 9000);
+    let settled = false, guard = null, watch = null, lastT = -1;
+    const cleanup = () => { if (guard) clearTimeout(guard); if (watch) clearInterval(watch); };
+    const ok = () => { if (settled) return; settled = true; cleanup(); cb(true); };
+    const bad = () => { if (settled) return; settled = true; cleanup(); try { a.pause(); } catch (e) {} next(); };
+    // 9s 仍未开始（paused 或 currentTime 仍为 0）→ 换下一个音源
+    guard = setTimeout(() => { if (!settled && (a.paused || a.currentTime === 0)) bad(); }, 9000);
+    // 进度监测：ended 已为真（手机 onended 偶发不触发）/ 接近结尾 / 中途停滞 → 及时收尾或换源
+    watch = setInterval(() => {
+      if (settled) return;
+      if (a.ended) { ok(); return; }
+      if (a.duration && isFinite(a.duration) && a.currentTime >= a.duration - 0.4) { ok(); return; }
+      if (!a.paused && a.currentTime === lastT) { bad(); return; }   // 播放中但进度不动 = 卡死
+      lastT = a.currentTime;
+    }, 1500);
     a.onended = ok;
     a.onerror = bad;
     const p = a.play();
@@ -381,10 +394,19 @@ function speakZhOnline(text, btn, onEnd, onAllFail) {
   const restore = () => { if (btn && btn.dataset.orig) btn.innerHTML = btn.dataset.orig; };
   if (!segs.length) { restore(); if (onAllFail) onAllFail(); return; }
 
+  // 兜底硬上限：整段最多 60s，超时强制收尾，绝不卡在"播放中"
+  const cap = setTimeout(() => {
+    if (token !== _zhPlayToken) return;
+    if (_currentTtsAudio) { try { _currentTtsAudio.pause(); } catch (e) {} _currentTtsAudio = null; }
+    restore();
+    if (onEnd) onEnd();
+  }, 60000);
+
   let idx = 0, played = 0, failStreak = 0;
   const step = () => {
     if (token !== _zhPlayToken) return;                 // 已被新的播放打断
     if (idx >= segs.length || failStreak >= 2) {        // 播完 / 连续失败则收尾
+      clearTimeout(cap);
       restore();
       if (played === 0) { if (onAllFail) onAllFail(); return; }
       if (onEnd) onEnd();
@@ -441,6 +463,8 @@ function zhAudioKey(text) {
 
 // 播放预生成的同源 mp3（最可靠：不依赖手机语音包、不依赖第三方接口、离线也能放）
 // 本地没有该文件时（404）立刻回调 onFail，由上层转在线合成
+// 关键修复：原实现无超时兜底，若 mp3 解码卡死或手机不触发 onended，按钮会永远"播放中"。
+// 这里增加 ended 属性兜底 + 时长/进度监测 + 40s 硬上限，确保任何情况下都收尾并推进连播。
 function playLocalZhAudio(text, btn, onEnd, onFail) {
   let a;
   try { a = new Audio('./audio/news/' + zhAudioKey(text) + '.mp3'); } catch (e) { onFail(); return; }
@@ -449,12 +473,20 @@ function playLocalZhAudio(text, btn, onEnd, onFail) {
   _currentTtsAudio = a;
   if (btn && !btn.dataset.orig) btn.dataset.orig = btn.innerHTML;
   if (btn) btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 播放中';
-  let settled = false;
+  let settled = false, watch = null, lastT = -1;
   const restore = () => { if (btn && btn.dataset.orig) btn.innerHTML = btn.dataset.orig; };
-  const done = () => { if (settled) return; settled = true; restore(); if (onEnd) onEnd(); };
-  const miss = () => { if (settled) return; settled = true; restore(); onFail(); };
+  const done = () => { if (settled) return; settled = true; if (watch) clearInterval(watch); clearTimeout(hard); try { a.pause(); } catch (e) {} restore(); if (onEnd) onEnd(); };
+  const miss = () => { if (settled) return; settled = true; if (watch) clearInterval(watch); clearTimeout(hard); try { a.pause(); } catch (e) {} restore(); onFail(); };
   a.onended = done;
   a.onerror = miss;
+  watch = setInterval(() => {
+    if (settled) return;
+    if (a.ended) { done(); return; }
+    if (a.duration && isFinite(a.duration) && a.currentTime >= a.duration - 0.4) { done(); return; }
+    if (!a.paused && a.currentTime === lastT) { miss(); return; }   // 本地文件中途卡死 → 转在线合成
+    lastT = a.currentTime;
+  }, 2000);
+  const hard = setTimeout(() => { if (!settled) done(); }, 40000);   // 最终兜底，绝不死等
   const p = a.play();
   if (p && p.catch) p.catch(miss);
 }
@@ -482,6 +514,14 @@ function speakZh(text, btn, onEnd) {
 function speakZhOne(text, btn) {
   if (_newsListenPlaying) stopNewsListen(false);
   speakZh(text, btn);
+  // 单条朗读兜底：若 25s 内仍未自行收尾（极端卡死），还原按钮并停掉底层音频
+  setTimeout(() => {
+    if (btn && btn.dataset.orig && btn.innerHTML !== btn.dataset.orig) {
+      if (_currentTtsAudio) { try { _currentTtsAudio.pause(); } catch (e) {} _currentTtsAudio = null; }
+      try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
+      btn.innerHTML = btn.dataset.orig;
+    }
+  }, 25000);
 }
 
 /* ===== 新闻听单：顺序连播队列 + 悬浮播放条 ===== */
@@ -534,8 +574,24 @@ function playNewsListenChain() {
     item.domBtn.classList.add('playing');
   }
   const cur = item.domBtn;
-  speakZh(item.text, item.domBtn, () => {
+  let itemSettled = false;
+  const finishItem = () => {
+    if (itemSettled) return; itemSettled = true;
+    if (itemWatch) clearTimeout(itemWatch);
     if (cur) { if (cur.dataset.orig) cur.innerHTML = cur.dataset.orig; cur.classList.remove('playing'); }
+  };
+  // 每条最多 30s 兜底：任何音源卡死都强制推进，绝不整列卡在"播放中"
+  const itemWatch = setTimeout(() => {
+    if (itemSettled) return;
+    _zhPlayToken++;
+    if (_currentTtsAudio) { try { _currentTtsAudio.pause(); } catch (e) {} _currentTtsAudio = null; }
+    try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
+    finishItem();
+    if (_newsListenPlaying) playNewsListenChain();
+  }, 30000);
+  speakZh(item.text, item.domBtn, () => {
+    if (itemSettled) return;
+    finishItem();
     if (_newsListenPlaying) playNewsListenChain();
   });
 }
