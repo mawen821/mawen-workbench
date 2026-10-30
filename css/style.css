@@ -7990,11 +7990,17 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary); outlin
 .slot-items { display: flex; flex-direction: column; gap: 7px; }
 .slot-empty { font-size: 13px; color: #b0a6bc; padding: 4px 2px; }
 
-.listen-item { display: flex; align-items: center; gap: 9px; background: rgba(255,255,255,.72);
-  border-radius: 10px; padding: 8px 10px; border: 1px solid rgba(0,0,0,.03); }
+.listen-item { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; background: rgba(255,255,255,.72);
+  border-radius: 10px; padding: 8px 10px; border: 1px solid rgba(0,0,0,.03); transition: border-color .2s, box-shadow .2s, background .2s; }
 .li-cat { flex: none; font-size: 11px !important; padding: 2px 8px !important; border-radius: 9px; font-weight: 600; }
+.li-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; cursor: pointer; }
 .li-title { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.5; color: var(--text-primary, #3a3450);
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.li-chevron { flex: none; font-size: 10.5px; color: #b3a4c4; transition: transform .2s; }
+.listen-item.open .li-chevron { transform: rotate(180deg); }
+.li-text { flex: 1 1 100%; font-size: 13px; line-height: 1.75; color: #5b5270; background: #faf6fe;
+  border: 1px solid #efe6f6; border-radius: 8px; padding: 9px 11px; margin-top: 4px; white-space: pre-wrap; word-break: break-word; }
+.listen-item.playing { border-color: #8A6CB0; background: #fff; box-shadow: 0 0 0 2px rgba(138,108,176,.18); }
 .li-play { flex: none; width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid #d9c7ea;
   background: #fff; color: #8A6CB0; cursor: pointer; display: flex; align-items: center; justify-content: center;
   font-size: 13px; transition: var(--transition, .2s); }
@@ -8024,6 +8030,20 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary); outlin
 .news-listen-bar .bar-stop { flex: none; border: none; background: rgba(255,255,255,.16); color: #fff;
   border-radius: 12px; padding: 7px 13px; font-size: 12.5px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 5px; font-family: inherit; }
 .news-listen-bar .bar-stop:hover { background: rgba(255,255,255,.28); }
+
+/* 听新闻：倍速选择器（hero 与悬浮条共用） */
+.zh-rate { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.zh-rate-label { font-size: 12px; color: #7a6e8c; font-weight: 600; }
+.zh-rate-btn { border: 1.5px solid #e6d9f0; background: #fbf8fd; color: #6b4e8a; border-radius: 999px;
+  padding: 4px 9px; font-size: 11.5px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s; }
+.zh-rate-btn:hover { border-color: #8A6CB0; }
+.zh-rate-btn.active { background: #8A6CB0; color: #fff; border-color: #8A6CB0; }
+.listen-rate-row { display: flex; justify-content: center; margin: 2px 0 0; }
+/* 悬浮条（深色背景）里的倍速按钮做反色处理 */
+.news-listen-bar .zh-rate { gap: 4px; }
+.news-listen-bar .zh-rate-label { color: rgba(255,255,255,.7); }
+.news-listen-bar .zh-rate-btn { border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.1); color: #fff; padding: 3px 8px; font-size: 11px; }
+.news-listen-bar .zh-rate-btn.active { background: #C99BB5; color: #3a3450; border-color: #C99BB5; }
 
 /* 听新闻：日期回顾条 */
 .listen-dates { display: flex; gap: 8px; overflow-x: auto; padding: 3px 2px 6px; -webkit-overflow-scrolling: touch; }

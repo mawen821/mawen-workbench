@@ -299,6 +299,41 @@ function speakYoudaoZh(text, btn, onEnd) {
    所以这里把长文本按句子切成短片段，逐段合成播放 —— 只要有网就一定能出声，与系统语音包无关。 */
 let _zhPlayToken = 0;   // 递增令牌：新一次播放会作废旧队列，实现"点一下立刻切"
 
+// 中文朗读倍速（0.5~2），跨会话记忆；作用于本地 mp3 / 在线分段 / 系统语音
+let _zhRate = (parseFloat(loadData('zh_rate', '1')) || 1);
+const ZH_RATES = [0.75, 1, 1.25, 1.5, 2];
+function fmtRate(r) { if (Number.isInteger(r)) return String(r); if (Number.isInteger(r * 2)) return r.toFixed(1); return r.toFixed(2); }
+function setZhRate(v) {
+  v = parseFloat(v); if (!v || isNaN(v)) v = 1;
+  if (v < 0.5) v = 0.5; if (v > 2) v = 2;
+  _zhRate = v; saveData('zh_rate', String(v));
+  document.querySelectorAll('.zh-rate-btn').forEach(b => {
+    b.classList.toggle('active', Math.abs(parseFloat(b.dataset.r) - v) < 1e-6);
+  });
+  const lab = document.getElementById('zh-rate-val');
+  if (lab) lab.textContent = fmtRate(v) + 'x';
+  // 立即作用于正在播放的音频，改倍速无需重播
+  if (_currentTtsAudio && _currentTtsAudio.playbackRate !== undefined) {
+    try { _currentTtsAudio.playbackRate = v; } catch (e) {}
+  }
+}
+// 倍速选择器 HTML 片段（hero 与悬浮条共用）
+function zhRateControlHtml() {
+  const btns = ZH_RATES.map(r =>
+    `<button class="zh-rate-btn ${Math.abs(r - _zhRate) < 1e-6 ? 'active' : ''}" data-r="${r}" onclick="setZhRate(${r})">${fmtRate(r)}x</button>`
+  ).join('');
+  return `<div class="zh-rate" title="朗读倍速"><span class="zh-rate-label">倍速</span>${btns}</div>`;
+}
+// 点一下展开/收起单条新闻原文
+function toggleLiText(mainEl) {
+  const item = mainEl.closest('.listen-item');
+  if (!item) return;
+  const txt = item.querySelector('.li-text');
+  if (!txt) return;
+  const open = item.classList.toggle('open');
+  txt.style.display = open ? 'block' : 'none';
+}
+
 // 把中文长文本切成适合 GET 请求的短片段（优先按句号/问号/分号，其次按逗号，最后硬切）
 function splitZhSegments(text, maxLen) {
   maxLen = maxLen || 50;
@@ -361,6 +396,7 @@ function playZhSegAudio(seg, cb) {
     let a;
     try { a = new Audio(url); } catch (e) { next(); return; }
     a.preload = 'auto';
+    try { a.playbackRate = _zhRate; } catch (e) {}
     _currentTtsAudio = a;
     let settled = false, guard = null, watch = null, lastT = -1;
     const cleanup = () => { if (guard) clearTimeout(guard); if (watch) clearInterval(watch); };
@@ -429,7 +465,7 @@ function speakZhSystem(text, btn, onEnd) {
     if (window.speechSynthesis && window.SpeechSynthesisUtterance) {
       const synth = window.speechSynthesis;
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'zh-CN'; u.rate = 1; u.pitch = 1;
+      u.lang = 'zh-CN'; u.rate = _zhRate; u.pitch = 1;
       const v = pickZhVoice(); if (v) u.voice = v;
       let handed = false;
       const fallback = () => {
@@ -469,6 +505,7 @@ function playLocalZhAudio(text, btn, onEnd, onFail) {
   let a;
   try { a = new Audio('./audio/news/' + zhAudioKey(text) + '.mp3'); } catch (e) { onFail(); return; }
   a.preload = 'auto';
+  try { a.playbackRate = _zhRate; } catch (e) {}
   if (_currentTtsAudio) { try { _currentTtsAudio.pause(); } catch (e) {} }
   _currentTtsAudio = a;
   if (btn && !btn.dataset.orig) btn.dataset.orig = btn.innerHTML;
@@ -513,6 +550,13 @@ function speakZh(text, btn, onEnd) {
 // 单条朗读：若正在连播则先停止，避免两路语音重叠
 function speakZhOne(text, btn) {
   if (_newsListenPlaying) stopNewsListen(false);
+  // 单条点播：展开这条的原文，边听边看
+  const li = btn && btn.closest ? btn.closest('.listen-item') : null;
+  if (li) {
+    li.classList.add('playing');
+    const tx = li.querySelector('.li-text');
+    if (tx) { li.classList.add('open'); tx.style.display = 'block'; }
+  }
   speakZh(text, btn);
   // 单条朗读兜底：若 25s 内仍未自行收尾（极端卡死），还原按钮并停掉底层音频
   setTimeout(() => {
@@ -521,6 +565,7 @@ function speakZhOne(text, btn) {
       try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
       btn.innerHTML = btn.dataset.orig;
     }
+    if (li) li.classList.remove('playing');
   }, 25000);
 }
 
@@ -543,6 +588,7 @@ function showNewsListenBar() {
     </div>
     <div class="bar-progress"><div class="bar-fill"></div></div>
     <button class="bar-stop" onclick="stopNewsListen(false)"><i class="fas fa-stop"></i> 停止</button>
+    ${zhRateControlHtml()}
   `;
   document.body.appendChild(_newsListenBar);
 }
@@ -562,6 +608,8 @@ function _newsListenRestoreAll() {
     if (b.dataset.orig) b.innerHTML = b.dataset.orig;
     b.classList.remove('playing');
   });
+  // 清掉条目高亮
+  document.querySelectorAll('.listen-item.playing').forEach(el => el.classList.remove('playing'));
 }
 function playNewsListenChain() {
   _newsListenIdx++;
@@ -574,11 +622,20 @@ function playNewsListenChain() {
     item.domBtn.classList.add('playing');
   }
   const cur = item.domBtn;
+  // 连播时同步高亮并展开当前条目的原文，方便边听边看
+  const curLi = (item.domBtn && item.domBtn.closest && item.domBtn.closest('.listen-item'))
+    || Array.from(document.querySelectorAll('.listen-item')).find(el => el.getAttribute('data-text') === item.text);
+  if (curLi) {
+    curLi.classList.add('playing');
+    const tx = curLi.querySelector('.li-text');
+    if (tx) { curLi.classList.add('open'); tx.style.display = 'block'; try { tx.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} }
+  }
   let itemSettled = false;
   const finishItem = () => {
     if (itemSettled) return; itemSettled = true;
     if (itemWatch) clearTimeout(itemWatch);
     if (cur) { if (cur.dataset.orig) cur.innerHTML = cur.dataset.orig; cur.classList.remove('playing'); }
+    if (curLi) curLi.classList.remove('playing');
   };
   // 每条最多 30s 兜底：任何音源卡死都强制推进，绝不整列卡在"播放中"
   const itemWatch = setTimeout(() => {
@@ -6356,11 +6413,16 @@ function renderNewsListen() {
       const rows = arr.map(n => {
         const cat = NEWS_CATEGORIES.find(c => c.id === n.category);
         const spk = n.title + '。' + n.summary;
+        const full = n.title + '。' + n.summary;
         return `
-          <div class="listen-item">
+          <div class="listen-item" data-text="${escapeHtml(full)}">
             <span class="li-cat news-tag ${n.category}">${cat ? cat.label : ''}</span>
-            <span class="li-title">${escapeHtml(n.title)}</span>
-            <button class="li-play" title="朗读这条" onclick="speakZhOne('${jsLit(spk)}', this)"><i class="fas fa-volume-up"></i></button>
+            <div class="li-main" onclick="toggleLiText(this)">
+              <span class="li-title">${escapeHtml(n.title)}</span>
+              <i class="li-chevron fas fa-chevron-down"></i>
+            </div>
+            <button class="li-play" title="朗读这条" onclick="event.stopPropagation();speakZhOne('${jsLit(spk)}', this)"><i class="fas fa-volume-up"></i></button>
+            <div class="li-text" style="display:none">${escapeHtml(full)}</div>
           </div>`;
       }).join('');
       return `
@@ -6445,6 +6507,7 @@ function renderNewsListen() {
   return `
     <div class="listen-wrap">
       ${hero}
+      ${zhRateControlHtml()}
       ${checkinCard}
       ${dateStrip}
       ${dayContent}
