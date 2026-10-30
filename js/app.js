@@ -7292,6 +7292,7 @@ function switchShenlunTab(tab) {
 function renderShenlunContent() {
   const c = $('#shenlun-content');
   switch(currentShenlunTab) {
+    case 'weekly': renderShenlunWeekly(c); break;
     case 'reading': renderShenlunReading(c); break;
     case 'flashcard': renderShenlunFlashcard(c); break;
     case 'policy': renderShenlunPolicy(c); break;
@@ -7299,6 +7300,112 @@ function renderShenlunContent() {
     case 'microlesson': renderShenlunWriting(c); break;
     case 'micropractice': renderShenlunPractice(c); break;
   }
+}
+
+// ===== 申论「本周更新」标签页（单一数据源 SHENLUN_WEEKLY，渲染时从各数组取完整内容）=====
+let currentShenlunWeekIdx = 0;
+function slReadingById(id) { return SHENLUN_READING_DATA.find(a => a.id === id); }
+function slFlashById(id) { return FLASHCARD_DATA.find(a => a.id === id); }
+function slPolicyById(id) { return POLICY_DATA.find(a => a.id === id); }
+function slLessonById(id) {
+  for (const m of SHENLUN_WRITING_DATA) { const l = (m.lessons || []).find(x => x.id === id); if (l) return Object.assign({ moduleTitle: m.title }, l); }
+  return null;
+}
+function slPracticeById(id) { return SHENLUN_WRITING_PRACTICE.find(a => a.id === id); }
+
+function switchShenlunWeek(i) {
+  currentShenlunWeekIdx = i;
+  renderShenlunWeekly($('#shenlun-content'));
+}
+
+function renderShenlunWeekly(c) {
+  const weeks = SHENLUN_WEEKLY || [];
+  if (!weeks.length) { c.innerHTML = `<div class="empty-tip">暂无周更新记录</div>`; return; }
+  const wk = weeks[Math.min(currentShenlunWeekIdx, weeks.length - 1)];
+  const sel = weeks.map((w, i) =>
+    `<button class="wk-sel ${i === currentShenlunWeekIdx ? 'active' : ''}" onclick="switchShenlunWeek(${i})"><i class="fas fa-calendar-day"></i> ${w.date}</button>`
+  ).join('');
+
+  let html = `
+    <div class="weekly-head">
+      <h2><i class="fas fa-calendar-check"></i> 本周申论更新</h2>
+      <p class="weekly-sub">${wk.date} · ${wk.summary} · 内容已同步进对应标签页</p>
+    </div>
+    <div class="weekly-sels">${sel}</div>
+    <div class="weekly-body">`;
+
+  if (wk.reading && wk.reading.length) {
+    html += `<div class="wk-sec"><h3><i class="fas fa-book-reader"></i> 每日精读（${wk.reading.length}）</h3>`;
+    wk.reading.forEach(id => {
+      const a = slReadingById(id); if (!a) return;
+      html += `<div class="wk-card">
+        <div class="wk-card-title">${escapeHtml(a.title)}</div>
+        <div class="wk-card-meta">${escapeHtml(a.source || '')}${a.date ? ' · ' + escapeHtml(a.date) : ''}</div>
+        <p class="wk-card-text">${escapeHtml(a.excerpt || '')}</p>
+        <button class="wk-go" onclick="switchShenlunTab('reading')">去精读 ›</button>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (wk.flashcard && wk.flashcard.length) {
+    html += `<div class="wk-sec"><h3><i class="fas fa-clone"></i> 金句闪卡（${wk.flashcard.length}）</h3><div class="wk-fc-grid">`;
+    wk.flashcard.forEach(id => {
+      const a = slFlashById(id); if (!a) return;
+      html += `<div class="wk-fc">
+        <div class="wk-fc-front">${escapeHtml(a.front)}</div>
+        <div class="wk-fc-src">${escapeHtml(a.back.source || '')}</div>
+        <div class="wk-fc-usage">${escapeHtml((a.back.usage || '').split('；')[0])}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  if (wk.policy && wk.policy.length) {
+    html += `<div class="wk-sec"><h3><i class="fas fa-book"></i> 政策热词（${wk.policy.length}）</h3>`;
+    wk.policy.forEach(id => {
+      const a = slPolicyById(id); if (!a) return;
+      html += `<div class="wk-card">
+        <div class="wk-card-title">${escapeHtml(a.term)}</div>
+        <div class="wk-card-meta">${escapeHtml(a.source || '')}</div>
+        <p class="wk-card-text">${escapeHtml(a.def || '')}</p>
+        <div class="wk-kp">${(a.keyPoints || []).map(k => `<span>${escapeHtml(k)}</span>`).join('')}</div>
+        <button class="wk-go" onclick="switchShenlunTab('policy')">去热词 ›</button>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (wk.microlesson && wk.microlesson.length) {
+    html += `<div class="wk-sec"><h3><i class="fas fa-lightbulb"></i> 写作微课（${wk.microlesson.length}）</h3>`;
+    wk.microlesson.forEach(id => {
+      const a = slLessonById(id); if (!a) return;
+      html += `<div class="wk-card">
+        <div class="wk-card-title">${escapeHtml(a.title)}</div>
+        <div class="wk-card-meta">${escapeHtml(a.moduleTitle || '写作微课')}</div>
+        <ul class="wk-points">${(a.points || []).map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>
+        ${a.beforeAfter ? `<div class="wk-ba"><div class="wk-ba-b">✗ ${escapeHtml(a.beforeAfter.before)}</div><div class="wk-ba-a">✓ ${escapeHtml(a.beforeAfter.after)}</div></div>` : ''}
+        <button class="wk-go" onclick="switchShenlunTab('microlesson')">去微课 ›</button>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  if (wk.micropractice && wk.micropractice.length) {
+    html += `<div class="wk-sec"><h3><i class="fas fa-pen-to-square"></i> 微练习（${wk.micropractice.length}）</h3>`;
+    wk.micropractice.forEach(id => {
+      const a = slPracticeById(id); if (!a) return;
+      html += `<div class="wk-card">
+        <div class="wk-q">${escapeHtml(a.q)}</div>
+        <details class="wk-ans"><summary>看参考答案</summary><p>${escapeHtml(a.answer)}</p></details>
+        <button class="wk-go" onclick="switchShenlunTab('micropractice')">去练习 ›</button>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  c.innerHTML = html;
 }
 
 // ===== 每日精读（按 群众→专家→政府 分层，由浅入深） =====

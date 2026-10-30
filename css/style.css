@@ -3022,6 +3022,51 @@ body {
   border-color: var(--primary);
 }
 
+/* ===== 申论「本周更新」标签页 ===== */
+.weekly-head { margin-bottom: 14px; }
+.weekly-head h2 { font-size: 18px; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+.weekly-head h2 i { color: var(--primary); }
+.weekly-sub { font-size: 12.5px; color: var(--text-secondary); margin: 4px 0 0; }
+.weekly-sels { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+.wk-sel {
+  padding: 7px 14px; border-radius: 20px; border: 1px solid var(--border-color);
+  background: var(--bg-card); color: var(--text-secondary); cursor: pointer;
+  font-size: 13px; display: flex; align-items: center; gap: 5px; transition: all .2s;
+}
+.wk-sel:hover { border-color: var(--primary); color: var(--primary); }
+.wk-sel.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.wk-sec { margin-bottom: 22px; }
+.wk-sec > h3 { font-size: 15px; color: var(--text-primary); display: flex; align-items: center; gap: 7px; margin-bottom: 10px; border-left: 3px solid var(--primary); padding-left: 9px; }
+.wk-sec > h3 i { color: var(--primary); }
+.wk-card {
+  background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm);
+  padding: 14px 16px; margin-bottom: 10px;
+}
+.wk-card-title { font-size: 14.5px; font-weight: 600; color: var(--text-primary); line-height: 1.5; }
+.wk-card-meta { font-size: 12px; color: var(--text-tertiary, #999); margin: 3px 0 7px; }
+.wk-card-text { font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin: 0; }
+.wk-go {
+  margin-top: 9px; background: none; border: none; color: var(--primary); cursor: pointer;
+  font-size: 13px; font-weight: 600; padding: 0;
+}
+.wk-go:hover { text-decoration: underline; }
+.wk-kp { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.wk-kp span { font-size: 11.5px; background: rgba(138,108,176,.12); color: var(--primary); padding: 3px 9px; border-radius: 10px; }
+.wk-points { margin: 8px 0 0; padding-left: 18px; }
+.wk-points li { font-size: 12.5px; color: var(--text-secondary); line-height: 1.7; }
+.wk-ba { margin-top: 9px; font-size: 12.5px; line-height: 1.6; }
+.wk-ba-b { background: rgba(229,115,115,.1); color: #c0392b; padding: 7px 10px; border-radius: 8px; margin-bottom: 6px; }
+.wk-ba-a { background: rgba(76,175,80,.1); color: #2e7d32; padding: 7px 10px; border-radius: 8px; }
+.wk-q { font-size: 13.5px; color: var(--text-primary); line-height: 1.6; }
+.wk-ans { margin-top: 8px; font-size: 12.5px; color: var(--text-secondary); }
+.wk-ans summary { cursor: pointer; color: var(--primary); font-weight: 600; }
+.wk-ans p { margin: 6px 0 0; line-height: 1.7; }
+.wk-fc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+.wk-fc { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px 14px; }
+.wk-fc-front { font-size: 14px; font-weight: 600; color: var(--primary); line-height: 1.5; }
+.wk-fc-src { font-size: 12px; color: var(--text-tertiary, #999); margin: 5px 0 4px; }
+.wk-fc-usage { font-size: 12px; color: var(--text-secondary); line-height: 1.6; }
+
 /* 通用提示条 */
 .shenlun-quotes-intro {
   display: flex;
