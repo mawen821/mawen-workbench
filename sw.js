@@ -1,7 +1,7 @@
 // 马雯的工作台 · Service Worker（v8 · 离线可用 + 更新必达版）
 // 目标：手机只要成功加载过一次，之后云端休眠 / 电脑关机也能离线秒开；
 //       联网时后台静默更新，保证内容不断更；新版本部署后强制重新缓存，更新必达。
-const CACHE = 'mw-workbench-v34';
+const CACHE = 'mw-workbench-v35';
 
 // 应用外壳：全部需要离线打开的同源资源
 const CORE = [
@@ -9,7 +9,7 @@ const CORE = [
   './index.html',
   './manifest.json',
   './css/style.css',
-  './js/app.js?v=34',
+  './js/app.js?v=35',
   './js/imgstore.js',
   './js/ai.js',
   './js/zimeiti.js',
