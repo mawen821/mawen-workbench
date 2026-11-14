@@ -34,6 +34,22 @@ jobs:
         with:
           node-version: '20'
 
+      - name: 校验密钥配置
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          NEWS_LLM_API_KEY: ${{ secrets.NEWS_LLM_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+        run: |
+          echo "LLM_API_KEY 长度: ${#LLM_API_KEY}"
+          echo "NEWS_LLM_API_KEY 长度: ${#NEWS_LLM_API_KEY}"
+          echo "LLM_BASE_URL: ${LLM_BASE_URL:-<空，默认 https://api.openai.com/v1>}"
+          echo "LLM_MODEL: ${LLM_MODEL:-<空，默认 gpt-4o-mini>}"
+          if [ -z "$LLM_API_KEY" ] && [ -z "$NEWS_LLM_API_KEY" ]; then
+            echo "::error::未配置 LLM 密钥，云端无法生成内容。请到仓库 Settings → Secrets and variables → Actions → New repository secret，名称填 LLM_API_KEY。"
+            exit 1
+          fi
+
       - name: 运行云端同步
         env:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}

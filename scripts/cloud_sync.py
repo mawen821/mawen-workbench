@@ -403,7 +403,8 @@ MODULES = [
         "key": "fund_news", "file": "js/data-finance.js", "weekdays": [6],
         "runner": "generic",
         "ops": [
-            {"type": "append", "array": "FINANCE_WEEKLY_NEWS", "num": 1, "max": 12, "trim_side": "end",
+            # 前端用 news[0] 当「最新」，所以必须插到最前面；超出上限时从末尾（最旧）裁掉
+            {"type": "prepend", "array": "FINANCE_WEEKLY_NEWS", "num": 1, "max": 12, "trim_side": "end",
              "schema": "{date(本周日YYYY-MM-DD), tag('宽基'|'指数'|'趋势'|'国情'), title(12-22字), summary(60-120字，说清动向与对普通投资者的意义), points:[两条20-40字要点], source(公开报道/公告口径)}"},
         ],
     },
@@ -463,7 +464,8 @@ MODULES = [
         "key": "hot_funds", "file": "js/data-finance.js", "weekdays": [0],
         "runner": "generic",
         "ops": [
-            {"type": "append", "array": "FINANCE_WEEKLY_FUNDS", "num": 1, "max": 12, "trim_side": "end",
+            # 前端取 FINANCE_WEEKLY_FUNDS[len-1] 当最新，追加到末尾；超上限从开头（最旧）裁掉
+            {"type": "append", "array": "FINANCE_WEEKLY_FUNDS", "num": 1, "max": 12, "trim_side": "start",
              "schema": "{week('2026-W45'用本周ISO周), date(YYYY-MM-DD), label('2026年M月第N周'), funds:[6个对象{name(基金全称), code(6位代码或''), category(类别名), principle(原理1-2句), advantage(优势1-2句), risk(风险1句), suitable(适合谁1句)}]}"},
         ],
     },
@@ -473,7 +475,7 @@ MODULES = [
         "ops": [
             {"type": "append", "array": "MISC_CARDS", "num": 4, "max": 60, "trim_side": "start",
              "schema": "{id, cat(分类), emoji, title, content, trivia?(冷知识)（跨领域随机趣味卡片）"},
-            {"type": "append", "array": "MISC_SERIES", "num": 1, "max": 16, "trim_side": "end",
+            {"type": "append", "array": "MISC_SERIES", "num": 1, "max": 16, "trim_side": "start",
              "schema": "{id('s-xxx'), cat('herb'|'china'|'world'|'cosmos'|'star'|'tarot'|'iching'|'shanhai'|'policy'|'metal'|'tech'), emoji, title, intro, episodes:[{n(集号),title,content,trivia}]}"},
         ],
     },
@@ -558,7 +560,8 @@ def main():
     if not is_configured():
         print("⚠️ LLM 未配置（缺 LLM_API_KEY / NEWS_LLM_API_KEY），所有 AI 模块将跳过。")
         print("   请在仓库 Settings → Secrets 添加 LLM_API_KEY（及可选 LLM_BASE_URL / LLM_MODEL）。")
-        return
+        # 退出码 2：让 GitHub Actions 明确报红，避免出现「绿色但什么都没更新」的假成功
+        sys.exit(2)
 
     weekday = datetime.now(TZ).weekday() if TZ else date.today().weekday()
     changed_files = []
