@@ -20,6 +20,7 @@
 """
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -30,7 +31,8 @@ import urllib.request
 WS = os.path.dirname(os.path.abspath(__file__))
 OUT_DIR = os.path.join(WS, "audio", "news")
 MANIFEST = os.path.join(OUT_DIR, "manifest.json")
-NODE = r"C:\Users\Lenovo\.workbuddy\binaries\node\versions\22.22.2\node.exe"
+# 跨平台：优先用 PATH 里的 node（GitHub Actions 云端 Linux 走这条），找不到再退回本机 Windows 路径
+NODE = shutil.which("node") or r"C:\Users\Lenovo\.workbuddy\binaries\node\versions\22.22.2\node.exe"
 JS_DATA = os.path.join(WS, "js", "data-news.js")
 
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36"

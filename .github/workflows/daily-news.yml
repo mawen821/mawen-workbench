@@ -1,0 +1,60 @@
+name: 每日新闻云端生成
+
+on:
+  schedule:
+    # 北京时间 07:00（UTC 23:00 前一天）自动跑；电脑关机也能执行
+    - cron: "0 23 * * *"
+  workflow_dispatch: {}      # 也可在 GitHub Actions 页面手动点 "Run workflow" 立即触发
+
+permissions:
+  contents: write            # 允许机器人提交新闻与音频到仓库
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 配置 Node（音频脚本读取 JS 用）
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 安装可选音频压缩依赖（失败不影响出声）
+        run: pip install miniaudio lameenc || echo "压缩依赖缺失，将保留原始音频"
+
+      - name: 抓取并生成当日新闻
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}      # 可选：填了则 AI 润色 detail/meaning/expert
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+          NEWS_FEEDS: ${{ secrets.NEWS_FEEDS }}        # 可选：覆盖默认 RSS 源
+        run: python scripts/news_pipeline.py
+
+      - name: 生成新闻语音（百度免 key TTS）
+        run: |
+          DATE=$(TZ=Asia/Shanghai date +%Y-%m-%d)
+          python _gen_news_audio.py "$DATE"
+
+      - name: 提交并推送（仅在确有变更时）
+        run: |
+          git config user.email "bot@workbuddy.local"
+          git config user.name "WorkBuddy News Bot"
+          git add js/data-news.js audio/news
+          if git diff --cached --quiet; then
+            echo "无变更，跳过提交"
+          else
+            DATE=$(TZ=Asia/Shanghai date +%Y-%m-%d)
+            git commit -m "news: 云端自动更新 $DATE"
+            git push
+          fi
