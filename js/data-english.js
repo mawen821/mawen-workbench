@@ -1963,6 +1963,187 @@ const DAILY_ACCUM_WORDS = [
   { en: 'processor', phonetic: '/ˈprɑːsesər/', cn: `n. 处理器，CPU`, example: 'A faster processor makes the laptop more responsive.' },
   { en: 'restore', phonetic: '/rɪˈstɔːr/', cn: `v. 恢复，还原（数据或系统）`, example: 'Restore the backup if the update fails.' },
   { en: 'prompt', phonetic: '/prɒmpt/', cn: `n. （AI）提示词，指令 v. 提示`, example: 'Write a clear prompt to get a better AI answer.' }
+,
+  {
+        en: `tenacious`,
+        phonetic: `/təˈneɪʃəs/`,
+        cn: `adj. 顽强的；不轻易放弃的`,
+        example: `She is a tenacious learner who never gives up on a hard passage.`
+      },
+  {
+        en: `adamant`,
+        phonetic: `/ˈædəmənt/`,
+        cn: `adj. 坚决的；固执己见的`,
+        example: `He was adamant that we should double-check the numbers.`
+      },
+  {
+        en: `wary`,
+        phonetic: `/ˈweəri/`,
+        cn: `adj. 谨慎的；警惕的`,
+        example: `Be wary of any offer that sounds too good to be true.`
+      },
+  {
+        en: `keen`,
+        phonetic: `/kiːn/`,
+        cn: `adj. 热衷的；敏锐的`,
+        example: `She is keen to improve her spoken English this term.`
+      },
+  {
+        en: `blunt`,
+        phonetic: `/blʌnt/`,
+        cn: `adj. 直率的；钝的`,
+        example: `To be blunt, the first draft needs a lot of work.`
+      },
+  {
+        en: `humble`,
+        phonetic: `/ˈhʌmbl/`,
+        cn: `adj. 谦逊的；朴素的`,
+        example: `Despite his success, he stays humble and easy to talk to.`
+      },
+  {
+        en: `tedious`,
+        phonetic: `/ˈtiːdiəs/`,
+        cn: `adj. 冗长乏味的；枯燥的`,
+        example: `Copying the same data by hand is tedious and error-prone.`
+      },
+  {
+        en: `vivid`,
+        phonetic: `/ˈvɪvɪd/`,
+        cn: `adj. 生动的；鲜明的`,
+        example: `She gave a vivid description of the night market.`
+      },
+  {
+        en: `subtle`,
+        phonetic: `/ˈsʌtl/`,
+        cn: `adj. 微妙的；不易察觉的`,
+        example: `There is a subtle difference between the two words.`
+      },
+  {
+        en: `rigid`,
+        phonetic: `/ˈrɪdʒɪd/`,
+        cn: `adj. 僵硬的；刻板的`,
+        example: `A rigid plan leaves no room for surprises.`
+      },
+  {
+        en: `fragile`,
+        phonetic: `/ˈfrædʒaɪl/`,
+        cn: `adj. 脆弱的；易碎的`,
+        example: `Confidence is fragile when you are just starting out.`
+      },
+  {
+        en: `sturdy`,
+        phonetic: `/ˈstɜːdi/`,
+        cn: `adj. 结实的；坚固的`,
+        example: `You need a sturdy pair of shoes for the hike.`
+      },
+  {
+        en: `ample`,
+        phonetic: `/ˈæmpl/`,
+        cn: `adj. 充足的；宽敞的`,
+        example: `There is ample time to finish before the deadline.`
+      },
+  {
+        en: `scarce`,
+        phonetic: `/skeəs/`,
+        cn: `adj. 稀少的；缺乏的`,
+        example: `Fresh water is scarce in that region.`
+      },
+  {
+        en: `abrupt`,
+        phonetic: `/əˈbrʌpt/`,
+        cn: `adj. 突然的；唐突的`,
+        example: `The meeting came to an abrupt end.`
+      },
+  {
+        en: `deliberate`,
+        phonetic: `/dɪˈlɪbərət/`,
+        cn: `adj. 故意的；从容的`,
+        example: `Her silence was deliberate, not accidental.`
+      },
+  {
+        en: `genuine`,
+        phonetic: `/ˈdʒenjuɪn/`,
+        cn: `adj. 真正的；真诚的`,
+        example: `He showed genuine interest in what she was saying.`
+      },
+  {
+        en: `crude`,
+        phonetic: `/kruːd/`,
+        cn: `adj. 粗糙的；未加工的`,
+        example: `It was a crude sketch, but the idea was clear.`
+      },
+  {
+        en: `swift`,
+        phonetic: `/swɪft/`,
+        cn: `adj. 迅速的；敏捷的`,
+        example: `The company took swift action after the complaint.`
+      },
+  {
+        en: `sluggish`,
+        phonetic: `/ˈslʌɡɪʃ/`,
+        cn: `adj. 缓慢的；迟钝的`,
+        example: `Sales were sluggish in the first half of the year.`
+      },
+  {
+        en: `weary`,
+        phonetic: `/ˈwɪəri/`,
+        cn: `adj. 疲倦的；厌倦的`,
+        example: `She felt weary after a long day of meetings.`
+      },
+  {
+        en: `brisk`,
+        phonetic: `/brɪsk/`,
+        cn: `adj. 轻快的；兴隆的`,
+        example: `A brisk walk before breakfast clears your head.`
+      },
+  {
+        en: `grave`,
+        phonetic: `/ɡreɪv/`,
+        cn: `adj. 严重的；严肃的`,
+        example: `The report raises grave concerns about water safety.`
+      },
+  {
+        en: `sheer`,
+        phonetic: `/ʃɪə/`,
+        cn: `adj. 完全的；纯粹的；陡峭的`,
+        example: `We won by sheer persistence.`
+      },
+  {
+        en: `vague`,
+        phonetic: `/veɪɡ/`,
+        cn: `adj. 模糊的；含糊的`,
+        example: `His answer was vague, so I asked again.`
+      },
+  {
+        en: `prone`,
+        phonetic: `/prəʊn/`,
+        cn: `adj. 易于……的；俯卧的`,
+        example: `Old files are prone to being forgotten.`
+      },
+  {
+        en: `immune`,
+        phonetic: `/ɪˈmjuːn/`,
+        cn: `adj. 免疫的；不受影响的`,
+        example: `No market is immune to panic.`
+      },
+  {
+        en: `lethal`,
+        phonetic: `/ˈliːθl/`,
+        cn: `adj. 致命的`,
+        example: `Mixing those two cleaners can produce a lethal gas.`
+      },
+  {
+        en: `benign`,
+        phonetic: `/bɪˈnaɪn/`,
+        cn: `adj. 良性的；温和的`,
+        example: `Fortunately, the tumour turned out to be benign.`
+      },
+  {
+        en: `dormant`,
+        phonetic: `/ˈdɔːmənt/`,
+        cn: `adj. 休眠的；潜伏的`,
+        example: `The account stayed dormant for three years.`
+      }
 ];
 
 // 可一键导入的词库市场（真实词书，由 AI 基于公开词表整理，覆盖常见教材与考试）
