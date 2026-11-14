@@ -1,0 +1,49 @@
+name: 工作台云端同步（全量自动更新）
+
+on:
+  schedule:
+    # 北京时间 08:00（UTC 00:00）每天跑一次；脚本内部按「今天星期几」决定跑哪些周模块
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    inputs:
+      module:
+        description: '只跑某一模块 key（调试用，留空则按星期跑全部该跑的）'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 配置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 配置 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 运行云端同步
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          NEWS_LLM_API_KEY: ${{ secrets.NEWS_LLM_API_KEY }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+          FORCE_MODULE: ${{ github.event.inputs.module }}
+        run: |
+          python scripts/cloud_sync.py
+
+      - name: 同步失败通知（仅记录）
+        if: failure()
+        run: echo "云端同步未完全成功，请查看上方日志"
