@@ -98,9 +98,12 @@ def _fill_placeholders(obj, today):
 
 
 def call_llm_json(prompt, system="", selector=None, **kw):
-    """配了 LLM key 走真实生成；否则从语料库按日期种子取内容（无状态）。"""
+    """配了 LLM key 走真实生成（失败则自动降级到语料）；否则从语料库按日期种子取内容（无状态）。"""
     if is_configured():
-        return _real_call_llm_json(prompt, system, **kw)
+        try:
+            return _real_call_llm_json(prompt, system, **kw)
+        except Exception as e:  # noqa: BLE001
+            print(f"  ! LLM 调用失败（{str(e)[:120]}）→ 本次改用离线语料兜底")
     mod = _CORPUS_CTX.get("module")
     if not mod:
         raise RuntimeError("语料上下文缺失")
