@@ -42,9 +42,12 @@ jobs:
         run: python scripts/news_pipeline.py
 
       - name: 生成新闻语音（百度免 key TTS）
+        # 音频偶发失败（百度限流/个别句子异常）不应让整条流水线报红。
+        # 新闻文字已由上一提交骤写入；音频缺失最多是当天少几条语音，不影响更新主线。
+        continue-on-error: true
         run: |
           DATE=$(TZ=Asia/Shanghai date +%Y-%m-%d)
-          python _gen_news_audio.py "$DATE"
+          python _gen_news_audio.py "$DATE" || echo "音频生成有部分失败，已忽略，不影响新闻文字更新"
 
       - name: 提交并推送（仅在确有变更时）
         run: |

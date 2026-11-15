@@ -38,10 +38,16 @@ JS_PATH = os.path.join(WS, "js", "data-news.js")
 UA = "Mozilla/5.0 (compatible; WorkBuddyNewsBot/1.0)"
 
 DEFAULT_FEEDS = [
+    # 主源：HTTP 国内站点（GitHub Actions 上可达、稳定）
     "http://www.gov.cn/xinwen/xxfb_rss.shtml",
     "http://www.xinhuanet.com/politics/news_politics.xml",
     "http://www.people.com.cn/rss/politics.xml",
+    "http://www.people.com.cn/rss/world.xml",
+    "http://www.xinhuanet.com/world/news_world.xml",
+    "http://www.gov.cn/xinwen/yaowen/rss.xml",
+    # 备用：https 源（个别网络环境下 HTTP 被拦时兜底）
     "https://rss.cctv.com.cn/rss/yaowen.xml",
+    "https://www.chinanews.com.cn/rss/scroll-news.xml",
 ]
 
 CATEGORIES = {
@@ -166,16 +172,31 @@ def parse_feed_regex(text):
 
 
 def parse_date(s):
-    if not s:
-        return None
-    try:
-        return datetime.datetime.strptime(s[:31], "%a, %d %b %Y %H:%M:%S %z")
-    except Exception:
-        pass
-    try:
-        return datetime.datetime.fromisoformat(s.replace("Z", "+00:00"))
-    except Exception:
-        return None
+    """解析新闻时间为"带时区(aware)"的 datetime。
+
+    关键：必须统一成 aware，否则 aware 与 naive 混合排序会抛
+    TypeError: can't compare offset-naive and offset-aware datetimes
+    （2026-11-15 新闻停更的真正根因）。
+    """
+    bj = datetime.timezone(datetime.timedelta(hours=8))
+    dt = None
+    if s:
+        for fmt in ("%a, %d %b %Y %H:%M:%S %z", "%a, %d %b %Y %H:%M:%S",
+                    "%Y-%m-%d %H:%M:%S", "%Y/%m/%d %H:%M:%S"):
+            try:
+                dt = datetime.datetime.strptime(s[:31], fmt)
+                break
+            except Exception:
+                pass
+        if dt is None:
+            try:
+                dt = datetime.datetime.fromisoformat(s.replace("Z", "+00:00"))
+            except Exception:
+                pass
+    # 统一补齐时区：naive 一律当作北京时间
+    if dt is not None and dt.tzinfo is None:
+        dt = dt.replace(tzinfo=bj)
+    return dt
 
 
 def categorize(title):
@@ -338,7 +359,21 @@ def main():
                 seen.add(t)
                 collected.append(it)
     # 按发布时间就近排序（无法解析时间的排后面）
-    collected.sort(key=lambda x: (parse_date(x["pub"]) or beijing_now()), reverse=True)
+    # 统一用 aware 时间戳排序，彻底避免 naive/aware 混比崩溃
+    def _sort_key(x):
+        d = parse_date(x.get("pub"))
+        if d is None:
+            # 无有效发布时间（多为存档旧闻）排到最后，
+            # 不能被当成"今天"抢到前排，否则每天都会混入多年前的旧新闻。
+            return float("-inf")
+        if d.tzinfo is None:  # 最后一道保险
+            d = d.replace(tzinfo=datetime.timezone(datetime.timedelta(hours=8)))
+        return d.timestamp()
+
+    try:
+        collected.sort(key=_sort_key, reverse=True)
+    except Exception as ex:
+        print("  [warn] 时间排序异常，改用原始顺序：%s" % str(ex)[:100])
     print("[news] 去重后候选 %d 条" % len(collected))
 
     entries = make_entries(collected, date_str, use_llm)
@@ -352,5 +387,21 @@ def main():
     return 0
 
 
+def _safe_main():
+    """任何未预期异常都只记日志、不崩流水线，保证后续语音/提交步骤照常。
+
+    设计原则：新闻脚本失败 ≠ 整条流水线失败。哪怕本脚本出任何问题，
+    也要让 workflow 继续往下走（后续步骤各自有内容缺失检查），
+    避免"一个环节崩 -> 全站新闻停更"的连锁反应。
+    """
+    try:
+        return main()
+    except Exception as ex:
+        import traceback
+        print("[news][ERROR] 新闻生成遇到未预期异常，本次跳过写入，但流水线继续：%s" % str(ex)[:200])
+        traceback.print_exc()
+        return 0
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(_safe_main())
