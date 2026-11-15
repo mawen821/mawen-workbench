@@ -1,0 +1,517 @@
+{
+ "module": "english_daily",
+ "items": [
+  {
+   "DAILY_ACCUM_WORDS": [
+    {
+     "en": "abundant",
+     "phonetic": "/əˈbʌndənt/",
+     "cn": "adj. 丰富的；充裕的",
+     "example": "The region is abundant in natural resources."
+    },
+    {
+     "en": "candid",
+     "phonetic": "/ˈkændɪd/",
+     "cn": "adj. 坦率的；真诚的",
+     "example": "She gave a candid account of the incident."
+    },
+    {
+     "en": "diligent",
+     "phonetic": "/ˈdɪlɪdʒənt/",
+     "cn": "adj. 勤勉的",
+     "example": "He is diligent in his daily practice."
+    },
+    {
+     "en": "elaborate",
+     "phonetic": "/ɪˈlæbərət/",
+     "cn": "adj./v. 精心制作的；详述",
+     "example": "Please elaborate on your proposal."
+    },
+    {
+     "en": "fragile",
+     "phonetic": "/ˈfrædʒaɪl/",
+     "cn": "adj. 脆弱的；易碎的",
+     "example": "Handle the fragile package with care."
+    },
+    {
+     "en": "genuine",
+     "phonetic": "/ˈdʒenjuɪn/",
+     "cn": "adj. 真正的；真诚的",
+     "example": "Her smile was warm and genuine."
+    },
+    {
+     "en": "humble",
+     "phonetic": "/ˈhʌmbl/",
+     "cn": "adj. 谦逊的；卑微的",
+     "example": "Despite his fame, he remained humble."
+    },
+    {
+     "en": "inevitable",
+     "phonetic": "/ɪnˈevɪtəbl/",
+     "cn": "adj. 不可避免的",
+     "example": "Some delays are inevitable in big projects."
+    },
+    {
+     "en": "justify",
+     "phonetic": "/ˈdʒʌstɪfaɪ/",
+     "cn": "v. 证明…正当",
+     "example": "You must justify your decision."
+    },
+    {
+     "en": "keen",
+     "phonetic": "/kiːn/",
+     "cn": "adj. 热衷的；敏锐的",
+     "example": "She is keen on learning new languages."
+    }
+   ]
+  },
+  {
+   "DAILY_ACCUM_WORDS": [
+    {
+     "en": "legitimate",
+     "phonetic": "/lɪˈdʒɪtɪmət/",
+     "cn": "adj. 合法的；合理的",
+     "example": "That is a legitimate concern."
+    },
+    {
+     "en": "modest",
+     "phonetic": "/ˈmɒdɪst/",
+     "cn": "adj. 谦虚的；适度的",
+     "example": "He lives a modest life."
+    },
+    {
+     "en": "notion",
+     "phonetic": "/ˈnəʊʃn/",
+     "cn": "n. 概念；想法",
+     "example": "The notion of fairness varies by culture."
+    },
+    {
+     "en": "obvious",
+     "phonetic": "/ˈɒbviəs/",
+     "cn": "adj. 明显的",
+     "example": "The answer is obvious."
+    },
+    {
+     "en": "precise",
+     "phonetic": "/prɪˈsaɪs/",
+     "cn": "adj. 精确的",
+     "example": "Give me a precise time."
+    },
+    {
+     "en": "rational",
+     "phonetic": "/ˈræʃnəl/",
+     "cn": "adj. 理性的",
+     "example": "We need a rational plan."
+    },
+    {
+     "en": "subtle",
+     "phonetic": "/ˈsʌtl/",
+     "cn": "adj. 微妙的",
+     "example": "There is a subtle difference."
+    },
+    {
+     "en": "tremendous",
+     "phonetic": "/trəˈmendəs/",
+     "cn": "adj. 巨大的",
+     "example": "The project was a tremendous success."
+    },
+    {
+     "en": "vivid",
+     "phonetic": "/ˈvɪvɪd/",
+     "cn": "adj. 生动的；鲜明的",
+     "example": "She gave a vivid description."
+    },
+    {
+     "en": "wealthy",
+     "phonetic": "/ˈwelθi/",
+     "cn": "adj. 富裕的",
+     "example": "A wealthy investor backed the startup."
+    }
+   ]
+  },
+  {
+   "DAILY_ACCUM_WORDS": [
+    {
+     "en": "annual",
+     "phonetic": "/ˈænjuəl/",
+     "cn": "adj. 每年的",
+     "example": "The annual report was published in March."
+    },
+    {
+     "en": "bias",
+     "phonetic": "/ˈbaɪəs/",
+     "cn": "n. 偏见；偏向",
+     "example": "Be aware of your own bias."
+    },
+    {
+     "en": "comprehensive",
+     "phonetic": "/ˌkɒmprɪˈhensɪv/",
+     "cn": "adj. 全面的",
+     "example": "We need a comprehensive review."
+    },
+    {
+     "en": "deliberate",
+     "phonetic": "/dɪˈlɪbərət/",
+     "cn": "adj. 故意的；深思熟虑的",
+     "example": "It was a deliberate choice."
+    },
+    {
+     "en": "empirical",
+     "phonetic": "/ɪmˈpɪrɪkl/",
+     "cn": "adj. 经验主义的",
+     "example": "We need empirical evidence."
+    },
+    {
+     "en": "feasible",
+     "phonetic": "/ˈfiːzəbl/",
+     "cn": "adj. 可行的",
+     "example": "Is the plan feasible?"
+    },
+    {
+     "en": "grant",
+     "phonetic": "/ɡrɑːnt/",
+     "cn": "v. 授予；n. 拨款",
+     "example": "She was granted a research fund."
+    },
+    {
+     "en": "hypothesis",
+     "phonetic": "/haɪˈpɒθəsɪs/",
+     "cn": "n. 假设",
+     "example": "The hypothesis needs testing."
+    },
+    {
+     "en": "inevitably",
+     "phonetic": "/ɪnˈevɪtəbli/",
+     "cn": "adv. 不可避免地",
+     "example": "Growth slows inevitably."
+    },
+    {
+     "en": "methodical",
+     "phonetic": "/məˈθɒdɪkl/",
+     "cn": "adj. 有条理的",
+     "example": "A methodical approach saves time."
+    }
+   ]
+  },
+  {
+   "DAILY_ACCUM_WORDS": [
+    {
+     "en": "neutral",
+     "phonetic": "/ˈnjuːtrəl/",
+     "cn": "adj. 中立的",
+     "example": "Stay neutral in the debate."
+    },
+    {
+     "en": "objective",
+     "phonetic": "/əbˈdʒektɪv/",
+     "cn": "adj. 客观的；n. 目标",
+     "example": "We need an objective view."
+    },
+    {
+     "en": "persistent",
+     "phonetic": "/pəˈsɪstənt/",
+     "cn": "adj. 持续的；执着的",
+     "example": "Persistent effort pays off."
+    },
+    {
+     "en": "preliminary",
+     "phonetic": "/prɪˈlɪmɪnəri/",
+     "cn": "adj. 初步的",
+     "example": "These are preliminary results."
+    },
+    {
+     "en": "robust",
+     "phonetic": "/rəʊˈbʌst/",
+     "cn": "adj. 稳健的；强健的",
+     "example": "We need a robust system."
+    },
+    {
+     "en": "scrutinize",
+     "phonetic": "/ˈskruːtənaɪz/",
+     "cn": "v. 仔细审查",
+     "example": "Scrutinize the contract carefully."
+    },
+    {
+     "en": "simultaneous",
+     "phonetic": "/ˌsɪmlˈteɪniəs/",
+     "cn": "adj. 同时的",
+     "example": "They made simultaneous moves."
+    },
+    {
+     "en": "stringent",
+     "phonetic": "/ˈstrɪndʒənt/",
+     "cn": "adj. 严格的",
+     "example": "The rules are stringent."
+    },
+    {
+     "en": "tangible",
+     "phonetic": "/ˈtændʒəbl/",
+     "cn": "adj. 有形的；可感知的",
+     "example": "We need tangible results."
+    },
+    {
+     "en": "uniform",
+     "phonetic": "/ˈjuːnɪfɔːm/",
+     "cn": "adj. 一致的；n. 制服",
+     "example": "Keep a uniform standard."
+    }
+   ]
+  },
+  {
+   "DAILY_ACCUM_WORDS": [
+    {
+     "en": "valid",
+     "phonetic": "/ˈvælɪd/",
+     "cn": "adj. 有效的；合理的",
+     "example": "Your argument is valid."
+    },
+    {
+     "en": "versatile",
+     "phonetic": "/ˈvɜːsətaɪl/",
+     "cn": "adj. 多才多艺的",
+     "example": "A scarf is versatile."
+    },
+    {
+     "en": "virtual",
+     "phonetic": "/ˈvɜːtʃuəl/",
+     "cn": "adj. 虚拟的；实质上的",
+     "example": "We met in a virtual room."
+    },
+    {
+     "en": "yield",
+     "phonetic": "/jiːld/",
+     "cn": "v. 产生；屈服",
+     "example": "The investment yielded 8%."
+    },
+    {
+     "en": "zeal",
+     "phonetic": "/ziːl/",
+     "cn": "n. 热情",
+     "example": "He works with great zeal."
+    },
+    {
+     "en": "accessible",
+     "phonetic": "/əkˈsesəbl/",
+     "cn": "adj. 易得到的；无障碍的",
+     "example": "Make the site accessible."
+    },
+    {
+     "en": "arbitrary",
+     "phonetic": "/ˈɑːbɪtrəri/",
+     "cn": "adj. 任意的；武断的",
+     "example": "Don't make arbitrary choices."
+    },
+    {
+     "en": "coherent",
+     "phonetic": "/kəʊˈhɪərənt/",
+     "cn": "adj. 连贯的",
+     "example": "Give a coherent answer."
+    },
+    {
+     "en": "cumulative",
+     "phonetic": "/ˈkjuːmjələtɪv/",
+     "cn": "adj. 累积的",
+     "example": "Small habits have cumulative effects."
+    },
+    {
+     "en": "discrepancy",
+     "phonetic": "/dɪsˈkrepənsi/",
+     "cn": "n. 差异；不符",
+     "example": "There is a discrepancy in the data."
+    }
+   ]
+  },
+  {
+   "DAILY_ACCUM_WORDS": [
+    {
+     "en": "explicit",
+     "phonetic": "/ɪkˈsplɪsɪt/",
+     "cn": "adj. 明确的",
+     "example": "Give explicit instructions."
+    },
+    {
+     "en": "fluctuate",
+     "phonetic": "/ˈflʌktʃueɪt/",
+     "cn": "v. 波动",
+     "example": "Prices fluctuate daily."
+    },
+    {
+     "en": "implicit",
+     "phonetic": "/ɪmˈplɪsɪt/",
+     "cn": "adj. 含蓄的；隐含的",
+     "example": "There is an implicit agreement."
+    },
+    {
+     "en": "momentum",
+     "phonetic": "/məˈmentəm/",
+     "cn": "n. 势头；动量",
+     "example": "The project gained momentum."
+    },
+    {
+     "en": "notwithstanding",
+     "phonetic": "/ˌnɒtwɪθˈstændɪŋ/",
+     "cn": "prep./adv. 尽管",
+     "example": "Notwithstanding the rain, we went."
+    },
+    {
+     "en": "optimal",
+     "phonetic": "/ˈɒptɪml/",
+     "cn": "adj. 最优的",
+     "example": "Find the optimal solution."
+    },
+    {
+     "en": "paradigm",
+     "phonetic": "/ˈpærədaɪm/",
+     "cn": "n. 范式；模式",
+     "example": "A new paradigm emerged."
+    },
+    {
+     "en": "qualitative",
+     "phonetic": "/ˈkwɒlɪtətɪv/",
+     "cn": "adj. 定性的",
+     "example": "We did a qualitative study."
+    },
+    {
+     "en": "quantitative",
+     "phonetic": "/ˈkwɒntɪtətɪv/",
+     "cn": "adj. 定量的",
+     "example": "Use quantitative methods."
+    },
+    {
+     "en": "resilient",
+     "phonetic": "/rɪˈzɪliənt/",
+     "cn": "adj. 有韧性的",
+     "example": "She is resilient under pressure."
+    }
+   ]
+  },
+  {
+   "DAILY_ACCUM_WORDS": [
+    {
+     "en": "theoretical",
+     "phonetic": "/ˌθɪəˈretɪkl/",
+     "cn": "adj. 理论的",
+     "example": "It is still theoretical."
+    },
+    {
+     "en": "underlying",
+     "phonetic": "/ˌʌndəˈlaɪɪŋ/",
+     "cn": "adj. 潜在的；根本的",
+     "example": "Address the underlying cause."
+    },
+    {
+     "en": "viable",
+     "phonetic": "/ˈvaɪəbl/",
+     "cn": "adj. 可行的",
+     "example": "That is a viable option."
+    },
+    {
+     "en": "abundant",
+     "phonetic": "/əˈbʌndənt/",
+     "cn": "adj. 丰富的；充裕的",
+     "example": "The region is abundant in natural resources."
+    },
+    {
+     "en": "candid",
+     "phonetic": "/ˈkændɪd/",
+     "cn": "adj. 坦率的；真诚的",
+     "example": "She gave a candid account of the incident."
+    },
+    {
+     "en": "diligent",
+     "phonetic": "/ˈdɪlɪdʒənt/",
+     "cn": "adj. 勤勉的",
+     "example": "He is diligent in his daily practice."
+    },
+    {
+     "en": "elaborate",
+     "phonetic": "/ɪˈlæbərət/",
+     "cn": "adj./v. 精心制作的；详述",
+     "example": "Please elaborate on your proposal."
+    },
+    {
+     "en": "fragile",
+     "phonetic": "/ˈfrædʒaɪl/",
+     "cn": "adj. 脆弱的；易碎的",
+     "example": "Handle the fragile package with care."
+    },
+    {
+     "en": "genuine",
+     "phonetic": "/ˈdʒenjuɪn/",
+     "cn": "adj. 真正的；真诚的",
+     "example": "Her smile was warm and genuine."
+    },
+    {
+     "en": "humble",
+     "phonetic": "/ˈhʌmbl/",
+     "cn": "adj. 谦逊的；卑微的",
+     "example": "Despite his fame, he remained humble."
+    }
+   ]
+  },
+  {
+   "DAILY_ACCUM_WORDS": [
+    {
+     "en": "inevitable",
+     "phonetic": "/ɪnˈevɪtəbl/",
+     "cn": "adj. 不可避免的",
+     "example": "Some delays are inevitable in big projects."
+    },
+    {
+     "en": "justify",
+     "phonetic": "/ˈdʒʌstɪfaɪ/",
+     "cn": "v. 证明…正当",
+     "example": "You must justify your decision."
+    },
+    {
+     "en": "keen",
+     "phonetic": "/kiːn/",
+     "cn": "adj. 热衷的；敏锐的",
+     "example": "She is keen on learning new languages."
+    },
+    {
+     "en": "legitimate",
+     "phonetic": "/lɪˈdʒɪtɪmət/",
+     "cn": "adj. 合法的；合理的",
+     "example": "That is a legitimate concern."
+    },
+    {
+     "en": "modest",
+     "phonetic": "/ˈmɒdɪst/",
+     "cn": "adj. 谦虚的；适度的",
+     "example": "He lives a modest life."
+    },
+    {
+     "en": "notion",
+     "phonetic": "/ˈnəʊʃn/",
+     "cn": "n. 概念；想法",
+     "example": "The notion of fairness varies by culture."
+    },
+    {
+     "en": "obvious",
+     "phonetic": "/ˈɒbviəs/",
+     "cn": "adj. 明显的",
+     "example": "The answer is obvious."
+    },
+    {
+     "en": "precise",
+     "phonetic": "/prɪˈsaɪs/",
+     "cn": "adj. 精确的",
+     "example": "Give me a precise time."
+    },
+    {
+     "en": "rational",
+     "phonetic": "/ˈræʃnəl/",
+     "cn": "adj. 理性的",
+     "example": "We need a rational plan."
+    },
+    {
+     "en": "subtle",
+     "phonetic": "/ˈsʌtl/",
+     "cn": "adj. 微妙的",
+     "example": "There is a subtle difference."
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,101 @@
+{
+ "module": "fashion",
+ "items": [
+  {
+   "FASHION_WEEKLY": {
+    "week": "{WEEKCN}",
+    "theme": "暖栗秋意",
+    "colors": [
+     "#A0522D",
+     "#D2B48C",
+     "#3E2723"
+    ],
+    "tip": "栗色大衣配卡其内搭，暖调叠穿最显气质。"
+   }
+  },
+  {
+   "FASHION_WEEKLY": {
+    "week": "{WEEKCN}",
+    "theme": "雾霾蓝静谧",
+    "colors": [
+     "#5B7B9A",
+     "#C9D6DF",
+     "#2E3A47"
+    ],
+    "tip": "雾蓝针织配浅灰下装，通勤也温柔。"
+   }
+  },
+  {
+   "FASHION_WEEKLY": {
+    "week": "{WEEKCN}",
+    "theme": "焦糖拿铁",
+    "colors": [
+     "#C08552",
+     "#E6C9A8",
+     "#4A3424"
+    ],
+    "tip": "焦糖色半裙配米白毛衣，暖甜不腻。"
+   }
+  },
+  {
+   "FASHION_WEEKLY": {
+    "week": "{WEEKCN}",
+    "theme": "墨绿森系",
+    "colors": [
+     "#2E5D4B",
+     "#9DBF9E",
+     "#1B2E26"
+    ],
+    "tip": "墨绿大衣内搭米色，沉静有质感。"
+   }
+  },
+  {
+   "FASHION_WEEKLY": {
+    "week": "{WEEKCN}",
+    "theme": "裸粉柔光",
+    "colors": [
+     "#E8B4B8",
+     "#F5E6E8",
+     "#7A5C61"
+    ],
+    "tip": "裸粉衬衫配浅灰西裤，柔而不弱。"
+   }
+  },
+  {
+   "FASHION_WEEKLY": {
+    "week": "{WEEKCN}",
+    "theme": "燕麦极简",
+    "colors": [
+     "#D9CAB3",
+     "#BFA980",
+     "#3D362C"
+    ],
+    "tip": "全身燕麦色同色系，靠材质差异出层次。"
+   }
+  },
+  {
+   "FASHION_WEEKLY": {
+    "week": "{WEEKCN}",
+    "theme": "牛仔海岸",
+    "colors": [
+     "#4A6FA5",
+     "#A7C4D9",
+     "#2C3E50"
+    ],
+    "tip": "蓝衬衫配白牛仔，清爽减龄。"
+   }
+  },
+  {
+   "FASHION_WEEKLY": {
+    "week": "{WEEKCN}",
+    "theme": "酒红节日",
+    "colors": [
+     "#7B2334",
+     "#C98B92",
+     "#2E1A1F"
+    ],
+    "tip": "酒红针织配黑西裤，低调有节日感。"
+   }
+  }
+ ]
+}

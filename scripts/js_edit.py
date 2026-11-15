@@ -292,6 +292,29 @@ def trim_array(text: str, name: str, max_len: int, side: str = 'start') -> str:
     return text[:oi + 1] + new_body + text[ci:]
 
 
+def trim_key_array(text: str, key: str, max_len: int, side: str = 'start') -> str:
+    """裁剪对象里的 `key: [` 子数组到 max_len 条；side='start' 删最旧（头部）。"""
+    oi, ci = find_key_array(text, key)
+    body = text[oi + 1:ci]
+    spans = _top_item_spans(body)
+    if len(spans) <= max_len:
+        return text
+    remove = len(spans) - max_len
+    if side == 'start':
+        cut = spans[remove - 1][1] + 1
+        j = cut
+        while j < len(body) and body[j] in ' \t\r\n,':
+            j += 1
+        new_body = body[j:]
+    else:
+        cut = spans[-remove][0]
+        k = cut
+        while k > 0 and body[k - 1] in ' \t\r\n,':
+            k -= 1
+        new_body = body[:k]
+    return text[:oi + 1] + new_body + text[ci:]
+
+
 def bump_date_var(text: str, var_name: str, today: str) -> str:
     """把 `const VAR = '...'` / "..." 的日期改成 today。"""
     pat = re.compile(re.escape(var_name) + r'\s*=\s*([\'"])(.*?)\1')

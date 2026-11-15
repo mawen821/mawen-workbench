@@ -1,0 +1,1577 @@
+{
+ "module": "ai_learning",
+ "items": [
+  {
+   "AI_WEEKLY": [
+    {
+     "id": "w-trend-101",
+     "tag": "趋势",
+     "t": "多模态大模型成主流",
+     "why": "图文音视频统一理解，应用门槛骤降",
+     "kw": "多模态 大模型"
+    },
+    {
+     "id": "w-tool-101",
+     "tag": "工具",
+     "t": "AI 编程助手普及",
+     "why": "写代码、改 bug 效率翻倍",
+     "kw": "AI 编程"
+    },
+    {
+     "id": "w-video-101",
+     "tag": "视频",
+     "t": "AI 一键成片",
+     "why": "脚本到成片一条龙",
+     "kw": "AI 视频"
+    },
+    {
+     "id": "w-漫剧-101",
+     "tag": "漫剧",
+     "t": "动态漫画走红",
+     "why": "成本低、节奏快、适合短剧",
+     "kw": "动态漫画"
+    },
+    {
+     "id": "w-原理-101",
+     "tag": "原理",
+     "t": "注意力机制通俗解",
+     "why": "理解 Transformer 才不被概念绕晕",
+     "kw": "注意力机制"
+    },
+    {
+     "id": "w-trend-102",
+     "tag": "趋势",
+     "t": "端侧小模型兴起",
+     "why": "手机本地跑、隐私好、离线可用",
+     "kw": "端侧模型"
+    },
+    {
+     "id": "w-tool-102",
+     "tag": "工具",
+     "t": "RAG 检索增强",
+     "why": "让模型查你自己的资料再答",
+     "kw": "RAG"
+    },
+    {
+     "id": "w-video-102",
+     "tag": "视频",
+     "t": "数字人主播",
+     "why": "24 小时无人直播成真",
+     "kw": "数字人"
+    }
+   ],
+   "AI_RESOURCES": [
+    {
+     "id": "rv-101",
+     "type": "视频",
+     "title": "李宏毅机器学习",
+     "source": "李宏毅",
+     "topic": "深度学习基础",
+     "why": "讲得透、有作业",
+     "plat": "bili",
+     "kw": "机器学习 入门"
+    },
+    {
+     "id": "rb-101",
+     "type": "博主",
+     "title": "同济子豪兄",
+     "source": "子豪兄",
+     "topic": "AI 论文解读",
+     "why": "硬核但易懂",
+     "plat": "bili",
+     "kw": "AI 论文"
+    },
+    {
+     "id": "rd-101",
+     "type": "文档",
+     "title": "Transformer 论文",
+     "source": "Attention Is All You Need",
+     "topic": "架构原典",
+     "why": "一切的起点",
+     "plat": "youtube",
+     "kw": "Transformer"
+    },
+    {
+     "id": "ra-101",
+     "type": "文章",
+     "title": "深呼吸与思维链",
+     "source": "科普长文",
+     "topic": "推理技巧",
+     "why": "学会让模型『多想一步』",
+     "plat": "bili",
+     "kw": "思维链"
+    },
+    {
+     "id": "rv-102",
+     "type": "视频",
+     "title": "跟李沐学 AI",
+     "source": "李沐",
+     "topic": "动手学深度学习",
+     "why": "代码+理论并重",
+     "plat": "bili",
+     "kw": "深度学习 动手"
+    },
+    {
+     "id": "rb-102",
+     "type": "博主",
+     "title": "赛博活码",
+     "source": "UP主",
+     "topic": "AI 工具实测",
+     "why": "避坑指南",
+     "plat": "bili",
+     "kw": "AI 工具"
+    },
+    {
+     "id": "rd-102",
+     "type": "文档",
+     "title": "Hugging Face 课程",
+     "source": "HF",
+     "topic": "实战教程",
+     "why": "免费系统",
+     "plat": "youtube",
+     "kw": "HuggingFace"
+    },
+    {
+     "id": "ra-102",
+     "type": "文章",
+     "title": "Prompt 工程指南",
+     "source": "社区整理",
+     "topic": "提示词",
+     "why": "少走弯路",
+     "plat": "bili",
+     "kw": "Prompt"
+    },
+    {
+     "id": "rv-103",
+     "type": "视频",
+     "title": "吴恩达 AI 系列",
+     "source": "Andrew Ng",
+     "topic": "应用导向",
+     "why": "视野开阔",
+     "plat": "youtube",
+     "kw": "AndrewNg"
+    },
+    {
+     "id": "rb-103",
+     "type": "博主",
+     "title": "人工智能研究所",
+     "source": "UP主",
+     "topic": "前沿解读",
+     "why": "跟进最新",
+     "plat": "bili",
+     "kw": "AI 前沿"
+    },
+    {
+     "id": "rd-103",
+     "type": "文档",
+     "title": "动手学深度学习",
+     "source": "D2L",
+     "topic": "开源教材",
+     "why": "可在线跑",
+     "plat": "youtube",
+     "kw": "D2L"
+    },
+    {
+     "id": "ra-103",
+     "type": "文章",
+     "title": "Stable Diffusion 原理",
+     "source": "技术博客",
+     "topic": "扩散模型",
+     "why": "懂图生成",
+     "plat": "bili",
+     "kw": "扩散模型"
+    },
+    {
+     "id": "rv-104",
+     "type": "视频",
+     "title": "AI 绘画从零",
+     "source": "UP主",
+     "topic": "ComfyUI",
+     "why": "工作流可视化",
+     "plat": "bili",
+     "kw": "ComfyUI"
+    },
+    {
+     "id": "rb-104",
+     "type": "博主",
+     "title": "搞笑但硬核",
+     "source": "UP主",
+     "topic": "模型评测",
+     "why": "真实对比",
+     "plat": "bili",
+     "kw": "模型评测"
+    },
+    {
+     "id": "rd-104",
+     "type": "文档",
+     "title": "LangChain 文档",
+     "source": "LangChain",
+     "topic": "应用框架",
+     "why": "搭 Agent",
+     "plat": "youtube",
+     "kw": "LangChain"
+    },
+    {
+     "id": "ra-104",
+     "type": "文章",
+     "title": "Agent 设计模式",
+     "source": "技术博客",
+     "topic": "智能体",
+     "why": "理解编排",
+     "plat": "bili",
+     "kw": "Agent"
+    },
+    {
+     "id": "rv-105",
+     "type": "视频",
+     "title": "Whisper 语音识别",
+     "source": "UP主",
+     "topic": "本地转写",
+     "why": "自己做字幕",
+     "plat": "bili",
+     "kw": "Whisper"
+    },
+    {
+     "id": "rb-105",
+     "type": "博主",
+     "title": "数据科学笔记",
+     "source": "UP主",
+     "topic": "数据分析",
+     "why": "结合 AI",
+     "plat": "bili",
+     "kw": "数据分析"
+    },
+    {
+     "id": "rd-105",
+     "type": "文档",
+     "title": "OpenCV 教程",
+     "source": "官方",
+     "topic": "计算机视觉",
+     "why": "图像基础",
+     "plat": "youtube",
+     "kw": "OpenCV"
+    },
+    {
+     "id": "ra-105",
+     "type": "文章",
+     "title": "向量数据库入门",
+     "source": "技术博客",
+     "topic": "RAG 存储",
+     "why": "检索底座",
+     "plat": "bili",
+     "kw": "向量数据库"
+    }
+   ]
+  },
+  {
+   "AI_WEEKLY": [
+    {
+     "id": "w-trend-103",
+     "tag": "趋势",
+     "t": "AI Agent 爆发",
+     "why": "能自己调用工具完成任务",
+     "kw": "智能体 Agent"
+    },
+    {
+     "id": "w-tool-103",
+     "tag": "工具",
+     "t": "代码审查 AI",
+     "why": "提交前自动找 bug",
+     "kw": "代码审查"
+    },
+    {
+     "id": "w-video-103",
+     "tag": "视频",
+     "t": "AI 配音克隆",
+     "why": "多语言一键本地化",
+     "kw": "AI 配音"
+    },
+    {
+     "id": "w-漫剧-103",
+     "tag": "漫剧",
+     "t": "漫画转动态",
+     "why": "静图变口播短片",
+     "kw": "漫画转视频"
+    },
+    {
+     "id": "w-原理-103",
+     "tag": "原理",
+     "t": "量化与蒸馏",
+     "why": "小模型跑得快的关键",
+     "kw": "模型量化"
+    },
+    {
+     "id": "w-trend-104",
+     "tag": "趋势",
+     "t": "AI 搜索重构",
+     "why": "答案直接给，不再列链接",
+     "kw": "AI 搜索"
+    },
+    {
+     "id": "w-tool-104",
+     "tag": "工具",
+     "t": "本地知识库",
+     "why": "私域资料秒问答",
+     "kw": "个人知识库"
+    },
+    {
+     "id": "w-video-104",
+     "tag": "视频",
+     "t": "AI 分镜脚本",
+     "why": "输入创意出分镜",
+     "kw": "AI 分镜"
+    }
+   ],
+   "AI_RESOURCES": [
+    {
+     "id": "rv-106",
+     "type": "视频",
+     "title": "Agent 实战",
+     "source": "UP主",
+     "topic": "智能体搭建",
+     "why": "从0到1",
+     "plat": "bili",
+     "kw": "Agent 实战"
+    },
+    {
+     "id": "rb-106",
+     "type": "博主",
+     "title": "提示词研究所",
+     "source": "UP主",
+     "topic": "高级 Prompt",
+     "why": "效果翻倍",
+     "plat": "bili",
+     "kw": "高级提示词"
+    },
+    {
+     "id": "rd-106",
+     "type": "文档",
+     "title": "LlamaIndex 文档",
+     "source": "LlamaIndex",
+     "topic": "索引框架",
+     "why": "RAG 利器",
+     "plat": "youtube",
+     "kw": "LlamaIndex"
+    },
+    {
+     "id": "ra-106",
+     "type": "文章",
+     "title": "Function Calling",
+     "source": "技术博客",
+     "topic": "工具调用",
+     "why": "Agent 核心",
+     "plat": "bili",
+     "kw": "函数调用"
+    },
+    {
+     "id": "rv-107",
+     "type": "视频",
+     "title": "量化部署实战",
+     "source": "UP主",
+     "topic": "模型压缩",
+     "why": "上手机/显卡",
+     "plat": "bili",
+     "kw": "模型量化"
+    },
+    {
+     "id": "rb-107",
+     "type": "博主",
+     "title": "CV 生活",
+     "source": "UP主",
+     "topic": "视觉应用",
+     "why": "看得见的 AI",
+     "plat": "bili",
+     "kw": "计算机视觉"
+    },
+    {
+     "id": "rd-107",
+     "type": "文档",
+     "title": "PyTorch 教程",
+     "source": "官方",
+     "topic": "深度学习框架",
+     "why": "必学",
+     "plat": "youtube",
+     "kw": "PyTorch"
+    },
+    {
+     "id": "ra-107",
+     "type": "文章",
+     "title": "微调 vs 提示",
+     "source": "科普",
+     "topic": "训练策略",
+     "why": "省钱省时",
+     "plat": "bili",
+     "kw": "微调"
+    },
+    {
+     "id": "rv-108",
+     "type": "视频",
+     "title": "AI 搜索横评",
+     "source": "UP主",
+     "topic": "工具对比",
+     "why": "选合适的",
+     "plat": "bili",
+     "kw": "AI 搜索"
+    },
+    {
+     "id": "rb-108",
+     "type": "博主",
+     "title": "语音合成日记",
+     "source": "UP主",
+     "topic": "TTS",
+     "why": "做有声内容",
+     "plat": "bili",
+     "kw": "语音合成"
+    },
+    {
+     "id": "rd-108",
+     "type": "文档",
+     "title": "Whisper 文档",
+     "source": "OpenAI",
+     "topic": "语音识别",
+     "why": "本地可用",
+     "plat": "youtube",
+     "kw": "Whisper"
+    },
+    {
+     "id": "ra-108",
+     "type": "文章",
+     "title": "RAG 最佳实践",
+     "source": "技术博客",
+     "topic": "检索增强",
+     "why": "少幻觉",
+     "plat": "bili",
+     "kw": "RAG 实践"
+    },
+    {
+     "id": "rv-109",
+     "type": "视频",
+     "title": "ComfyUI 进阶",
+     "source": "UP主",
+     "topic": "节点工作流",
+     "why": "可控出图",
+     "plat": "bili",
+     "kw": "ComfyUI 进阶"
+    },
+    {
+     "id": "rb-109",
+     "type": "博主",
+     "title": "数据炼丹笔记",
+     "source": "UP主",
+     "topic": "训练技巧",
+     "why": "避坑",
+     "plat": "bili",
+     "kw": "模型训练"
+    },
+    {
+     "id": "rd-109",
+     "type": "文档",
+     "title": "Diffusers 文档",
+     "source": "HF",
+     "topic": "生成模型",
+     "why": "官方范例",
+     "plat": "youtube",
+     "kw": "Diffusers"
+    },
+    {
+     "id": "ra-109",
+     "type": "文章",
+     "title": "多模态融合",
+     "source": "技术博客",
+     "topic": "图文音",
+     "why": "理解趋势",
+     "plat": "bili",
+     "kw": "多模态"
+    },
+    {
+     "id": "rv-110",
+     "type": "视频",
+     "title": "端侧模型部署",
+     "source": "UP主",
+     "topic": "手机跑 AI",
+     "why": "隐私离线",
+     "plat": "bili",
+     "kw": "端侧 AI"
+    },
+    {
+     "id": "rb-110",
+     "type": "博主",
+     "title": "产品里的 AI",
+     "source": "UP主",
+     "topic": "落地案例",
+     "why": "学应用",
+     "plat": "bili",
+     "kw": "AI 产品"
+    },
+    {
+     "id": "rd-110",
+     "type": "文档",
+     "title": "Ollama 文档",
+     "source": "Ollama",
+     "topic": "本地大模型",
+     "why": "一键跑",
+     "plat": "youtube",
+     "kw": "Ollama"
+    },
+    {
+     "id": "ra-110",
+     "type": "文章",
+     "title": "评测大模型",
+     "source": "科普",
+     "topic": "基准解读",
+     "why": "不被分数忽悠",
+     "plat": "bili",
+     "kw": "大模型评测"
+    }
+   ]
+  },
+  {
+   "AI_WEEKLY": [
+    {
+     "id": "w-trend-105",
+     "tag": "趋势",
+     "t": "开源模型追平闭源",
+     "why": "可私有部署、可控成本",
+     "kw": "开源大模型"
+    },
+    {
+     "id": "w-tool-105",
+     "tag": "工具",
+     "t": "AI 笔记整理",
+     "why": "会议录音变结构化笔记",
+     "kw": "AI 笔记"
+    },
+    {
+     "id": "w-video-105",
+     "tag": "视频",
+     "t": "口播视频批量化",
+     "why": "文案+配音+剪辑一体",
+     "kw": "口播视频"
+    },
+    {
+     "id": "w-漫剧-105",
+     "tag": "漫剧",
+     "t": "情绪漫剧模板",
+     "why": "高完播率结构可复制",
+     "kw": "情绪漫剧"
+    },
+    {
+     "id": "w-原理-105",
+     "tag": "原理",
+     "t": "训练数据从哪来",
+     "why": "懂数据才懂上限",
+     "kw": "训练数据"
+    },
+    {
+     "id": "w-trend-106",
+     "tag": "趋势",
+     "t": "AI 原生应用",
+     "why": "不为旧流程贴皮，而是重做",
+     "kw": "AI 原生"
+    },
+    {
+     "id": "w-tool-106",
+     "tag": "工具",
+     "t": "图像一键去背",
+     "why": "电商素材秒出",
+     "kw": "AI 去背"
+    },
+    {
+     "id": "w-video-106",
+     "tag": "视频",
+     "t": "AI 字幕翻译",
+     "why": "跨语种内容搬运",
+     "kw": "AI 字幕"
+    }
+   ],
+   "AI_RESOURCES": [
+    {
+     "id": "rv-111",
+     "type": "视频",
+     "title": "开源模型横评",
+     "source": "UP主",
+     "topic": "本地大模型",
+     "why": "选型参考",
+     "plat": "bili",
+     "kw": "开源模型"
+    },
+    {
+     "id": "rb-111",
+     "type": "博主",
+     "title": "本地模型日记",
+     "source": "UP主",
+     "topic": "Ollama",
+     "why": "零云依赖",
+     "plat": "bili",
+     "kw": "本地模型"
+    },
+    {
+     "id": "rd-111",
+     "type": "文档",
+     "title": "vLLM 文档",
+     "source": "vLLM",
+     "topic": "高性能推理",
+     "why": "部署提速",
+     "plat": "youtube",
+     "kw": "vLLM"
+    },
+    {
+     "id": "ra-111",
+     "type": "文章",
+     "title": "数据清洗实务",
+     "source": "技术博客",
+     "topic": "数据工程",
+     "why": "垃圾进垃圾出",
+     "plat": "bili",
+     "kw": "数据清洗"
+    },
+    {
+     "id": "rv-112",
+     "type": "视频",
+     "title": "AI 笔记工作流",
+     "source": "UP主",
+     "topic": "效率工具",
+     "why": "省时间",
+     "plat": "bili",
+     "kw": "AI 笔记"
+    },
+    {
+     "id": "rb-112",
+     "type": "博主",
+     "title": "剪辑自动化",
+     "source": "UP主",
+     "topic": "视频流水线",
+     "why": "批量出片",
+     "plat": "bili",
+     "kw": "剪辑自动化"
+    },
+    {
+     "id": "rd-112",
+     "type": "文档",
+     "title": "AutoDL 教程",
+     "source": "平台",
+     "topic": "租显卡",
+     "why": "低成本算力",
+     "plat": "youtube",
+     "kw": "AutoDL"
+    },
+    {
+     "id": "ra-112",
+     "type": "文章",
+     "title": "提示词反模式",
+     "source": "社区",
+     "topic": "Prompt 坑",
+     "why": "避坑",
+     "plat": "bili",
+     "kw": "提示词 坑"
+    },
+    {
+     "id": "rv-113",
+     "type": "视频",
+     "title": "去背与抠图",
+     "source": "UP主",
+     "topic": "图像工具",
+     "why": "电商可用",
+     "plat": "bili",
+     "kw": "AI 去背"
+    },
+    {
+     "id": "rb-113",
+     "type": "博主",
+     "title": "AI 漫剧工坊",
+     "source": "UP主",
+     "topic": "动态漫画",
+     "why": "低成本内容",
+     "plat": "bili",
+     "kw": "AI 漫剧"
+    },
+    {
+     "id": "rd-113",
+     "type": "文档",
+     "title": "PaddleOCR 文档",
+     "source": "百度",
+     "topic": "文字识别",
+     "why": "图文提取",
+     "plat": "youtube",
+     "kw": "OCR"
+    },
+    {
+     "id": "ra-113",
+     "type": "文章",
+     "title": "长上下文用法",
+     "source": "科普",
+     "topic": "大窗口",
+     "why": "喂整本书",
+     "plat": "bili",
+     "kw": "长上下文"
+    },
+    {
+     "id": "rv-114",
+     "type": "视频",
+     "title": "AI 配音对比",
+     "source": "UP主",
+     "topic": "TTS 选型",
+     "why": "找自然音色",
+     "plat": "bili",
+     "kw": "AI 配音"
+    },
+    {
+     "id": "rb-114",
+     "type": "博主",
+     "title": "产品经理看 AI",
+     "source": "UP主",
+     "topic": "落地思维",
+     "why": "学定义问题",
+     "plat": "bili",
+     "kw": "AI 产品"
+    },
+    {
+     "id": "rd-114",
+     "type": "文档",
+     "title": "Gradio 文档",
+     "source": "HF",
+     "topic": "做演示页",
+     "why": "快速验证",
+     "plat": "youtube",
+     "kw": "Gradio"
+    },
+    {
+     "id": "ra-114",
+     "type": "文章",
+     "title": "模型安全与对齐",
+     "source": "技术博客",
+     "topic": "AI 安全",
+     "why": "负责任使用",
+     "plat": "bili",
+     "kw": "AI 安全"
+    },
+    {
+     "id": "rv-115",
+     "type": "视频",
+     "title": "多模态数据构建",
+     "source": "UP主",
+     "topic": "数据集",
+     "why": "训练前一步",
+     "plat": "bili",
+     "kw": "多模态数据"
+    },
+    {
+     "id": "rb-115",
+     "type": "博主",
+     "title": "部署踩坑录",
+     "source": "UP主",
+     "topic": "推理部署",
+     "why": "真实经验",
+     "plat": "bili",
+     "kw": "模型部署"
+    },
+    {
+     "id": "rd-115",
+     "type": "文档",
+     "title": "TensorRT 文档",
+     "source": "NVIDIA",
+     "topic": "加速推理",
+     "why": "提吞吐",
+     "plat": "youtube",
+     "kw": "TensorRT"
+    },
+    {
+     "id": "ra-115",
+     "type": "文章",
+     "title": "评测集怎么看",
+     "source": "科普",
+     "topic": "基准",
+     "why": "理性选型",
+     "plat": "bili",
+     "kw": "评测集"
+    }
+   ]
+  },
+  {
+   "AI_WEEKLY": [
+    {
+     "id": "w-trend-107",
+     "tag": "趋势",
+     "t": "小模型大能力",
+     "why": "蒸馏+量化让手机也聪明",
+     "kw": "小模型"
+    },
+    {
+     "id": "w-tool-107",
+     "tag": "工具",
+     "t": "AI 翻译润色",
+     "why": "中英互译保语气",
+     "kw": "AI 翻译"
+    },
+    {
+     "id": "w-video-107",
+     "tag": "视频",
+     "t": "老片修复上色",
+     "why": "怀旧内容新流量",
+     "kw": "AI 修复"
+    },
+    {
+     "id": "w-漫剧-107",
+     "tag": "漫剧",
+     "t": "对话驱动分镜",
+     "why": "剧本直接出画面",
+     "kw": "剧本转视频"
+    },
+    {
+     "id": "w-原理-107",
+     "tag": "原理",
+     "t": "幻觉从哪来",
+     "why": "懂来源才懂怎么防",
+     "kw": "AI 幻觉"
+    },
+    {
+     "id": "w-trend-108",
+     "tag": "趋势",
+     "t": "AI 教育个性化",
+     "why": "按节奏给题讲题",
+     "kw": "AI 教育"
+    },
+    {
+     "id": "w-tool-108",
+     "tag": "工具",
+     "t": "代码生成评审",
+     "why": "PR 自动摘要",
+     "kw": "代码评审"
+    },
+    {
+     "id": "w-video-108",
+     "tag": "视频",
+     "t": "虚拟拍摄",
+     "why": "绿幕被实时合成取代",
+     "kw": "虚拟拍摄"
+    }
+   ],
+   "AI_RESOURCES": [
+    {
+     "id": "rv-116",
+     "type": "视频",
+     "title": "蒸馏与微调",
+     "source": "UP主",
+     "topic": "小模型训练",
+     "why": "省钱",
+     "plat": "bili",
+     "kw": "知识蒸馏"
+    },
+    {
+     "id": "rb-116",
+     "type": "博主",
+     "title": "翻译技术流",
+     "source": "UP主",
+     "topic": "AI 翻译",
+     "why": "保真",
+     "plat": "bili",
+     "kw": "AI 翻译"
+    },
+    {
+     "id": "rd-116",
+     "type": "文档",
+     "title": "MarianMT 文档",
+     "source": "HF",
+     "topic": "机器翻译",
+     "why": "可本地",
+     "plat": "youtube",
+     "kw": "机器翻译"
+    },
+    {
+     "id": "ra-116",
+     "type": "文章",
+     "title": "减少幻觉方法",
+     "source": "技术博客",
+     "topic": "可靠性",
+     "why": "更可信",
+     "plat": "bili",
+     "kw": "减少幻觉"
+    },
+    {
+     "id": "rv-117",
+     "type": "视频",
+     "title": "老片 AI 修复",
+     "source": "UP主",
+     "topic": "画质增强",
+     "why": "怀旧流量",
+     "plat": "bili",
+     "kw": "AI 修复"
+    },
+    {
+     "id": "rb-117",
+     "type": "博主",
+     "title": "教育 AI 观察",
+     "source": "UP主",
+     "topic": "个性化学习",
+     "why": "务实",
+     "plat": "bili",
+     "kw": "AI 教育"
+    },
+    {
+     "id": "rd-117",
+     "type": "文档",
+     "title": "Sentence-Transformers",
+     "source": "HF",
+     "topic": "句向量",
+     "why": "语义检索",
+     "plat": "youtube",
+     "kw": "句向量"
+    },
+    {
+     "id": "ra-117",
+     "type": "文章",
+     "title": "RAG 还是微调",
+     "source": "科普",
+     "topic": "选型",
+     "why": "少走弯路",
+     "plat": "bili",
+     "kw": "RAG 微调"
+    },
+    {
+     "id": "rv-118",
+     "type": "视频",
+     "title": "代码评审 AI",
+     "source": "UP主",
+     "topic": "研发提效",
+     "why": "团队可用",
+     "plat": "bili",
+     "kw": "代码评审"
+    },
+    {
+     "id": "rb-118",
+     "type": "博主",
+     "title": "虚拟制片",
+     "source": "UP主",
+     "topic": "实时合成",
+     "why": "低成本",
+     "plat": "bili",
+     "kw": "虚拟制片"
+    },
+    {
+     "id": "rd-118",
+     "type": "文档",
+     "title": "ControlNet 文档",
+     "source": "社区",
+     "topic": "可控生成",
+     "why": "姿势构图可控",
+     "plat": "youtube",
+     "kw": "ControlNet"
+    },
+    {
+     "id": "ra-118",
+     "type": "文章",
+     "title": "上下文工程",
+     "source": "技术博客",
+     "topic": "Prompt 组织",
+     "why": "复杂任务关键",
+     "plat": "bili",
+     "kw": "上下文工程"
+    },
+    {
+     "id": "rv-119",
+     "type": "视频",
+     "title": "小模型实测",
+     "source": "UP主",
+     "topic": "端侧跑分",
+     "why": "选型",
+     "plat": "bili",
+     "kw": "小模型实测"
+    },
+    {
+     "id": "rb-119",
+     "type": "博主",
+     "title": "AI 伦理闲谈",
+     "source": "UP主",
+     "topic": "负责任",
+     "why": "长期视角",
+     "plat": "bili",
+     "kw": "AI 伦理"
+    },
+    {
+     "id": "rd-119",
+     "type": "文档",
+     "title": "GGUF 格式",
+     "source": "社区",
+     "topic": "模型格式",
+     "why": "本地友好",
+     "plat": "youtube",
+     "kw": "GGUF"
+    },
+    {
+     "id": "ra-119",
+     "type": "文章",
+     "title": "评测提示词鲁棒性",
+     "source": "科普",
+     "topic": "稳定性",
+     "why": "别被偶然惊艳",
+     "plat": "bili",
+     "kw": "提示词鲁棒性"
+    },
+    {
+     "id": "rv-120",
+     "type": "视频",
+     "title": "AI 字幕工作流",
+     "source": "UP主",
+     "topic": "视频本地化",
+     "why": "搬运利器",
+     "plat": "bili",
+     "kw": "AI 字幕"
+    },
+    {
+     "id": "rb-120",
+     "type": "博主",
+     "title": "数据可视化 AI",
+     "source": "UP主",
+     "topic": "图表自动",
+     "why": "报告提速",
+     "plat": "bili",
+     "kw": "数据可视化"
+    },
+    {
+     "id": "rd-120",
+     "type": "文档",
+     "title": "Semantic-Kernel",
+     "source": "微软",
+     "topic": "Agent 框架",
+     "why": "企业级",
+     "plat": "youtube",
+     "kw": "SemanticKernel"
+    },
+    {
+     "id": "ra-120",
+     "type": "文章",
+     "title": "AI 工作流编排",
+     "source": "技术博客",
+     "topic": "自动化",
+     "why": "省人力",
+     "plat": "bili",
+     "kw": "工作流编排"
+    }
+   ]
+  },
+  {
+   "AI_WEEKLY": [
+    {
+     "id": "w-trend-109",
+     "tag": "趋势",
+     "t": "具身智能起步",
+     "why": "AI 从屏幕走向机器人",
+     "kw": "具身智能"
+    },
+    {
+     "id": "w-tool-109",
+     "tag": "工具",
+     "t": "AI 表单抽取",
+     "why": "发票合同自动结构化",
+     "kw": "信息抽取"
+    },
+    {
+     "id": "w-video-109",
+     "tag": "视频",
+     "t": "AI 短片工业化",
+     "why": "模板化生产内容",
+     "kw": "AI 短片"
+    },
+    {
+     "id": "w-漫剧-109",
+     "tag": "漫剧",
+     "t": "IP 漫剧化",
+     "why": "小说一键转动态剧",
+     "kw": "IP 漫剧"
+    },
+    {
+     "id": "w-原理-109",
+     "tag": "原理",
+     "t": "训练 vs 推理",
+     "why": "成本结构搞清才算账",
+     "kw": "训练推理"
+    },
+    {
+     "id": "w-trend-110",
+     "tag": "趋势",
+     "t": "AI 合规收紧",
+     "why": "备案与标识成标配",
+     "kw": "AI 合规"
+    },
+    {
+     "id": "w-tool-110",
+     "tag": "工具",
+     "t": "AI 会议纪要",
+     "why": "录音转决议清单",
+     "kw": "会议纪要"
+    },
+    {
+     "id": "w-video-110",
+     "tag": "视频",
+     "t": "实时换脸谨慎",
+     "why": "技术强但法律风险高",
+     "kw": "换脸"
+    }
+   ],
+   "AI_RESOURCES": [
+    {
+     "id": "rv-121",
+     "type": "视频",
+     "title": "具身智能入门",
+     "source": "UP主",
+     "topic": "机器人 AI",
+     "why": "前沿",
+     "plat": "bili",
+     "kw": "具身智能"
+    },
+    {
+     "id": "rb-121",
+     "type": "博主",
+     "title": "文档智能",
+     "source": "UP主",
+     "topic": "OCR+抽取",
+     "why": "办公提效",
+     "plat": "bili",
+     "kw": "文档智能"
+    },
+    {
+     "id": "rd-121",
+     "type": "文档",
+     "title": "LayoutLM 文档",
+     "source": "微软",
+     "topic": "版面理解",
+     "why": "表单合同",
+     "plat": "youtube",
+     "kw": "LayoutLM"
+    },
+    {
+     "id": "ra-121",
+     "type": "文章",
+     "title": "成本怎么算",
+     "source": "科普",
+     "topic": "token 计费",
+     "why": "不被账吓到",
+     "plat": "bili",
+     "kw": "AI 成本"
+    },
+    {
+     "id": "rv-122",
+     "type": "视频",
+     "title": "AI 短片流水线",
+     "source": "UP主",
+     "topic": "工业化生产",
+     "why": "可复制",
+     "plat": "bili",
+     "kw": "AI 短片"
+    },
+    {
+     "id": "rb-122",
+     "type": "博主",
+     "title": "合规那些事",
+     "source": "UP主",
+     "topic": "AI 备案",
+     "why": "避红线",
+     "plat": "bili",
+     "kw": "AI 合规"
+    },
+    {
+     "id": "rd-122",
+     "type": "文档",
+     "title": "Modelscope 教程",
+     "source": "阿里",
+     "topic": "国产模型库",
+     "why": "中文友好",
+     "plat": "youtube",
+     "kw": "Modelscope"
+    },
+    {
+     "id": "ra-122",
+     "type": "文章",
+     "title": "会议纪要模板",
+     "source": "社区",
+     "topic": "效率",
+     "why": "开会不白开",
+     "plat": "bili",
+     "kw": "会议纪要"
+    },
+    {
+     "id": "rv-123",
+     "type": "视频",
+     "title": "信息抽取实战",
+     "source": "UP主",
+     "topic": "结构化",
+     "why": "数据入库",
+     "plat": "bili",
+     "kw": "信息抽取"
+    },
+    {
+     "id": "rb-123",
+     "type": "博主",
+     "title": "机器人观察",
+     "source": "UP主",
+     "topic": "运动控制",
+     "why": "硬核",
+     "plat": "bili",
+     "kw": "机器人"
+    },
+    {
+     "id": "rd-123",
+     "type": "文档",
+     "title": "Transformers 进阶",
+     "source": "HF",
+     "topic": "源码精读",
+     "why": "理解底层",
+     "plat": "youtube",
+     "kw": "Transformers"
+    },
+    {
+     "id": "ra-123",
+     "type": "文章",
+     "title": "AI 水印与标识",
+     "source": "科普",
+     "topic": "合规",
+     "why": "趋势",
+     "plat": "bili",
+     "kw": "AI 水印"
+    },
+    {
+     "id": "rv-124",
+     "type": "视频",
+     "title": "IP 漫剧化",
+     "source": "UP主",
+     "topic": "小说转剧",
+     "why": "流量密码",
+     "plat": "bili",
+     "kw": "IP 漫剧"
+    },
+    {
+     "id": "rb-124",
+     "type": "博主",
+     "title": "产品拆解 AI",
+     "source": "UP主",
+     "topic": "案例",
+     "why": "学思路",
+     "plat": "bili",
+     "kw": "产品拆解"
+    },
+    {
+     "id": "rd-124",
+     "type": "文档",
+     "title": "PaddleNLP 文档",
+     "source": "百度",
+     "topic": "中文 NLP",
+     "why": "本地化好",
+     "plat": "youtube",
+     "kw": "PaddleNLP"
+    },
+    {
+     "id": "ra-124",
+     "type": "文章",
+     "title": "推理优化总览",
+     "source": "技术博客",
+     "topic": "提速降本",
+     "why": "上线必看",
+     "plat": "bili",
+     "kw": "推理优化"
+    },
+    {
+     "id": "rv-125",
+     "type": "视频",
+     "title": "换脸技术边界",
+     "source": "UP主",
+     "topic": "深度伪造",
+     "why": "懂风险",
+     "plat": "bili",
+     "kw": "深度伪造"
+    },
+    {
+     "id": "rb-125",
+     "type": "博主",
+     "title": "AI 法律笔记",
+     "source": "UP主",
+     "topic": "合规科普",
+     "why": "自我保护",
+     "plat": "bili",
+     "kw": "AI 法律"
+    },
+    {
+     "id": "rd-125",
+     "type": "文档",
+     "title": "DeepSpeed 文档",
+     "source": "微软",
+     "topic": "分布式训练",
+     "why": "大模型必备",
+     "plat": "youtube",
+     "kw": "DeepSpeed"
+    },
+    {
+     "id": "ra-125",
+     "type": "文章",
+     "title": "训练数据合规",
+     "source": "科普",
+     "topic": "版权",
+     "why": "长线安全",
+     "plat": "bili",
+     "kw": "数据合规"
+    }
+   ]
+  },
+  {
+   "AI_WEEKLY": [
+    {
+     "id": "w-trend-111",
+     "tag": "趋势",
+     "t": "AI 个人助理常态化",
+     "why": "日程、邮件、备忘自动打理",
+     "kw": "个人助理"
+    },
+    {
+     "id": "w-tool-111",
+     "tag": "工具",
+     "t": "AI 写周报",
+     "why": "碎片记录变总结",
+     "kw": "AI 周报"
+    },
+    {
+     "id": "w-video-111",
+     "tag": "视频",
+     "t": "AI 生成 BGM",
+     "why": "配乐不再版权愁",
+     "kw": "AI 配乐"
+    },
+    {
+     "id": "w-漫剧-111",
+     "tag": "漫剧",
+     "t": "竖屏漫剧节奏",
+     "why": "前3秒定生死",
+     "kw": "竖屏漫剧"
+    },
+    {
+     "id": "w-原理-111",
+     "tag": "原理",
+     "t": "上下文窗口极限",
+     "why": "再长也有限，需分段",
+     "kw": "上下文窗口"
+    },
+    {
+     "id": "w-trend-112",
+     "tag": "趋势",
+     "t": "AI 设计协同",
+     "why": "草图到高保真一键",
+     "kw": "AI 设计"
+    },
+    {
+     "id": "w-tool-112",
+     "tag": "工具",
+     "t": "AI 数据清洗",
+     "why": "脏数据自动规整",
+     "kw": "数据清洗"
+    },
+    {
+     "id": "w-video-112",
+     "tag": "视频",
+     "t": "AI 口型对齐",
+     "why": "配音与嘴型一致",
+     "kw": "口型对齐"
+    }
+   ],
+   "AI_RESOURCES": [
+    {
+     "id": "rv-126",
+     "type": "视频",
+     "title": "个人助理搭建",
+     "source": "UP主",
+     "topic": "自动化生活",
+     "why": "省力",
+     "plat": "bili",
+     "kw": "个人助理"
+    },
+    {
+     "id": "rb-126",
+     "type": "博主",
+     "title": "效率流",
+     "source": "UP主",
+     "topic": "周报自动化",
+     "why": "告别加班写总结",
+     "plat": "bili",
+     "kw": "效率流"
+    },
+    {
+     "id": "rd-126",
+     "type": "文档",
+     "title": "Suno 文档",
+     "source": "Suno",
+     "topic": "AI 音乐",
+     "why": "生成 BGM",
+     "plat": "youtube",
+     "kw": "AI 音乐"
+    },
+    {
+     "id": "ra-126",
+     "type": "文章",
+     "title": "长文处理策略",
+     "source": "科普",
+     "topic": "分块检索",
+     "why": "超长上下文",
+     "plat": "bili",
+     "kw": "长文处理"
+    },
+    {
+     "id": "rv-127",
+     "type": "视频",
+     "title": "AI 设计协作",
+     "source": "UP主",
+     "topic": "UI 生成",
+     "why": "草图变稿",
+     "plat": "bili",
+     "kw": "AI 设计"
+    },
+    {
+     "id": "rb-127",
+     "type": "博主",
+     "title": "数据工程日记",
+     "source": "UP主",
+     "topic": "ETL+AI",
+     "why": "脏数据救星",
+     "plat": "bili",
+     "kw": "数据工程"
+    },
+    {
+     "id": "rd-127",
+     "type": "文档",
+     "title": "FAISS 文档",
+     "source": "Meta",
+     "topic": "向量检索",
+     "why": "海量相似度",
+     "plat": "youtube",
+     "kw": "FAISS"
+    },
+    {
+     "id": "ra-127",
+     "type": "文章",
+     "title": "口型对齐原理",
+     "source": "技术博客",
+     "topic": "音视频",
+     "why": "更自然",
+     "plat": "bili",
+     "kw": "口型对齐"
+    },
+    {
+     "id": "rv-128",
+     "type": "视频",
+     "title": "AI 配乐实战",
+     "source": "UP主",
+     "topic": "生成 BGM",
+     "why": "免版权",
+     "plat": "bili",
+     "kw": "AI 配乐"
+    },
+    {
+     "id": "rb-128",
+     "type": "博主",
+     "title": "剪辑思路",
+     "source": "UP主",
+     "topic": "竖屏节奏",
+     "why": "完播率",
+     "plat": "bili",
+     "kw": "竖屏剪辑"
+    },
+    {
+     "id": "rd-128",
+     "type": "文档",
+     "title": "Weaviate 文档",
+     "source": "Weaviate",
+     "topic": "向量库",
+     "why": "生产级",
+     "plat": "youtube",
+     "kw": "Weaviate"
+    },
+    {
+     "id": "ra-128",
+     "type": "文章",
+     "title": "提示词分层",
+     "source": "社区",
+     "topic": "结构设计",
+     "why": "复杂任务稳",
+     "plat": "bili",
+     "kw": "提示词分层"
+    },
+    {
+     "id": "rv-129",
+     "type": "视频",
+     "title": "草图到高保真",
+     "source": "UP主",
+     "topic": "AI 设计",
+     "why": "提速",
+     "plat": "bili",
+     "kw": "草图生成"
+    },
+    {
+     "id": "rb-129",
+     "type": "博主",
+     "title": "自动化玩家",
+     "source": "UP主",
+     "topic": "脚本流",
+     "why": "重复事交给机器",
+     "plat": "bili",
+     "kw": "自动化"
+    },
+    {
+     "id": "rd-129",
+     "type": "文档",
+     "title": "AutoGen 文档",
+     "source": "微软",
+     "topic": "多智能体",
+     "why": "协作编排",
+     "plat": "youtube",
+     "kw": "AutoGen"
+    },
+    {
+     "id": "ra-129",
+     "type": "文章",
+     "title": "评测集自建",
+     "source": "科普",
+     "topic": "质量保障",
+     "why": "持续监控",
+     "plat": "bili",
+     "kw": "评测集"
+    },
+    {
+     "id": "rv-130",
+     "type": "视频",
+     "title": "数据清洗 AI",
+     "source": "UP主",
+     "topic": "规整",
+     "why": "少手动",
+     "plat": "bili",
+     "kw": "数据清洗"
+    },
+    {
+     "id": "rb-130",
+     "type": "博主",
+     "title": "周报模版流",
+     "source": "UP主",
+     "topic": "总结生成",
+     "why": "省心",
+     "plat": "bili",
+     "kw": "周报"
+    },
+    {
+     "id": "rd-130",
+     "type": "文档",
+     "title": "Milvus 文档",
+     "source": "Zilliz",
+     "topic": "向量数据库",
+     "why": "大规模",
+     "plat": "youtube",
+     "kw": "Milvus"
+    },
+    {
+     "id": "ra-130",
+     "type": "文章",
+     "title": "AI 助手边界",
+     "source": "科普",
+     "topic": "何时人工",
+     "why": "靠谱落地",
+     "plat": "bili",
+     "kw": "AI 边界"
+    }
+   ]
+  }
+ ]
+}

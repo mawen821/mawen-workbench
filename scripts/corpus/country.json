@@ -1,0 +1,224 @@
+{
+ "module": "country",
+ "items": [
+  {
+   "COUNTRY_AUTO_ENTRIES": {
+    "part": "china",
+    "dim": "trend",
+    "id": "auto-cn-trend-{DATE8}",
+    "title": "县域经济成为内循环新支点",
+    "summary": "随着大城市增长趋稳，县域消费与产业承接能力被重新审视，下沉市场成为扩大内需的重要抓手。",
+    "body": [
+     {
+      "p": "县域连接城乡，是内需循环的枢纽。"
+     }
+    ],
+    "points": [
+     "县域消费潜力大",
+     "产业转移承接机会多"
+    ],
+    "data": "多省县域社零增速高于全国平均",
+    "source": "公开统计口径 {DATE}",
+    "views": {
+     "macro": "扩内需战略落地",
+     "nation": "城乡融合加速",
+     "people": "就近就业增多"
+    },
+    "question": "你家乡的县域产业有什么变化？",
+    "guide": "从身边观察理解宏观趋势。"
+   }
+  },
+  {
+   "COUNTRY_AUTO_ENTRIES": {
+    "part": "world",
+    "dim": "strategy",
+    "id": "auto-wl-str-{DATE8}",
+    "title": "全球供应链区域化重构",
+    "summary": "在地缘与成本双重驱动下，全球供应链从『效率优先』转向『安全+效率』并重，区域化集群更明显。",
+    "body": [
+     {
+      "p": "近岸外包、友岸外包成为高频词。"
+     }
+    ],
+    "points": [
+     "供应链更强调韧性",
+     "区域产业集群成形"
+    ],
+    "data": "多区域贸易协定扩容",
+    "source": "公开研究 {DATE}",
+    "views": {
+     "macro": "重塑贸易格局",
+     "nation": "影响出口结构",
+     "people": "就业方向变化"
+    },
+    "question": "这对你所在行业意味着什么？",
+    "guide": "用产业链视角看新闻。"
+   }
+  },
+  {
+   "COUNTRY_AUTO_ENTRIES": {
+    "part": "china",
+    "dim": "assess",
+    "id": "auto-cn-ass-{DATE8}",
+    "title": "新能源装机规模领跑全球",
+    "summary": "中国风电光伏装机连续多年全球第一，绿电占比持续提升，能源结构转型进入快车道。",
+    "body": [
+     {
+      "p": "绿电不仅减碳，也重塑产业竞争力。"
+     }
+    ],
+    "points": [
+     "装机规模全球领先",
+     "消纳与储能是关键"
+    ],
+    "data": "风光装机占新增电源主体",
+    "source": "能源统计 {DATE}",
+    "views": {
+     "macro": "双碳战略支撑",
+     "nation": "产业竞争力提升",
+     "people": "用电更绿"
+    },
+    "question": "绿电降价会怎样影响你的生活成本？",
+    "guide": "能源是理解物价的基础。"
+   }
+  },
+  {
+   "COUNTRY_AUTO_ENTRIES": {
+    "part": "world",
+    "dim": "trend",
+    "id": "auto-wl-tr-{DATE8}",
+    "title": "人工智能渗透千行百业",
+    "summary": "生成式AI从工具走向基础设施，研发、客服、内容生产等岗位形态正在被重新定义。",
+    "body": [
+     {
+      "p": "会用AI的人效率显著领先。"
+     },
+     {
+      "p": "但监管与伦理框架仍在追赶。"
+     }
+    ],
+    "points": [
+     "生产力范式转移",
+     "复合人才更稀缺"
+    ],
+    "data": "多国发布AI产业战略",
+    "source": "公开报道 {DATE}",
+    "views": {
+     "macro": "新一轮技术革命",
+     "nation": "竞争力重构",
+     "people": "技能需升级"
+    },
+    "question": "你的工作哪些环节可被AI增强？",
+    "guide": "把AI当杠杆而非威胁。"
+   }
+  },
+  {
+   "COUNTRY_AUTO_ENTRIES": {
+    "part": "china",
+    "dim": "strategy",
+    "id": "auto-cn-st-{DATE8}",
+    "title": "统一大市场建设提速",
+    "summary": "破除地方保护与市场分割、推动要素自由流动，是提升经济整体效率的深层改革。",
+    "body": [
+     {
+      "p": "统一规则降低交易成本。"
+     }
+    ],
+    "points": [
+     "要素流动更顺畅",
+     "公平竞争环境改善"
+    ],
+    "data": "多项统一标准落地",
+    "source": "政策公开信息 {DATE}",
+    "views": {
+     "macro": "释放制度红利",
+     "nation": "企业活力增强",
+     "people": "选择更多"
+    },
+    "question": "你感受过哪些『跨省不通』的痛点？",
+    "guide": "从体验反推改革价值。"
+   }
+  },
+  {
+   "COUNTRY_AUTO_ENTRIES": {
+    "part": "world",
+    "dim": "assess",
+    "id": "auto-wl-as-{DATE8}",
+    "title": "人口结构变化重塑社会",
+    "summary": "多国面临老龄化与少子化，劳动力结构、社保压力与消费偏好随之改变，是长期慢变量。",
+    "body": [
+     {
+      "p": "银发经济与自动化并行。"
+     }
+    ],
+    "points": [
+     "劳动力减少",
+     "养老压力上升"
+    ],
+    "data": "多国65+占比上升",
+    "source": "人口统计 {DATE}",
+    "views": {
+     "macro": "增长模式转型",
+     "nation": "政策需调整",
+     "people": "养老要早规划"
+    },
+    "question": "你为养老做了哪些准备？",
+    "guide": "长期视角做财务规划。"
+   }
+  },
+  {
+   "COUNTRY_AUTO_ENTRIES": {
+    "part": "china",
+    "dim": "trend",
+    "id": "auto-cn-tr2-{DATE8}",
+    "title": "银发经济站上风口",
+    "summary": "老龄化带来医疗、康养、适老化改造的巨大需求，银发产业从公益属性走向市场化蓝海。",
+    "body": [
+     {
+      "p": "需求真实且长期。"
+     }
+    ],
+    "points": [
+     "康养需求爆发",
+     "适老化改造缺口大"
+    ],
+    "data": "老年人口规模居首",
+    "source": "公开数据 {DATE}",
+    "views": {
+     "macro": "新增长极",
+     "nation": "产业升级方向",
+     "people": "服务长辈"
+    },
+    "question": "你家里有哪些适老化需求？",
+    "guide": "从家庭需求看产业机会。"
+   }
+  },
+  {
+   "COUNTRY_AUTO_ENTRIES": {
+    "part": "world",
+    "dim": "strategy",
+    "id": "auto-wl-st2-{DATE8}",
+    "title": "绿色转型成全球共识",
+    "summary": "碳中和从口号进入产业实操，能源、交通、制造全链条减排，催生新技术与新贸易规则。",
+    "body": [
+     {
+      "p": "碳壁垒影响出口企业。"
+     }
+    ],
+    "points": [
+     "能源结构切换",
+     "绿色贸易规则出现"
+    ],
+    "data": "多国设碳中和目标",
+    "source": "国际协定 {DATE}",
+    "views": {
+     "macro": "重塑产业版图",
+     "nation": "出口合规压力",
+     "people": "生活方式变化"
+    },
+    "question": "你的消费会因『碳』改变吗？",
+    "guide": "宏观趋势落到日常选择。"
+   }
+  }
+ ]
+}

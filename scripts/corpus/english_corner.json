@@ -1,0 +1,1247 @@
+{
+ "module": "english_corner",
+ "items": [
+  {
+   "primary": [
+    {
+     "en": "apple",
+     "phonetic": "/ˈæpl/",
+     "cn": "n. 苹果",
+     "example": "She ate a red apple."
+    },
+    {
+     "en": "book",
+     "phonetic": "/bʊk/",
+     "cn": "n. 书",
+     "example": "This book is interesting."
+    },
+    {
+     "en": "cat",
+     "phonetic": "/kæt/",
+     "cn": "n. 猫",
+     "example": "The cat is sleeping."
+    },
+    {
+     "en": "dog",
+     "phonetic": "/dɒɡ/",
+     "cn": "n. 狗",
+     "example": "A dog is a loyal friend."
+    },
+    {
+     "en": "egg",
+     "phonetic": "/eɡ/",
+     "cn": "n. 蛋",
+     "example": "I had an egg for breakfast."
+    }
+   ],
+   "middle": [
+    {
+     "en": "achieve",
+     "phonetic": "/əˈtʃiːv/",
+     "cn": "v. 实现；达到",
+     "example": "We achieved our goal."
+    },
+    {
+     "en": "benefit",
+     "phonetic": "/ˈbenɪfɪt/",
+     "cn": "n./v. 益处；受益",
+     "example": "Exercise benefits health."
+    },
+    {
+     "en": "consider",
+     "phonetic": "/kənˈsɪdə/",
+     "cn": "v. 考虑；认为",
+     "example": "Consider all options."
+    },
+    {
+     "en": "develop",
+     "phonetic": "/dɪˈveləp/",
+     "cn": "v. 发展；开发",
+     "example": "They develop new apps."
+    },
+    {
+     "en": "environment",
+     "phonetic": "/ɪnˈvaɪrənmənt/",
+     "cn": "n. 环境",
+     "example": "Protect the environment."
+    },
+    {
+     "en": "familiar",
+     "phonetic": "/fəˈmɪliə/",
+     "cn": "adj. 熟悉的",
+     "example": "I am familiar with this."
+    },
+    {
+     "en": "government",
+     "phonetic": "/ˈɡʌvənmənt/",
+     "cn": "n. 政府",
+     "example": "The government made a plan."
+    },
+    {
+     "en": "husband",
+     "phonetic": "/ˈhʌzbənd/",
+     "cn": "n. 丈夫",
+     "example": "Her husband is a teacher."
+    },
+    {
+     "en": "increase",
+     "phonetic": "/ɪnˈkriːs/",
+     "cn": "v. 增加",
+     "example": "Sales increased this year."
+    },
+    {
+     "en": "journey",
+     "phonetic": "/ˈdʒɜːni/",
+     "cn": "n. 旅程",
+     "example": "Life is a long journey."
+    }
+   ],
+   "high": [
+    {
+     "en": "ambiguous",
+     "phonetic": "/æmˈbɪɡjuəs/",
+     "cn": "adj. 模棱两可的",
+     "example": "His answer was ambiguous."
+    },
+    {
+     "en": "comprehensive",
+     "phonetic": "/ˌkɒmprɪˈhensɪv/",
+     "cn": "adj. 全面的",
+     "example": "A comprehensive report."
+    },
+    {
+     "en": "deliberate",
+     "phonetic": "/dɪˈlɪbərət/",
+     "cn": "adj. 故意的",
+     "example": "A deliberate mistake."
+    },
+    {
+     "en": "inevitable",
+     "phonetic": "/ɪnˈevɪtəbl/",
+     "cn": "adj. 不可避免的",
+     "example": "An inevitable result."
+    },
+    {
+     "en": "simultaneous",
+     "phonetic": "/ˌsɪmlˈteɪniəs/",
+     "cn": "adj. 同时的",
+     "example": "Two simultaneous events."
+    }
+   ],
+   "SPEAKING_DATA": [
+    {
+     "scene": "购物",
+     "en": "How much is this?",
+     "cn": "这个多少钱？"
+    },
+    {
+     "scene": "点餐",
+     "en": "I'd like a cup of coffee.",
+     "cn": "我想要一杯咖啡。"
+    },
+    {
+     "scene": "问路",
+     "en": "Excuse me, where is the station?",
+     "cn": "请问车站在哪？"
+    },
+    {
+     "scene": "社交",
+     "en": "Nice to meet you.",
+     "cn": "很高兴认识你。"
+    },
+    {
+     "scene": "旅行",
+     "en": "Could you take a photo for me?",
+     "cn": "能帮我拍张照吗？"
+    }
+   ],
+   "READING_DATA": [
+    {
+     "title": "The Power of Reading",
+     "level": "B1",
+     "difficulty": "★★☆",
+     "paragraphs": [
+      {
+       "en": "Reading expands our world.",
+       "cn": "阅读拓展我们的世界。"
+      },
+      {
+       "en": "Even ten pages a day helps.",
+       "cn": "哪怕每天十页也有帮助。"
+      }
+     ],
+     "vocabulary": [
+      {
+       "word": "expand",
+       "meaning": "拓展"
+      },
+      {
+       "word": "consistent",
+       "meaning": "持续的"
+      }
+     ]
+    }
+   ],
+   "GRAMMAR_DATA": [
+    {
+     "id": "g-101",
+     "title": "一般现在时",
+     "icon": "📘",
+     "intro": "表示习惯、真理与常态。",
+     "sections": [
+      {
+       "heading": "结构",
+       "content": "主语+动词原形（三单加-s）",
+       "examples": [
+        "He reads. / They read."
+       ]
+      },
+      {
+       "heading": "用法",
+       "content": "习惯动作、客观真理",
+       "examples": [
+        "The sun rises in the east."
+       ]
+      }
+     ],
+     "tip": "别忘了三单加 s。"
+    }
+   ]
+  },
+  {
+   "primary": [
+    {
+     "en": "fish",
+     "phonetic": "/fɪʃ/",
+     "cn": "n. 鱼",
+     "example": "We ate fish for dinner."
+    },
+    {
+     "en": "girl",
+     "phonetic": "/ɡɜːl/",
+     "cn": "n. 女孩",
+     "example": "The girl is smiling."
+    },
+    {
+     "en": "hand",
+     "phonetic": "/hænd/",
+     "cn": "n. 手",
+     "example": "Wash your hands."
+    },
+    {
+     "en": "ice",
+     "phonetic": "/aɪs/",
+     "cn": "n. 冰",
+     "example": "Add some ice."
+    },
+    {
+     "en": "jump",
+     "phonetic": "/dʒʌmp/",
+     "cn": "v. 跳",
+     "example": "The child can jump high."
+    }
+   ],
+   "middle": [
+    {
+     "en": "knowledge",
+     "phonetic": "/ˈnɒlɪdʒ/",
+     "cn": "n. 知识",
+     "example": "Knowledge is power."
+    },
+    {
+     "en": "limitation",
+     "phonetic": "/ˌlɪmɪˈteɪʃn/",
+     "cn": "n. 限制",
+     "example": "Know your limitations."
+    },
+    {
+     "en": "maintain",
+     "phonetic": "/meɪnˈteɪn/",
+     "cn": "v. 维持",
+     "example": "Maintain a habit."
+    },
+    {
+     "en": "negotiate",
+     "phonetic": "/nɪˈɡəʊʃieɪt/",
+     "cn": "v. 谈判",
+     "example": "They negotiated a deal."
+    },
+    {
+     "en": "obvious",
+     "phonetic": "/ˈɒbviəs/",
+     "cn": "adj. 明显的",
+     "example": "An obvious fact."
+    },
+    {
+     "en": "phenomenon",
+     "phonetic": "/fəˈnɒmɪnən/",
+     "cn": "n. 现象",
+     "example": "A natural phenomenon."
+    },
+    {
+     "en": "quality",
+     "phonetic": "/ˈkwɒləti/",
+     "cn": "n. 质量；品质",
+     "example": "Focus on quality."
+    },
+    {
+     "en": "reflect",
+     "phonetic": "/rɪˈflekt/",
+     "cn": "v. 反映；反思",
+     "example": "Reflect on your day."
+    },
+    {
+     "en": "struggle",
+     "phonetic": "/ˈstrʌɡl/",
+     "cn": "v. 挣扎；努力",
+     "example": "Struggle to improve."
+    },
+    {
+     "en": "transform",
+     "phonetic": "/trænsˈfɔːm/",
+     "cn": "v. 转变",
+     "example": "It transformed my life."
+    }
+   ],
+   "high": [
+    {
+     "en": "controversial",
+     "phonetic": "/ˌkɒntrəˈvɜːʃl/",
+     "cn": "adj. 有争议的",
+     "example": "A controversial topic."
+    },
+    {
+     "en": "descend",
+     "phonetic": "/dɪˈsend/",
+     "cn": "v. 下降；下来",
+     "example": "The sun descends."
+    },
+    {
+     "en": "explicit",
+     "phonetic": "/ɪkˈsplɪsɪt/",
+     "cn": "adj. 明确的",
+     "example": "Explicit instructions."
+    },
+    {
+     "en": "implicit",
+     "phonetic": "/ɪmˈplɪsɪt/",
+     "cn": "adj. 含蓄的",
+     "example": "An implicit message."
+    },
+    {
+     "en": "profound",
+     "phonetic": "/prəˈfaʊnd/",
+     "cn": "adj. 深刻的",
+     "example": "A profound insight."
+    }
+   ],
+   "SPEAKING_DATA": [
+    {
+     "scene": "购物",
+     "en": "Do you have a larger size?",
+     "cn": "有更大码的吗？"
+    },
+    {
+     "scene": "点餐",
+     "en": "The bill, please.",
+     "cn": "买单，谢谢。"
+    },
+    {
+     "scene": "问路",
+     "en": "Is it far from here?",
+     "cn": "离这儿远吗？"
+    },
+    {
+     "scene": "社交",
+     "en": "What do you do?",
+     "cn": "你做哪一行？"
+    },
+    {
+     "scene": "旅行",
+     "en": "Where is the nearest subway?",
+     "cn": "最近地铁在哪？"
+    }
+   ],
+   "READING_DATA": [
+    {
+     "title": "Habits Shape Identity",
+     "level": "B1",
+     "difficulty": "★★☆",
+     "paragraphs": [
+      {
+       "en": "Who you are is built by small acts.",
+       "cn": "你是谁由一个个小行动塑造。"
+      },
+      {
+       "en": "Repeat good ones daily.",
+       "cn": "每天重复好的那些。"
+      }
+     ],
+     "vocabulary": [
+      {
+       "word": "identity",
+       "meaning": "身份"
+      },
+      {
+       "word": "compound",
+       "meaning": "复利的"
+      }
+     ]
+    }
+   ],
+   "GRAMMAR_DATA": [
+    {
+     "id": "g-102",
+     "title": "现在进行时",
+     "icon": "⏳",
+     "intro": "表示正在发生的动作。",
+     "sections": [
+      {
+       "heading": "结构",
+       "content": "am/is/are + 动词-ing",
+       "examples": [
+        "She is reading."
+       ]
+      },
+      {
+       "heading": "用法",
+       "content": "此刻正做、现阶段持续",
+       "examples": [
+        "It is raining now."
+       ]
+      }
+     ],
+     "tip": "注意动词加-ing 的拼写变化。"
+    }
+   ]
+  },
+  {
+   "primary": [
+    {
+     "en": "kite",
+     "phonetic": "/kaɪt/",
+     "cn": "n. 风筝",
+     "example": "The kite flies high."
+    },
+    {
+     "en": "lion",
+     "phonetic": "/ˈlaɪən/",
+     "cn": "n. 狮子",
+     "example": "The lion roars."
+    },
+    {
+     "en": "milk",
+     "phonetic": "/mɪlk/",
+     "cn": "n. 牛奶",
+     "example": "A glass of milk."
+    },
+    {
+     "en": "nose",
+     "phonetic": "/nəʊz/",
+     "cn": "n. 鼻子",
+     "example": "He has a big nose."
+    },
+    {
+     "en": "orange",
+     "phonetic": "/ˈɒrɪndʒ/",
+     "cn": "n./adj. 橙子；橙色",
+     "example": "An orange a day."
+    }
+   ],
+   "middle": [
+    {
+     "en": "accumulate",
+     "phonetic": "/əˈkjuːmjəleɪt/",
+     "cn": "v. 积累",
+     "example": "Accumulate knowledge."
+    },
+    {
+     "en": "beneficial",
+     "phonetic": "/ˌbenɪˈfɪʃl/",
+     "cn": "adj. 有益的",
+     "example": "Sleep is beneficial."
+    },
+    {
+     "en": "consequence",
+     "phonetic": "/ˈkɒnsɪkwəns/",
+     "cn": "n. 后果",
+     "example": "Face the consequence."
+    },
+    {
+     "en": "demonstrate",
+     "phonetic": "/ˈdemənstreɪt/",
+     "cn": "v. 演示；证明",
+     "example": "Demonstrate the method."
+    },
+    {
+     "en": "equivalent",
+     "phonetic": "/ɪˈkwɪvələnt/",
+     "cn": "adj. 等价的",
+     "example": "Equivalent value."
+    },
+    {
+     "en": "fundamental",
+     "phonetic": "/ˌfʌndəˈmentl/",
+     "cn": "adj. 基本的",
+     "example": "Fundamental rules."
+    },
+    {
+     "en": "inevitably",
+     "phonetic": "/ɪnˈevɪtəbli/",
+     "cn": "adv. 不可避免地",
+     "example": "It ends inevitably."
+    },
+    {
+     "en": "phenomenal",
+     "phonetic": "/fəˈnɒmɪnl/",
+     "cn": "adj. 非凡的",
+     "example": "A phenomenal result."
+    },
+    {
+     "en": "significant",
+     "phonetic": "/sɪɡˈnɪfɪkənt/",
+     "cn": "adj. 重要的",
+     "example": "A significant change."
+    },
+    {
+     "en": "ultimately",
+     "phonetic": "/ˈʌltɪmətli/",
+     "cn": "adv. 最终",
+     "example": "Ultimately it works."
+    }
+   ],
+   "high": [
+    {
+     "en": "conscientious",
+     "phonetic": "/ˌkɒnʃiˈenʃəs/",
+     "cn": "adj. 认真的",
+     "example": "A conscientious worker."
+    },
+    {
+     "en": "discrepancy",
+     "phonetic": "/dɪsˈkrepənsi/",
+     "cn": "n. 差异",
+     "example": "A clear discrepancy."
+    },
+    {
+     "en": "hypothetical",
+     "phonetic": "/ˌhaɪpəˈθetɪkl/",
+     "cn": "adj. 假设的",
+     "example": "A hypothetical case."
+    },
+    {
+     "en": "meticulous",
+     "phonetic": "/məˈtɪkjələs/",
+     "cn": "adj. 一丝不苟的",
+     "example": "Meticulous work."
+    },
+    {
+     "en": "paradigm",
+     "phonetic": "/ˈpærədaɪm/",
+     "cn": "n. 范式",
+     "example": "A new paradigm."
+    }
+   ],
+   "SPEAKING_DATA": [
+    {
+     "scene": "购物",
+     "en": "Can I pay by phone?",
+     "cn": "能手机支付吗？"
+    },
+    {
+     "scene": "点餐",
+     "en": "No onions, please.",
+     "cn": "请不要放洋葱。"
+    },
+    {
+     "scene": "问路",
+     "en": "Go straight and turn left.",
+     "cn": "直走然后左转。"
+    },
+    {
+     "scene": "社交",
+     "en": "Long time no see!",
+     "cn": "好久不见！"
+    },
+    {
+     "scene": "旅行",
+     "en": "Is breakfast included?",
+     "cn": "含早餐吗？"
+    }
+   ],
+   "READING_DATA": [
+    {
+     "title": "Why We Procrastinate",
+     "level": "B2",
+     "difficulty": "★★★",
+     "paragraphs": [
+      {
+       "en": "We delay because tasks feel heavy.",
+       "cn": "我们拖延是因为任务显得沉重。"
+      },
+      {
+       "en": "Shrink the first step.",
+       "cn": "把第一步缩到最小。"
+      }
+     ],
+     "vocabulary": [
+      {
+       "word": "procrastinate",
+       "meaning": "拖延"
+      },
+      {
+       "word": "overwhelm",
+       "meaning": "压倒"
+      }
+     ]
+    }
+   ],
+   "GRAMMAR_DATA": [
+    {
+     "id": "g-103",
+     "title": "一般过去时",
+     "icon": "🕰️",
+     "intro": "表示过去发生的动作。",
+     "sections": [
+      {
+       "heading": "结构",
+       "content": "主语+动词过去式（规则加-ed）",
+       "examples": [
+        "He walked."
+       ]
+      },
+      {
+       "heading": "用法",
+       "content": "已结束的过去动作",
+       "examples": [
+        "I watched a film."
+       ]
+      }
+     ],
+     "tip": "不规则动词要单独记。"
+    }
+   ]
+  },
+  {
+   "primary": [
+    {
+     "en": "pen",
+     "phonetic": "/pen/",
+     "cn": "n. 钢笔",
+     "example": "Sign with this pen."
+    },
+    {
+     "en": "queen",
+     "phonetic": "/kwiːn/",
+     "cn": "n. 女王",
+     "example": "The queen waved."
+    },
+    {
+     "en": "rain",
+     "phonetic": "/reɪn/",
+     "cn": "n./v. 雨；下雨",
+     "example": "It will rain."
+    },
+    {
+     "en": "sun",
+     "phonetic": "/sʌn/",
+     "cn": "n. 太阳",
+     "example": "The sun is bright."
+    },
+    {
+     "en": "tree",
+     "phonetic": "/triː/",
+     "cn": "n. 树",
+     "example": "Plant a tree."
+    }
+   ],
+   "middle": [
+    {
+     "en": "adapt",
+     "phonetic": "/əˈdæpt/",
+     "cn": "v. 适应",
+     "example": "Adapt to change."
+    },
+    {
+     "en": "brilliant",
+     "phonetic": "/ˈbrɪliənt/",
+     "cn": "adj. 出色的",
+     "example": "A brilliant idea."
+    },
+    {
+     "en": "consequence",
+     "phonetic": "/ˈkɒnsɪkwəns/",
+     "cn": "n. 结果",
+     "example": "Think of consequences."
+    },
+    {
+     "en": "diligent",
+     "phonetic": "/ˈdɪlɪdʒənt/",
+     "cn": "adj. 勤勉的",
+     "example": "A diligent student."
+    },
+    {
+     "en": "elaborate",
+     "phonetic": "/ɪˈlæbərət/",
+     "cn": "adj. 详尽的",
+     "example": "An elaborate plan."
+    },
+    {
+     "en": "feasible",
+     "phonetic": "/ˈfiːzəbl/",
+     "cn": "adj. 可行的",
+     "example": "A feasible plan."
+    },
+    {
+     "en": "genuine",
+     "phonetic": "/ˈdʒenjuɪn/",
+     "cn": "adj. 真诚的",
+     "example": "Genuine concern."
+    },
+    {
+     "en": "hesitate",
+     "phonetic": "/ˈhezɪteɪt/",
+     "cn": "v. 犹豫",
+     "example": "Don't hesitate."
+    },
+    {
+     "en": "inevitable",
+     "phonetic": "/ɪnˈevɪtəbl/",
+     "cn": "adj. 不可避免的",
+     "example": "An inevitable choice."
+    },
+    {
+     "en": "justify",
+     "phonetic": "/ˈdʒʌstɪfaɪ/",
+     "cn": "v. 证明正当",
+     "example": "Justify your view."
+    }
+   ],
+   "high": [
+    {
+     "en": "ambiguous",
+     "phonetic": "/æmˈbɪɡjuəs/",
+     "cn": "adj. 含糊的",
+     "example": "An ambiguous phrase."
+    },
+    {
+     "en": "coherent",
+     "phonetic": "/kəʊˈhɪərənt/",
+     "cn": "adj. 连贯的",
+     "example": "A coherent essay."
+    },
+    {
+     "en": "cumulative",
+     "phonetic": "/ˈkjuːmjələtɪv/",
+     "cn": "adj. 累积的",
+     "example": "Cumulative effort."
+    },
+    {
+     "en": "deliberate",
+     "phonetic": "/dɪˈlɪbərət/",
+     "cn": "adj. 深思熟虑的",
+     "example": "A deliberate act."
+    },
+    {
+     "en": "resilient",
+     "phonetic": "/rɪˈzɪliənt/",
+     "cn": "adj. 有韧性的",
+     "example": "Resilient people recover."
+    }
+   ],
+   "SPEAKING_DATA": [
+    {
+     "scene": "购物",
+     "en": "It's a bit expensive.",
+     "cn": "有点贵。"
+    },
+    {
+     "scene": "点餐",
+     "en": "I'm full, thanks.",
+     "cn": "我饱了，谢谢。"
+    },
+    {
+     "scene": "问路",
+     "en": "Can you show me on the map?",
+     "cn": "能在地图上指给我吗？"
+    },
+    {
+     "scene": "社交",
+     "en": "I couldn't agree more.",
+     "cn": "我完全同意。"
+    },
+    {
+     "scene": "旅行",
+     "en": "What time does it open?",
+     "cn": "几点开门？"
+    }
+   ],
+   "READING_DATA": [
+    {
+     "title": "Sleep Is Productivity",
+     "level": "B2",
+     "difficulty": "★★★",
+     "paragraphs": [
+      {
+       "en": "Poor sleep ruins focus.",
+       "cn": "睡不好毁掉专注。"
+      },
+      {
+       "en": "Protect your rest like a meeting.",
+       "cn": "像守会议一样守住休息。"
+      }
+     ],
+     "vocabulary": [
+      {
+       "word": "restoration",
+       "meaning": "恢复"
+      },
+      {
+       "word": "cognitive",
+       "meaning": "认知的"
+      }
+     ]
+    }
+   ],
+   "GRAMMAR_DATA": [
+    {
+     "id": "g-104",
+     "title": "现在完成时",
+     "icon": "✅",
+     "intro": "表示过去发生、与现在有关。",
+     "sections": [
+      {
+       "heading": "结构",
+       "content": "have/has + 过去分词",
+       "examples": [
+        "I have finished."
+       ]
+      },
+      {
+       "heading": "用法",
+       "content": "经历、结果、持续",
+       "examples": [
+        "She has lived here 5 years."
+       ]
+      }
+     ],
+     "tip": "别和一般过去时混用。"
+    }
+   ]
+  },
+  {
+   "primary": [
+    {
+     "en": "umbrella",
+     "phonetic": "/ʌmˈbrelə/",
+     "cn": "n. 伞",
+     "example": "Take an umbrella."
+    },
+    {
+     "en": "vase",
+     "phonetic": "/vɑːz/",
+     "cn": "n. 花瓶",
+     "example": "A blue vase."
+    },
+    {
+     "en": "water",
+     "phonetic": "/ˈwɔːtə/",
+     "cn": "n. 水",
+     "example": "Drink water."
+    },
+    {
+     "en": "box",
+     "phonetic": "/bɒks/",
+     "cn": "n. 盒子",
+     "example": "A heavy box."
+    },
+    {
+     "en": "yard",
+     "phonetic": "/jɑːd/",
+     "cn": "n. 院子",
+     "example": "The yard is green."
+    }
+   ],
+   "middle": [
+    {
+     "en": "anticipate",
+     "phonetic": "/ænˈtɪsɪpeɪt/",
+     "cn": "v. 预料",
+     "example": "Anticipate problems."
+    },
+    {
+     "en": "comprehensive",
+     "phonetic": "/ˌkɒmprɪˈhensɪv/",
+     "cn": "adj. 全面的",
+     "example": "A comprehensive view."
+    },
+    {
+     "en": "distinguish",
+     "phonetic": "/dɪˈstɪŋɡwɪʃ/",
+     "cn": "v. 区分",
+     "example": "Distinguish right from wrong."
+    },
+    {
+     "en": "elaborate",
+     "phonetic": "/ɪˈlæbərət/",
+     "cn": "v. 详述",
+     "example": "Elaborate your point."
+    },
+    {
+     "en": "fundamental",
+     "phonetic": "/ˌfʌndəˈmentl/",
+     "cn": "adj. 根本的",
+     "example": "Fundamental needs."
+    },
+    {
+     "en": "gratitude",
+     "phonetic": "/ˈɡrætɪtjuːd/",
+     "cn": "n. 感激",
+     "example": "Show gratitude."
+    },
+    {
+     "en": "inevitably",
+     "phonetic": "/ɪnˈevɪtəbli/",
+     "cn": "adv. 不可避免地",
+     "example": "Mistakes happen inevitably."
+    },
+    {
+     "en": "objective",
+     "phonetic": "/əbˈdʒektɪv/",
+     "cn": "adj. 客观的",
+     "example": "An objective view."
+    },
+    {
+     "en": "scrutinize",
+     "phonetic": "/ˈskruːtənaɪz/",
+     "cn": "v. 细查",
+     "example": "Scrutinize the data."
+    },
+    {
+     "en": "versatile",
+     "phonetic": "/ˈvɜːsətaɪl/",
+     "cn": "adj. 多才多艺的",
+     "example": "A versatile tool."
+    }
+   ],
+   "high": [
+    {
+     "en": "explicit",
+     "phonetic": "/ɪkˈsplɪsɪt/",
+     "cn": "adj. 明确的",
+     "example": "Explicit terms."
+    },
+    {
+     "en": "implicit",
+     "phonetic": "/ɪmˈplɪsɪt/",
+     "cn": "adj. 隐含的",
+     "example": "Implicit trust."
+    },
+    {
+     "en": "paradox",
+     "phonetic": "/ˈpærədɒks/",
+     "cn": "n. 悖论",
+     "example": "A curious paradox."
+    },
+    {
+     "en": "robust",
+     "phonetic": "/rəʊˈbʌst/",
+     "cn": "adj. 稳健的",
+     "example": "A robust system."
+    },
+    {
+     "en": "subtle",
+     "phonetic": "/ˈsʌtl/",
+     "cn": "adj. 微妙的",
+     "example": "A subtle hint."
+    }
+   ],
+   "SPEAKING_DATA": [
+    {
+     "scene": "购物",
+     "en": "Do you have a receipt?",
+     "cn": "有收据吗？"
+    },
+    {
+     "scene": "点餐",
+     "en": "Make it to go, please.",
+     "cn": "打包谢谢。"
+    },
+    {
+     "scene": "问路",
+     "en": "Which bus goes downtown?",
+     "cn": "哪路公交去市中心？"
+    },
+    {
+     "scene": "社交",
+     "en": "Let's keep in touch.",
+     "cn": "咱们保持联系。"
+    },
+    {
+     "scene": "旅行",
+     "en": "Where can I buy a ticket?",
+     "cn": "在哪买票？"
+    }
+   ],
+   "READING_DATA": [
+    {
+     "title": "Learning in Public",
+     "level": "B2",
+     "difficulty": "★★★",
+     "paragraphs": [
+      {
+       "en": "Share what you learn.",
+       "cn": "把学到的分享出来。"
+      },
+      {
+       "en": "Teaching fixes memory.",
+       "cn": "教别人能固化记忆。"
+      }
+     ],
+     "vocabulary": [
+      {
+       "word": "accountability",
+       "meaning": "担责"
+      },
+      {
+       "word": "retention",
+       "meaning": "留存"
+      }
+     ]
+    }
+   ],
+   "GRAMMAR_DATA": [
+    {
+     "id": "g-105",
+     "title": "一般将来时",
+     "icon": "🔮",
+     "intro": "表示将要发生的动作。",
+     "sections": [
+      {
+       "heading": "结构",
+       "content": "will + 动词原形 / be going to",
+       "examples": [
+        "I will help."
+       ]
+      },
+      {
+       "heading": "用法",
+       "content": "预测、意图、计划",
+       "examples": [
+        "It is going to rain."
+       ]
+      }
+     ],
+     "tip": "going to 偏意图，will 偏即时决定。"
+    }
+   ]
+  },
+  {
+   "primary": [
+    {
+     "en": "zoo",
+     "phonetic": "/zuː/",
+     "cn": "n. 动物园",
+     "example": "We visited the zoo."
+    },
+    {
+     "en": "yarn",
+     "phonetic": "/jɑːn/",
+     "cn": "n. 纱线",
+     "example": "A ball of yarn."
+    },
+    {
+     "en": "window",
+     "phonetic": "/ˈwɪndəʊ/",
+     "cn": "n. 窗户",
+     "example": "Open the window."
+    },
+    {
+     "en": "xylophone",
+     "phonetic": "/ˈzaɪləfəʊn/",
+     "cn": "n. 木琴",
+     "example": "She plays xylophone."
+    },
+    {
+     "en": "key",
+     "phonetic": "/kiː/",
+     "cn": "n. 钥匙；键",
+     "example": "Where is my key?"
+    }
+   ],
+   "middle": [
+    {
+     "en": "allocate",
+     "phonetic": "/ˈæləkeɪt/",
+     "cn": "v. 分配",
+     "example": "Allocate your time."
+    },
+    {
+     "en": "beneficial",
+     "phonetic": "/ˌbenɪˈfɪʃl/",
+     "cn": "adj. 有益的",
+     "example": "Beneficial habits."
+    },
+    {
+     "en": "comprehensive",
+     "phonetic": "/ˌkɒmprɪˈhensɪv/",
+     "cn": "adj. 综合的",
+     "example": "A comprehensive plan."
+    },
+    {
+     "en": "deliberate",
+     "phonetic": "/dɪˈlɪbərət/",
+     "cn": "v. 仔细考虑",
+     "example": "Deliberate before acting."
+    },
+    {
+     "en": "empirical",
+     "phonetic": "/ɪmˈpɪrɪkl/",
+     "cn": "adj. 实证的",
+     "example": "Empirical evidence."
+    },
+    {
+     "en": "feasible",
+     "phonetic": "/ˈfiːzəbl/",
+     "cn": "adj. 可行的",
+     "example": "Feasible within a month."
+    },
+    {
+     "en": "genuine",
+     "phonetic": "/ˈdʒenjuɪn/",
+     "cn": "adj. 真实的",
+     "example": "Genuine progress."
+    },
+    {
+     "en": "inevitably",
+     "phonetic": "/ɪnˈevɪtəbli/",
+     "cn": "adv. 不可避免地",
+     "example": "Change comes inevitably."
+    },
+    {
+     "en": "scrutinize",
+     "phonetic": "/ˈskruːtənaɪz/",
+     "cn": "v. 审视",
+     "example": "Scrutinize the offer."
+    },
+    {
+     "en": "underlying",
+     "phonetic": "/ˌʌndəˈlaɪɪŋ/",
+     "cn": "adj. 潜在的",
+     "example": "The underlying cause."
+    }
+   ],
+   "high": [
+    {
+     "en": "coherent",
+     "phonetic": "/kəʊˈhɪərənt/",
+     "cn": "adj. 有条理的",
+     "example": "A coherent plan."
+    },
+    {
+     "en": "deliberate",
+     "phonetic": "/dɪˈlɪbərət/",
+     "cn": "adj. 审慎的",
+     "example": "A deliberate choice."
+    },
+    {
+     "en": "inevitable",
+     "phonetic": "/ɪnˈevɪtəbl/",
+     "cn": "adj. 必然的",
+     "example": "An inevitable trend."
+    },
+    {
+     "en": "profound",
+     "phonetic": "/prəˈfaʊnd/",
+     "cn": "adj. 深远的",
+     "example": "A profound impact."
+    },
+    {
+     "en": "tangible",
+     "phonetic": "/ˈtændʒəbl/",
+     "cn": "adj. 可触摸的",
+     "example": "Tangible results."
+    }
+   ],
+   "SPEAKING_DATA": [
+    {
+     "scene": "购物",
+     "en": "Can I try it on?",
+     "cn": "能试穿吗？"
+    },
+    {
+     "scene": "点餐",
+     "en": "Any recommendation?",
+     "cn": "有推荐吗？"
+    },
+    {
+     "scene": "问路",
+     "en": "Sorry, I'm new here too.",
+     "cn": "抱歉，我也是刚来。"
+    },
+    {
+     "scene": "社交",
+     "en": "That makes sense.",
+     "cn": "有道理。"
+    },
+    {
+     "scene": "旅行",
+     "en": "Is there Wi-Fi here?",
+     "cn": "这有Wi-Fi吗？"
+    }
+   ],
+   "READING_DATA": [
+    {
+     "title": "Small Steps, Big Moves",
+     "level": "B2",
+     "difficulty": "★★★",
+     "paragraphs": [
+      {
+       "en": "Consistency beats intensity.",
+       "cn": "持续胜过强度。"
+      },
+      {
+       "en": "One tiny step daily compounds.",
+       "cn": "每天一小步会复利。"
+      }
+     ],
+     "vocabulary": [
+      {
+       "word": "compound",
+       "meaning": "复利"
+      },
+      {
+       "word": "momentum",
+       "meaning": "势头"
+      }
+     ]
+    }
+   ],
+   "GRAMMAR_DATA": [
+    {
+     "id": "g-106",
+     "title": "被动语态",
+     "icon": "🔁",
+     "intro": "强调动作承受者而非执行者。",
+     "sections": [
+      {
+       "heading": "结构",
+       "content": "be + 过去分词",
+       "examples": [
+        "The book was written."
+       ]
+      },
+      {
+       "heading": "用法",
+       "content": "未知/不重要执行者时",
+       "examples": [
+        "Mistakes were made."
+       ]
+      }
+     ],
+     "tip": "时态由 be 动词体现。"
+    }
+   ]
+  }
+ ]
+}

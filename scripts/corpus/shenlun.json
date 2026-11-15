@@ -1,0 +1,791 @@
+{
+ "module": "shenlun",
+ "items": [
+  {
+   "SHENLUN_READING_DATA": {
+    "id": "read-101",
+    "tier": "县级",
+    "title": "县域消费如何破局",
+    "source": "政策研讨",
+    "date": "{DATE}",
+    "excerpt": "下沉市场潜力大但供给不均，需补齐商业与服务短板。",
+    "content": "县域是内循环的关键节点，既要引入连锁与电商，也要培育本地特色。",
+    "annotation": [
+     {
+      "type": "观点",
+      "text": "补短比铺摊子更重要"
+     },
+     {
+      "type": "数据",
+      "text": "多县社零增速高于全国"
+     }
+    ],
+    "practicePrompt": "假如你是乡镇干部，写一条激活本地消费的三步法。"
+   },
+   "FLASHCARD_DATA": [
+    {
+     "id": "fc-101",
+     "front": "治国有常，而利民为本。",
+     "back": {
+      "source": "《淮南子》",
+      "context": "论述治理要以民为本",
+      "meaning": "治国法则在于利民",
+      "usage": "写民生类文章引语",
+      "example": "治国有常，而利民为本。"
+     },
+     "category": "治国"
+    },
+    {
+     "id": "fc-102",
+     "front": "利民之事，丝发必兴。",
+     "back": {
+      "source": "清·万斯大",
+      "context": "强调细微利民也要做",
+      "meaning": "对百姓有利的事再小也做",
+      "usage": "论证务实为民",
+      "example": "利民之事，丝发必兴。"
+     },
+     "category": "民生"
+    },
+    {
+     "id": "fc-103",
+     "front": "物有甘苦，尝之者识。",
+     "back": {
+      "source": "明·刘基",
+      "context": "实践出真知",
+      "meaning": "事之甘苦亲历才知",
+      "usage": "写调研作风",
+      "example": "物有甘苦，尝之者识。"
+     },
+     "category": "实践"
+    },
+    {
+     "id": "fc-104",
+     "front": "政之所兴在顺民心。",
+     "back": {
+      "source": "《管子》",
+      "context": "民心决定政事",
+      "meaning": "得民心则政兴",
+      "usage": "民生主题引语",
+      "example": "政之所兴在顺民心。"
+     },
+     "category": "治国"
+    }
+   ],
+   "POLICY_DATA": [
+    {
+     "id": "p-101",
+     "cat": "economy",
+     "term": "县域商业体系",
+     "source": "政策文件",
+     "def": "以县城为中心、乡镇为节点、村为基础的农村商业网络。",
+     "keyPoints": [
+      "补齐物流短板",
+      "培育本地特色"
+     ],
+     "shenlunAngle": "可用『补短板+树特色』结构展开。"
+    },
+    {
+     "id": "p-102",
+     "cat": "governance",
+     "term": "枫桥经验",
+     "source": "基层治理",
+     "def": "依靠群众就地化解矛盾的社会治理经验。",
+     "keyPoints": [
+      "源头治理",
+      "预防为主"
+     ],
+     "shenlunAngle": "写基层治理必用素材。"
+    },
+    {
+     "id": "p-103",
+     "cat": "society",
+     "term": "适老化改造",
+     "source": "民生政策",
+     "def": "围绕老年人生活场景进行无障碍与智能化改造。",
+     "keyPoints": [
+      "居家安全",
+      "便利出行"
+     ],
+     "shenlunAngle": "可与老龄化主题结合。"
+    }
+   ],
+   "SHENLUN_WRITING_DATA": {
+    "id": "w101",
+    "title": "如何让政策『落地有声』",
+    "points": [
+     "从文件到现场",
+     "从指标到感受"
+    ],
+    "content": "好政策不能停在红头文件，要变成群众可感的实事。",
+    "beforeAfter": {
+     "before": "重部署轻落实",
+     "after": "重反馈重迭代"
+    },
+    "tip": "用『群众满意度』检验成效。",
+    "action": "建立基层反馈闭环。"
+   },
+   "SHENLUN_WRITING_PRACTICE": {
+    "id": "wp101",
+    "q": "某地修便民桥却长期不通车，你怎么看？",
+    "hint": "从『建成—使用—维护』全链条分析。",
+    "answer": "重建设轻运营，应补齐管护与调度机制。"
+   }
+  },
+  {
+   "SHENLUN_READING_DATA": {
+    "id": "read-102",
+    "tier": "市级",
+    "title": "城市更新要留得住记忆",
+    "source": "城市研究",
+    "date": "{DATE}",
+    "excerpt": "更新不是大拆大建，而是让老空间适配新生活。",
+    "content": "保留街巷肌理与社区网络，比推平重建更可持续。",
+    "annotation": [
+     {
+      "type": "观点",
+      "text": "微更新优于大拆建"
+     },
+     {
+      "type": "案例",
+      "text": "老厂区改文创园"
+     }
+    ],
+    "practicePrompt": "以『记忆与便利的平衡』写一段150字论述。"
+   },
+   "FLASHCARD_DATA": [
+    {
+     "id": "fc-105",
+     "front": "城，所以盛民也。",
+     "back": {
+      "source": "《墨子》",
+      "context": "城市为聚民而建",
+      "meaning": "城市本质是为人",
+      "usage": "写以人为本更新",
+      "example": "城，所以盛民也。"
+     },
+     "category": "城市"
+    },
+    {
+     "id": "fc-106",
+     "front": "不慕古，不留今。",
+     "back": {
+      "source": "《管子》",
+      "context": "既不盲目复古也不止步",
+      "meaning": "继承与创新的平衡",
+      "usage": "写传统与现代",
+      "example": "不慕古，不留今。"
+     },
+     "category": "治理"
+    },
+    {
+     "id": "fc-107",
+     "front": "因地制宜，分类施策。",
+     "back": {
+      "source": "政策常用语",
+      "context": "强调差异化",
+      "meaning": "按实际定办法",
+      "usage": "申论高频句",
+      "example": "因地制宜，分类施策。"
+     },
+     "category": "方法"
+    },
+    {
+     "id": "fc-108",
+     "front": "民之所忧，我必念之。",
+     "back": {
+      "source": "公开讲话",
+      "context": "以民之忧为念",
+      "meaning": "民生情怀表达",
+      "usage": "结尾升华",
+      "example": "民之所忧，我必念之。"
+     },
+     "category": "民生"
+    }
+   ],
+   "POLICY_DATA": [
+    {
+     "id": "p-104",
+     "cat": "governance",
+     "term": "城市更新行动",
+     "source": "住建政策",
+     "def": "对老旧小区、街区、厂区进行功能提升与活力再造。",
+     "keyPoints": [
+      "留改拆并举",
+      "补齐功能"
+     ],
+     "shenlunAngle": "可用『留记忆+提功能』展开。"
+    },
+    {
+     "id": "p-105",
+     "cat": "ecology",
+     "term": "海绵城市",
+     "source": "城建政策",
+     "def": "通过透水铺装、蓄水设施让城市像海绵一样吸水释水。",
+     "keyPoints": [
+      "防内涝",
+      "补地下水"
+     ],
+     "shenlunAngle": "写城市韧性可用。"
+    },
+    {
+     "id": "p-106",
+     "cat": "society",
+     "term": "完整社区",
+     "source": "民生政策",
+     "def": "步行可达范围内配齐养老、托育、健身等服务的社区。",
+     "keyPoints": [
+      "15分钟生活圈",
+      "一老一小"
+     ],
+     "shenlunAngle": "可与适老化结合。"
+    }
+   ],
+   "SHENLUN_WRITING_DATA": {
+    "id": "w102",
+    "title": "微更新里的民生温度",
+    "points": [
+     "小切口改善",
+     "慢功夫见效"
+    ],
+    "content": "一处处微更新累积成可感的城市温度。",
+    "beforeAfter": {
+     "before": "大拆大建",
+     "after": "有机更新"
+    },
+    "tip": "用具体场景代替空泛口号。",
+    "action": "征集居民『微心愿』。"
+   },
+   "SHENLUN_WRITING_PRACTICE": {
+    "id": "wp102",
+    "q": "老街区改造与居民利益冲突，如何协调？",
+    "hint": "从共商共议角度切入。",
+    "answer": "建立居民议事机制，平衡保护与便利。"
+   }
+  },
+  {
+   "SHENLUN_READING_DATA": {
+    "id": "read-103",
+    "tier": "省级",
+    "title": "营商环境就是生产力",
+    "source": "经济评论",
+    "date": "{DATE}",
+    "excerpt": "企业用脚投票，服务与预期决定投资去向。",
+    "content": "减环节、降成本、稳预期，比优惠政策更长效。",
+    "annotation": [
+     {
+      "type": "观点",
+      "text": "预期稳则投资稳"
+     },
+     {
+      "type": "数据",
+      "text": "民企看重在哪注册"
+     }
+    ],
+    "practicePrompt": "用『减法换乘法』写一段营商环境论述。"
+   },
+   "FLASHCARD_DATA": [
+    {
+     "id": "fc-109",
+     "front": "栽下梧桐树，引得凤凰来。",
+     "back": {
+      "source": "俗语",
+      "context": "环境好则人才聚",
+      "meaning": "改善生态吸引人才",
+      "usage": "写营商环境",
+      "example": "栽下梧桐树，引得凤凰来。"
+     },
+     "category": "人才"
+    },
+    {
+     "id": "fc-110",
+     "front": "法者，治之端也。",
+     "back": {
+      "source": "《荀子》",
+      "context": "法治是治理开端",
+      "meaning": "依法治国之本",
+      "usage": "写法治保障",
+      "example": "法者，治之端也。"
+     },
+     "category": "法治"
+    },
+    {
+     "id": "fc-111",
+     "front": "无事不扰，有求必应。",
+     "back": {
+      "source": "政务服务理念",
+      "context": "监管与服务的平衡",
+      "meaning": "少干扰多服务",
+      "usage": "写政企关系",
+      "example": "无事不扰，有求必应。"
+     },
+     "category": "治理"
+    },
+    {
+     "id": "fc-112",
+     "front": "水深则鱼悦，城强则贾兴。",
+     "back": {
+      "source": "古语",
+      "context": "环境优则商聚",
+      "meaning": "生态好则繁荣",
+      "usage": "写宜商环境",
+      "example": "水深则鱼悦，城强则贾兴。"
+     },
+     "category": "经济"
+    }
+   ],
+   "POLICY_DATA": [
+    {
+     "id": "p-107",
+     "cat": "economy",
+     "term": "全国统一大市场",
+     "source": "政策文件",
+     "def": "破除壁垒、推动要素自由流动的高标准市场体系。",
+     "keyPoints": [
+      "统一规则",
+      "公平竞争"
+     ],
+     "shenlunAngle": "可用『破壁+畅通』结构。"
+    },
+    {
+     "id": "p-108",
+     "cat": "governance",
+     "term": "放管服改革",
+     "source": "行政改革",
+     "def": "简政放权、放管结合、优化服务的改革总称。",
+     "keyPoints": [
+      "减审批",
+      "强监管"
+     ],
+     "shenlunAngle": "写营商环境主线。"
+    },
+    {
+     "id": "p-109",
+     "cat": "economy",
+     "term": "预期管理",
+     "source": "宏观调控",
+     "def": "通过政策沟通稳定市场主体信心。",
+     "keyPoints": [
+      "稳信心",
+      "透明沟通"
+     ],
+     "shenlunAngle": "可与民营经济结合。"
+    }
+   ],
+   "SHENLUN_WRITING_DATA": {
+    "id": "w103",
+    "title": "用『减法』换『乘法』",
+    "points": [
+     "减环节",
+     "强预期"
+    ],
+    "content": "少一些审批干扰，多一分投资信心，红利会成倍释放。",
+    "beforeAfter": {
+     "before": "重审批轻服务",
+     "after": "重预期重法治"
+    },
+    "tip": "用企业视角写对策。",
+    "action": "推行承诺制审批。"
+   },
+   "SHENLUN_WRITING_PRACTICE": {
+    "id": "wp103",
+    "q": "某地招商『重签约轻落地』，怎么破？",
+    "hint": "从全流程服务分析。",
+    "answer": "建立签约后跟踪服务与考核，避免虎头蛇尾。"
+   }
+  },
+  {
+   "SHENLUN_READING_DATA": {
+    "id": "read-104",
+    "tier": "县级",
+    "title": "数字乡村的『最后一公里』",
+    "source": "三农研究",
+    "date": "{DATE}",
+    "excerpt": "设备进村易，用好数据难，关键在人与机制。",
+    "content": "数字乡村不是装摄像头，而是让数据服务生产决策与治理。",
+    "annotation": [
+     {
+      "type": "观点",
+      "text": "技术要长在需求上"
+     },
+     {
+      "type": "案例",
+      "text": "直播带货助农"
+     }
+    ],
+    "practicePrompt": "以『技术下沉更要服务下沉』写一段对策。"
+   },
+   "FLASHCARD_DATA": [
+    {
+     "id": "fc-113",
+     "front": "农，天下之大本也。",
+     "back": {
+      "source": "《汉书》",
+      "context": "农业为立国根本",
+      "meaning": "重农固本",
+      "usage": "写三农主题",
+      "example": "农，天下之大本也。"
+     },
+     "category": "三农"
+    },
+    {
+     "id": "fc-114",
+     "front": "仓廪实而知礼节。",
+     "back": {
+      "source": "《管子》",
+      "context": "物质基础养文明",
+      "meaning": "富足而后知礼",
+      "usage": "写富民与文明",
+      "example": "仓廪实而知礼节。"
+     },
+     "category": "民生"
+    },
+    {
+     "id": "fc-115",
+     "front": "因地制宜发展特色产业。",
+     "back": {
+      "source": "政策常用语",
+      "context": "差异化振兴",
+      "meaning": "一地一策",
+      "usage": "写乡村产业",
+      "example": "因地制宜发展特色产业。"
+     },
+     "category": "方法"
+    },
+    {
+     "id": "fc-116",
+     "front": "授人以鱼，不如授人以渔。",
+     "back": {
+      "source": "古语",
+      "context": "帮扶重在能力",
+      "meaning": "造血优于输血",
+      "usage": "写帮扶长效",
+      "example": "授人以鱼，不如授人以渔。"
+     },
+     "category": "治理"
+    }
+   ],
+   "POLICY_DATA": [
+    {
+     "id": "p-110",
+     "cat": "economy",
+     "term": "数字乡村",
+     "source": "乡村振兴政策",
+     "def": "以数字技术赋能农业生产、治理与服务的乡村发展模式。",
+     "keyPoints": [
+      "数据助产",
+      "智慧治理"
+     ],
+     "shenlunAngle": "可用『硬件+人才+机制』展开。"
+    },
+    {
+     "id": "p-111",
+     "cat": "society",
+     "term": "防止返贫监测",
+     "source": "巩固脱贫",
+     "def": "对易返贫户动态监测及时帮扶的机制。",
+     "keyPoints": [
+      "早发现",
+      "快帮扶"
+     ],
+     "shenlunAngle": "写底线民生可用。"
+    },
+    {
+     "id": "p-112",
+     "cat": "economy",
+     "term": "一村一品",
+     "source": "产业振兴",
+     "def": "每村立足资源发展特色主导产业的路径。",
+     "keyPoints": [
+      "错位发展",
+      "品牌化"
+     ],
+     "shenlunAngle": "可与电商结合。"
+    }
+   ],
+   "SHENLUN_WRITING_DATA": {
+    "id": "w104",
+    "title": "让数据长在泥土里",
+    "points": [
+     "设备下沉",
+     "服务下沉"
+    ],
+    "content": "数字乡村的成效，最终看农民会不会用、愿不愿用。",
+    "beforeAfter": {
+     "before": "重建设轻运营",
+     "after": "重培训重应用"
+    },
+    "tip": "用『人』串起技术。",
+    "action": "培育本土数字带头人。"
+   },
+   "SHENLUN_WRITING_PRACTICE": {
+    "id": "wp104",
+    "q": "村里装了系统却没人用，问题在哪？",
+    "hint": "从需求与能力两端看。",
+    "answer": "缺本土人才与贴合场景的应用，需培训+简版工具。"
+   }
+  },
+  {
+   "SHENLUN_READING_DATA": {
+    "id": "read-105",
+    "tier": "市级",
+    "title": "把绿水青山变成金山银山",
+    "source": "生态评论",
+    "date": "{DATE}",
+    "excerpt": "保护不是不发展，而是换一种更持久的活法。",
+    "content": "生态产品价值实现，让保护者得益、使用者付费。",
+    "annotation": [
+     {
+      "type": "观点",
+      "text": "保护即发展"
+     },
+     {
+      "type": "案例",
+      "text": "生态游带富山村"
+     }
+    ],
+    "practicePrompt": "用『转化机制』写一段生态价值实现论述。"
+   },
+   "FLASHCARD_DATA": [
+    {
+     "id": "fc-117",
+     "front": "绿水青山就是金山银山。",
+     "back": {
+      "source": "治国理政重要论断",
+      "context": "生态与经济的统一",
+      "meaning": "好生态也是生产力",
+      "usage": "生态主题核心引语",
+      "example": "绿水青山就是金山银山。"
+     },
+     "category": "生态"
+    },
+    {
+     "id": "fc-118",
+     "front": "取之有度，用之有节。",
+     "back": {
+      "source": "《资治通鉴》",
+      "context": "节度用物",
+      "meaning": "取用要有节制",
+      "usage": "写资源节约",
+      "example": "取之有度，用之有节。"
+     },
+     "category": "生态"
+    },
+    {
+     "id": "fc-119",
+     "front": "子钓而不纲，弋不射宿。",
+     "back": {
+      "source": "《论语》",
+      "context": "取物有度",
+      "meaning": "不赶尽杀绝",
+      "usage": "写可持续",
+      "example": "子钓而不纲，弋不射宿。"
+     },
+     "category": "生态"
+    },
+    {
+     "id": "fc-120",
+     "front": "草木植成，国之富也。",
+     "back": {
+      "source": "《管子》",
+      "context": "生态即财富",
+      "meaning": "绿化关乎国富",
+      "usage": "写国土绿化",
+      "example": "草木植成，国之富也。"
+     },
+     "category": "生态"
+    }
+   ],
+   "POLICY_DATA": [
+    {
+     "id": "p-113",
+     "cat": "ecology",
+     "term": "生态产品价值实现",
+     "source": "生态政策",
+     "def": "通过碳汇、生态旅游等把生态优势转为经济收益的机制。",
+     "keyPoints": [
+      "谁保护谁受益",
+      "市场化交易"
+     ],
+     "shenlunAngle": "可用『核算+交易+反哺』展开。"
+    },
+    {
+     "id": "p-114",
+     "cat": "ecology",
+     "term": "碳达峰碳中和",
+     "source": "国家战略",
+     "def": "二氧化碳排放力争2030前达峰、2060前中和。",
+     "keyPoints": [
+      "能源转型",
+      "绿色产业"
+     ],
+     "shenlunAngle": "写产业机会可用。"
+    },
+    {
+     "id": "p-115",
+     "cat": "governance",
+     "term": "河湖长制",
+     "source": "环保制度",
+     "def": "由各级负责人分段包干河湖治理的责任制度。",
+     "keyPoints": [
+      "责任到人",
+      "系统治理"
+     ],
+     "shenlunAngle": "写治水长效机制。"
+    }
+   ],
+   "SHENLUN_WRITING_DATA": {
+    "id": "w105",
+    "title": "保护的另一种活法",
+    "points": [
+     "算生态账",
+     "做转化题"
+    ],
+    "content": "把生态资本核算清楚、交易起来，保护才有内生动力。",
+    "beforeAfter": {
+     "before": "就保护谈保护",
+     "after": "保护与发展互促"
+    },
+    "tip": "用机制设计代替道德号召。",
+    "action": "探索碳汇交易试点。"
+   },
+   "SHENLUN_WRITING_PRACTICE": {
+    "id": "wp105",
+    "q": "保护区周边居民生计与保护冲突，怎么办？",
+    "hint": "从生态补偿看。",
+    "answer": "建立生态补偿与替代产业，让保护者得实惠。"
+   }
+  },
+  {
+   "SHENLUN_READING_DATA": {
+    "id": "read-106",
+    "tier": "省级",
+    "title": "人口变局下的主动应对",
+    "source": "人口研究",
+    "date": "{DATE}",
+    "excerpt": "少子老龄化不可逆，关键在早准备、系统应对。",
+    "content": "从生育支持、托育、养老到延迟退休，需全链条制度供给。",
+    "annotation": [
+     {
+      "type": "观点",
+      "text": "慢变量要早动"
+     },
+     {
+      "type": "数据",
+      "text": "多省步入深度老龄化"
+     }
+    ],
+    "practicePrompt": "以『既顾当下也谋长远』写一段人口政策论述。"
+   },
+   "FLASHCARD_DATA": [
+    {
+     "id": "fc-121",
+     "front": "老吾老以及人之老。",
+     "back": {
+      "source": "《孟子》",
+      "context": "推己及人养老",
+      "meaning": "敬养自家及他人",
+      "usage": "写养老主题",
+      "example": "老吾老以及人之老。"
+     },
+     "category": "民生"
+    },
+    {
+     "id": "fc-122",
+     "front": "幼吾幼以及人之幼。",
+     "back": {
+      "source": "《孟子》",
+      "context": "推己及人抚幼",
+      "meaning": "爱护自家及他人",
+      "usage": "写托育主题",
+      "example": "幼吾幼以及人之幼。"
+     },
+     "category": "民生"
+    },
+    {
+     "id": "fc-123",
+     "front": "凡事豫则立，不豫则废。",
+     "back": {
+      "source": "《中庸》",
+      "context": "预备的重要",
+      "meaning": "早规划才成事",
+      "usage": "写前瞻应对",
+      "example": "凡事豫则立，不豫则废。"
+     },
+     "category": "方法"
+    },
+    {
+     "id": "fc-124",
+     "front": "国以民为本，民以生为先。",
+     "back": {
+      "source": "古语",
+      "context": "民生优先",
+      "meaning": "治国以民生为要",
+      "usage": "写民生主线",
+      "example": "国以民为本，民以生为先。"
+     },
+     "category": "民生"
+    }
+   ],
+   "POLICY_DATA": [
+    {
+     "id": "p-116",
+     "cat": "society",
+     "term": "生育支持政策",
+     "source": "人口政策",
+     "def": "以补贴、托育、休假等降低生育养育成本的措施体系。",
+     "keyPoints": [
+      "降成本",
+      "补服务"
+     ],
+     "shenlunAngle": "可用『成本+服务+观念』展开。"
+    },
+    {
+     "id": "p-117",
+     "cat": "society",
+     "term": "普惠托育",
+     "source": "民生政策",
+     "def": "面向广大家庭、价格可承受的婴幼儿照护服务。",
+     "keyPoints": [
+      "就近可及",
+      "质量有保障"
+     ],
+     "shenlunAngle": "写一老一小结合。"
+    },
+    {
+     "id": "p-118",
+     "cat": "governance",
+     "term": "积极应对老龄化",
+     "source": "国家战略",
+     "def": "从健康、保障、参与等多维度系统应对老龄社会。",
+     "keyPoints": [
+      "健康老龄",
+      "银发经济"
+     ],
+     "shenlunAngle": "写产业与保障双线。"
+    }
+   ],
+   "SHENLUN_WRITING_DATA": {
+    "id": "w106",
+    "title": "慢变量要早动手",
+    "points": [
+     "当下减负",
+     "长远建制"
+    ],
+    "content": "人口趋势虽缓，但积累效应巨大，今天的政策决定明天的负担。",
+    "beforeAfter": {
+     "before": "事后补救",
+     "after": "前置设计"
+    },
+    "tip": "用『制度供给』代替临时应对。",
+    "action": "完善托育与养老并举。"
+   },
+   "SHENLUN_WRITING_PRACTICE": {
+    "id": "wp106",
+    "q": "年轻人不愿生，仅靠发钱能解决吗？",
+    "hint": "从成本与服务体系看。",
+    "answer": "钱是一部分，更需托育、住房、职场友好等系统支撑。"
+   }
+  }
+ ]
+}

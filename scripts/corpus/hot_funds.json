@@ -1,0 +1,509 @@
+{
+ "module": "hot_funds",
+ "items": [
+  {
+   "FINANCE_WEEKLY_FUNDS": {
+    "week": "{ISOWEEK}",
+    "date": "{DATE}",
+    "label": "{YEAR}年热门赛道观察",
+    "funds": [
+     {
+      "name": "沪深300ETF",
+      "code": "510300",
+      "category": "宽基指数",
+      "principle": "跟踪沪深300大盘蓝筹",
+      "advantage": "代表中国经济核心资产，费率低",
+      "risk": "随大盘波动",
+      "suitable": "想省心参与A股长期的投资者"
+     },
+     {
+      "name": "中证A500ETF",
+      "code": "159339",
+      "category": "宽基指数",
+      "principle": "覆盖各行业龙头更均衡",
+      "advantage": "行业分散、避免单一暴露",
+      "risk": "随市场波动",
+      "suitable": "追求均衡配置的人"
+     },
+     {
+      "name": "中证红利ETF",
+      "code": "515080",
+      "category": "策略指数",
+      "principle": "按股息率选高分红股",
+      "advantage": "现金流稳、回撤较小",
+      "risk": "成长性差、分红虚高风险",
+      "suitable": "稳健型、求分红者"
+     },
+     {
+      "name": "易方达蓝筹精选",
+      "code": "005827",
+      "category": "主动混合",
+      "principle": "聚焦消费+港股核心",
+      "advantage": "经理历史业绩优秀",
+      "risk": "集中度高、波动大",
+      "suitable": "能承受波动的长线者"
+     },
+     {
+      "name": "招商中证白酒",
+      "code": "161725",
+      "category": "行业指数",
+      "principle": "跟踪白酒板块",
+      "advantage": "消费长牛赛道代表",
+      "risk": "行业集中、回撤大",
+      "suitable": "看好消费的人"
+     },
+     {
+      "name": "天弘中证食品饮料",
+      "code": "001631",
+      "category": "行业指数",
+      "principle": "覆盖食品饮料龙头",
+      "advantage": "刚需消费防御性强",
+      "risk": "估值偏高时回撤",
+      "suitable": "防御配置者"
+     }
+    ]
+   }
+  },
+  {
+   "FINANCE_WEEKLY_FUNDS": {
+    "week": "{ISOWEEK}",
+    "date": "{DATE}",
+    "label": "{YEAR}年科技成长主线",
+    "funds": [
+     {
+      "name": "华夏科创50ETF",
+      "code": "588000",
+      "category": "宽基指数",
+      "principle": "跟踪科创板50硬科技",
+      "advantage": "押注半导体/AI等前沿",
+      "risk": "高波动高弹性",
+      "suitable": "风险偏好高的成长投资者"
+     },
+     {
+      "name": "国泰CES半导体",
+      "code": "512760",
+      "category": "行业指数",
+      "principle": "跟踪半导体产业链",
+      "advantage": "国产替代长期逻辑",
+      "risk": "周期性强、波动大",
+      "suitable": "看好芯片自主的人"
+     },
+     {
+      "name": "诺安成长混合",
+      "code": "320007",
+      "category": "主动混合",
+      "principle": "重仓半导体成长",
+      "advantage": "弹性大、进攻性强",
+      "risk": "回撤极深",
+      "suitable": "能扛大波动的激进者"
+     },
+     {
+      "name": "鹏华碳中和",
+      "code": "016530",
+      "category": "主题混合",
+      "principle": "聚焦新能源转型",
+      "advantage": "政策长期支持方向",
+      "risk": "行业未稳、波动大",
+      "suitable": "长线看好双碳者"
+     },
+     {
+      "name": "华宝中证医疗",
+      "code": "162412",
+      "category": "行业指数",
+      "principle": "跟踪医疗生物",
+      "advantage": "刚需+老龄化长期逻辑",
+      "risk": "集采政策压制估值",
+      "suitable": "逆向布局者"
+     },
+     {
+      "name": "招商新能源汽车",
+      "code": "161028",
+      "category": "行业指数",
+      "principle": "覆盖新能源车链",
+      "advantage": "电动化渗透率提升",
+      "risk": "竞争激烈、波动大",
+      "suitable": "看好出行革命者"
+     }
+    ]
+   }
+  },
+  {
+   "FINANCE_WEEKLY_FUNDS": {
+    "week": "{ISOWEEK}",
+    "date": "{DATE}",
+    "label": "{YEAR}年稳健底仓组合",
+    "funds": [
+     {
+      "name": "易方达增强回报",
+      "code": "110017",
+      "category": "二级债基",
+      "principle": "债券为主+少量股票",
+      "advantage": "攻守兼备、波动小于股基",
+      "risk": "仍有小幅波动",
+      "suitable": "中低风险偏好者"
+     },
+     {
+      "name": "招商双债增强",
+      "code": "000474",
+      "category": "纯债基金",
+      "principle": "主投高等级信用债",
+      "advantage": "稳健、回撤小",
+      "risk": "收益上限低",
+      "suitable": "保守型投资者"
+     },
+     {
+      "name": "天弘余额宝",
+      "code": "000198",
+      "category": "货币基金",
+      "principle": "投存单与短债",
+      "advantage": "近乎不亏、随时取",
+      "risk": "收益随利率浮动",
+      "suitable": "活钱管理"
+     },
+     {
+      "name": "博时信用债纯债",
+      "code": "050027",
+      "category": "纯债基金",
+      "principle": "中高等级信用债",
+      "advantage": "长期稳健增值",
+      "risk": "信用风险极低但非无",
+      "suitable": "稳健理财"
+     },
+     {
+      "name": "工银瑞信双利",
+      "code": "485111",
+      "category": "二级债基",
+      "principle": "债打底+股增强",
+      "advantage": "体验平滑",
+      "risk": "股市大跌时跟跌",
+      "suitable": "求平稳增值者"
+     },
+     {
+      "name": "南方宝元债券",
+      "code": "202101",
+      "category": "二级债基",
+      "principle": "经典债基代表",
+      "advantage": "长跑业绩稳定",
+      "risk": "偶有回撤",
+      "suitable": "配置型投资者"
+     }
+    ]
+   }
+  },
+  {
+   "FINANCE_WEEKLY_FUNDS": {
+    "week": "{ISOWEEK}",
+    "date": "{DATE}",
+    "label": "{YEAR}年港股与海外机会",
+    "funds": [
+     {
+      "name": "华夏恒生科技ETF",
+      "code": "513180",
+      "category": "跨境指数",
+      "principle": "跟踪港股科技龙头",
+      "advantage": "估值低位、弹性大",
+      "risk": "受海外流动性影响",
+      "suitable": "能承受波动的逆向者"
+     },
+     {
+      "name": "易方达中概互联",
+      "code": "513050",
+      "category": "跨境指数",
+      "principle": "跟踪中概互联网",
+      "advantage": "龙头集中、修复弹性",
+      "risk": "政策与监管风险",
+      "suitable": "看好平台经济者"
+     },
+     {
+      "name": "华安纳斯达克100",
+      "code": "040046",
+      "category": "QDII",
+      "principle": "跟踪美股科技100",
+      "advantage": "全球科技龙头敞口",
+      "risk": "汇率+时差风险",
+      "suitable": "想配置美股的人"
+     },
+     {
+      "name": "广发标普500",
+      "code": "270042",
+      "category": "QDII",
+      "principle": "跟踪标普500",
+      "advantage": "美股大盘宽基",
+      "risk": "长期慢牛但也会回撤",
+      "suitable": "长期配置者"
+     },
+     {
+      "name": "南方东英恒生指数",
+      "code": "513600",
+      "category": "跨境指数",
+      "principle": "跟踪恒生指数",
+      "advantage": "港股大盘代表",
+      "risk": "波动大",
+      "suitable": "看好港股估值修复"
+     },
+     {
+      "name": "博时标普港股通",
+      "code": "513600",
+      "category": "跨境",
+      "principle": "跨市场分散",
+      "advantage": "分散单一市场风险",
+      "risk": "管理复杂",
+      "suitable": "全球配置者"
+     }
+    ]
+   }
+  },
+  {
+   "FINANCE_WEEKLY_FUNDS": {
+    "week": "{ISOWEEK}",
+    "date": "{DATE}",
+    "label": "{YEAR}年红利低波策略",
+    "funds": [
+     {
+      "name": "中证红利低波ETF",
+      "code": "512890",
+      "category": "策略指数",
+      "principle": "高股息+低波动筛选",
+      "advantage": "攻守兼备",
+      "risk": "成长性差",
+      "suitable": "稳健求现金流者"
+     },
+     {
+      "name": "工银瑞信红利",
+      "code": "481006",
+      "category": "主动红利",
+      "principle": "精选高分红个股",
+      "advantage": "经理主动优化",
+      "risk": "择股风险",
+      "suitable": "红利偏好者"
+     },
+     {
+      "name": "招商中证红利",
+      "code": "515080",
+      "category": "策略指数",
+      "principle": "按股息率选股",
+      "advantage": "透明、费率低",
+      "risk": "周期行业权重高",
+      "suitable": "长期分红投资者"
+     },
+     {
+      "name": "华泰柏瑞红利",
+      "code": "510880",
+      "category": "策略指数",
+      "principle": "经典红利宽基",
+      "advantage": "长跑业绩稳",
+      "risk": "金融地产占比高",
+      "suitable": "防御配置"
+     },
+     {
+      "name": "天弘中证红利低波",
+      "code": "008114",
+      "category": "策略指数",
+      "principle": "低波红利增强",
+      "advantage": "波动更小",
+      "risk": "收益弹性低",
+      "suitable": "保守型"
+     },
+     {
+      "name": "富国中证红利",
+      "code": "100032",
+      "category": "主动增强",
+      "principle": "红利+增强策略",
+      "advantage": "争取超额",
+      "risk": "增强失效风险",
+      "suitable": "求稳健增强者"
+     }
+    ]
+   }
+  },
+  {
+   "FINANCE_WEEKLY_FUNDS": {
+    "week": "{ISOWEEK}",
+    "date": "{DATE}",
+    "label": "{YEAR}年消费复苏线索",
+    "funds": [
+     {
+      "name": "易方达消费行业",
+      "code": "110022",
+      "category": "主动消费",
+      "principle": "聚焦白酒+消费龙头",
+      "advantage": "消费长牛代表",
+      "risk": "行业集中",
+      "suitable": "长线消费信徒"
+     },
+     {
+      "name": "汇添富消费行业",
+      "code": "000083",
+      "category": "主动消费",
+      "principle": "均衡配置大消费",
+      "advantage": "经理选股能力强",
+      "risk": "估值波动",
+      "suitable": "品质消费投资者"
+     },
+     {
+      "name": "鹏华养老产业",
+      "code": "000854",
+      "category": "主动混合",
+      "principle": "围绕老龄化布局",
+      "advantage": "长期人口趋势",
+      "risk": "短期业绩波动",
+      "suitable": "看多银发经济"
+     },
+     {
+      "name": "银华富裕主题",
+      "code": "180012",
+      "category": "主动混合",
+      "principle": "消费+医药成长",
+      "advantage": "长跑业绩突出",
+      "risk": "回撤较大",
+      "suitable": "能扛波动者"
+     },
+     {
+      "name": "嘉实消费精选",
+      "code": "006604",
+      "category": "主动消费",
+      "principle": "新消费+传统消费",
+      "advantage": "弹性较好",
+      "risk": "波动大",
+      "suitable": "成长消费投资者"
+     },
+     {
+      "name": "招商国证食品",
+      "code": "161725",
+      "category": "行业指数",
+      "principle": "食品饮料纯 Beta",
+      "advantage": "工具化、费率低",
+      "risk": "单一行业风险",
+      "suitable": "行业坚定者"
+     }
+    ]
+   }
+  },
+  {
+   "FINANCE_WEEKLY_FUNDS": {
+    "week": "{ISOWEEK}",
+    "date": "{DATE}",
+    "label": "{YEAR}年高端制造与军工",
+    "funds": [
+     {
+      "name": "易方达国防军工",
+      "code": "001475",
+      "category": "主动军工",
+      "principle": "聚焦军工装备",
+      "advantage": "地缘与装备升级逻辑",
+      "risk": "高波动、事件驱动",
+      "suitable": "高风险偏好者"
+     },
+     {
+      "name": "富国中证军工",
+      "code": "161024",
+      "category": "行业指数",
+      "principle": "跟踪军工龙头",
+      "advantage": "透明、行业纯 Beta",
+      "risk": "周期性强",
+      "suitable": "看好军工者"
+     },
+     {
+      "name": "鹏华高端装备",
+      "code": "018135",
+      "category": "主动制造",
+      "principle": "布局智能制造",
+      "advantage": "制造业升级长期线",
+      "risk": "波动大",
+      "suitable": "长线制造投资者"
+     },
+     {
+      "name": "华夏中证机器人",
+      "code": "562500",
+      "category": "行业指数",
+      "principle": "跟踪机器人产业链",
+      "advantage": "AI+制造前沿",
+      "risk": "概念波动大",
+      "suitable": "前沿主题投资者"
+     },
+     {
+      "name": "国泰中证机床",
+      "code": "159667",
+      "category": "行业指数",
+      "principle": "工业母机主题",
+      "advantage": "国产替代逻辑",
+      "risk": "主题集中",
+      "suitable": "专业投资者"
+     },
+     {
+      "name": "招商高端制造",
+      "code": "014918",
+      "category": "主动制造",
+      "principle": "均衡高端制造",
+      "advantage": "分散个股风险",
+      "risk": "仍受制造周期影响",
+      "suitable": "配置型"
+     }
+    ]
+   }
+  },
+  {
+   "FINANCE_WEEKLY_FUNDS": {
+    "week": "{ISOWEEK}",
+    "date": "{DATE}",
+    "label": "{YEAR}年医药与AI主题",
+    "funds": [
+     {
+      "name": "工银瑞信前沿医疗",
+      "code": "001717",
+      "category": "主动医药",
+      "principle": "聚焦创新药+器械",
+      "advantage": "长线医药阿尔法",
+      "risk": "集采政策风险",
+      "suitable": "看好医药创新"
+     },
+     {
+      "name": "中欧医疗健康",
+      "code": "003095",
+      "category": "主动医药",
+      "principle": "医药全链条布局",
+      "advantage": "规模大、代表性强",
+      "risk": "回撤深",
+      "suitable": "长线医药投资者"
+     },
+     {
+      "name": "华宝中证医疗",
+      "code": "162412",
+      "category": "行业指数",
+      "principle": "医疗生物纯 Beta",
+      "advantage": "估值低位修复逻辑",
+      "risk": "政策压制",
+      "suitable": "逆向布局者"
+     },
+     {
+      "name": "诺安积极回报",
+      "code": "001706",
+      "category": "主动混合",
+      "principle": "AI+科技成长",
+      "advantage": "弹性大",
+      "risk": "波动极大",
+      "suitable": "高风险成长者"
+     },
+     {
+      "name": "华夏中证人工智能",
+      "code": "515070",
+      "category": "行业指数",
+      "principle": "跟踪AI产业链",
+      "advantage": "AI长期主线",
+      "risk": "概念波动",
+      "suitable": "看好AI者"
+     },
+     {
+      "name": "万家人工智能",
+      "code": "006281",
+      "category": "主动混合",
+      "principle": "AI主动增强",
+      "advantage": "争取超额",
+      "risk": "增强失效风险",
+      "suitable": "AI主题投资者"
+     }
+    ]
+   }
+  }
+ ]
+}
