@@ -39,7 +39,11 @@
         </div>
       </div>
 
-      <nav class="sidebar-nav">
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <div class="nav-search-wrap">
+          <i class="fas fa-search"></i>
+          <input type="search" id="nav-search" placeholder="搜索板块…" autocomplete="off" aria-label="搜索板块">
+        </div>
         <button class="nav-item active" data-module="overview">
           <img class="nav-ico" src="assets/board-icons/overview.svg" alt="">
           <span>总览</span>
@@ -79,7 +83,7 @@
         </button>
         <button class="nav-item" data-module="zimeiti-pet">
           <img class="nav-ico" src="assets/board-icons/zimeiti-pet.svg" alt="">
-          <span>宠物部</span>
+          <span>宠物号运营</span>
         </button>
         <button class="nav-item" data-module="zimeiti-goods">
           <img class="nav-ico" src="assets/board-icons/zimeiti-goods.svg" alt="">
@@ -119,7 +123,7 @@
         </button>
         <button class="nav-item" data-module="pet">
           <img class="nav-ico" src="assets/board-icons/pet.svg" alt="">
-          <span>宠物</span>
+          <span>我的宠物</span>
         </button>
         <button class="nav-item" data-module="country">
           <img class="nav-ico" src="assets/board-icons/country.svg" alt="">
@@ -226,7 +230,7 @@
   <script src="js/data-english-shadow.js"></script>
   <script src="js/data-finance.js"></script>
   <script src="js/data-finance-trend.js"></script>
-  <script src="js/data-shenlun.js?v=34"></script>
+  <script src="js/data-shenlun.js?v=36"></script>
   <script src="js/data-news.js"></script>
   <script src="js/data-reading.js"></script>
   <script src="js/data-booktexts.js"></script>
@@ -257,11 +261,11 @@
   <script src="js/ai.js"></script>
   <!-- 应用逻辑 -->
   <script src="js/imgstore.js"></script>
-  <script src="js/app.js?v=35"></script>
+  <script src="js/app.js?v=36"></script>
 
   <!-- 安装到主屏幕引导 -->
   <div class="install-banner" id="install-banner" hidden>
-    <div class="ib-icon"><img src="assets/icon-192.png" alt=""></div>
+    <div class="ib-icon"><img src="assets/icon-girl-192.png" alt=""></div>
     <div class="ib-text">
       <strong>安装到手机</strong>
       <span>添加到主屏幕，像 App 一样随时打开</span>

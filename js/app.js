@@ -107,9 +107,8 @@ function speakFallback(text) {
   const isLongText = text.length > 60;
   const fontSize = isLongText ? '15px' : '20px';
   const lineHeight = isLongText ? 1.9 : 2;
-  const title = isLongText ? '📖 原文（音频暂时放不出）' : '🔊 朗读（文字版）';
-  const toast = '这一段没能合成语音，已为你显示文字。请检查手机网络后重试（联网即可朗读，无需安装语音包）';
-  showToast(toast, 'info');
+  const title = isLongText ? '📖 原文（先看文字版）' : '🔊 朗读（文字版）';
+  showToast('先给你看文字版～连上网就能听朗读了', 'info');
   openZoom(title, `<p style="font-size:${fontSize};line-height:${lineHeight};color:var(--text-primary)">${escapeHtml(text)}</p>`);
 }
 
@@ -679,6 +678,35 @@ function stopNewsListen(finished) {
 /* ===== 数据备份：导出/导入，保证换手机可一键转移全部手动数据 ===== */
 // 主数据使用 mw_ 前缀；少数独立子应用（如旅行地图）用专属 key，也要一并备份
 const EXTRA_BACKUP_KEYS = ['travelBoard.v1'];
+
+// ===== 备份状态提醒：记录最近一次导出/导入时间，超过阈值提醒 =====
+const BACKUP_WARN_DAYS = 7; // 超过 7 天没备份就提醒
+function markBackedUp(count) {
+  try { localStorage.setItem('mw_backup_meta', JSON.stringify({ at: Date.now(), count: count || 0 })); }
+  catch (e) {}
+}
+function getBackupMeta() {
+  return loadData('backup_meta', null);
+}
+function backupStatus() {
+  const meta = getBackupMeta();
+  if (!meta || !meta.at) return { level: 'never', text: '还没有备份过 — 建议现在导出一次，存到微信文件传输或云盘', days: null };
+  const days = Math.floor((Date.now() - meta.at) / 86400000);
+  if (days <= 0) return { level: 'good', text: '今天已备份 · 共 ' + (meta.count || 0) + ' 项数据', days: 0 };
+  if (days < BACKUP_WARN_DAYS) return { level: 'good', text: '上次备份在 ' + days + ' 天前 · 共 ' + (meta.count || 0) + ' 项', days: days };
+  return { level: 'warn', text: '已 ' + days + ' 天没备份了 — 数据只存在这台设备，建议尽快导出一次', days: days };
+}
+function refreshBackupStatus() {
+  const el = document.getElementById('backup-status-text');
+  if (!el) return;
+  const s = backupStatus();
+  el.textContent = s.text;
+  const bar = document.getElementById('data-backup-bar');
+  if (bar) {
+    bar.classList.toggle('backup-warn', s.level === 'warn' || s.level === 'never');
+    bar.classList.toggle('backup-good', s.level === 'good');
+  }
+}
 function exportWorkbench() {
   const data = {};
   for (let i = 0; i < localStorage.length; i++) {
@@ -699,7 +727,9 @@ function exportWorkbench() {
     a.download = '马雯工作台-备份-' + today() + '.json';
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    markBackedUp(payload.count);
     showToast('已导出 ' + payload.count + ' 项数据（含图片），请存到云盘/微信文件传输');
+    refreshBackupStatus();
   }).catch(function () {
     showToast('导出失败：图片处理出错', 'error');
   });
@@ -720,6 +750,7 @@ function importWorkbench(input) {
           for (const k in real) {
             if ((k.indexOf('mw_') === 0 || EXTRA_BACKUP_KEYS.indexOf(k) > -1) && typeof real[k] === 'string') { localStorage.setItem(k, real[k]); n++; }
           }
+          markBackedUp(n);
           showToast('已导入 ' + n + ' 项数据，即将刷新…');
           setTimeout(() => location.reload(), 900);
         } catch (e) {
@@ -1010,6 +1041,7 @@ function init() {
   updateStreak();
   updateCheckinBadge();
   bindNav();
+  setupNavEnhance();
   startFocusTracking();
   startUsageTracking();
   renderModule('overview');
@@ -1098,10 +1130,98 @@ function bindNav() {
       flushUsage();
       currentModule = mod;
       lastModuleSwitch = Date.now();
-      closeMobileSidebar();
+      recordNavUse(mod);
       renderModule(mod);
+      // 手机端点完板块后收起抽屉
+      if (window.innerWidth <= 768) closeMobileSidebar();
     });
   });
+}
+
+/* ===== 导航增强：分组 + 搜索 + 按使用频率自动置顶常用板块 ===== */
+// 板块分组（group 顺序即展示顺序）
+const NAV_GROUPS = [
+  { key: 'daily',  label: '📅 每日必用', mods: ['overview', 'checkin', 'review', 'ledger', 'sport'] },
+  { key: 'study',  label: '📚 学习成长', mods: ['english', 'shenlun', 'common', 'skill', 'tenmin', 'search', 'ai'] },
+  { key: 'info',   label: '📰 资讯视野', mods: ['news', 'country', 'shisanwu', 'misc', 'book'] },
+  { key: 'money',  label: '💰 投资理财', mods: ['finance'] },
+  { key: 'fun',    label: '🎨 兴趣生活', mods: ['beauty', 'pet', 'travel', 'destiny', 'tarot'] },
+  { key: 'media',  label: '✍️ 自媒体',   mods: ['zimeiti-pet', 'zimeiti-goods'] }
+];
+
+// 记录板块点击频次（用于常用置顶），只留最近 60 天
+function recordNavUse(mod) {
+  const m = loadData('nav_use', {});
+  m[mod] = (m[mod] || 0) + 1;
+  saveData('nav_use', m);
+}
+// 取使用频次最高的 N 个板块作为"常用"
+function topFavMods(n) {
+  const m = loadData('nav_use', {});
+  return Object.keys(m).sort((a, b) => m[b] - m[a]).slice(0, n);
+}
+
+function setupNavEnhance() {
+  const nav = document.getElementById('sidebar-nav');
+  if (!nav) return;
+  const items = {};
+  nav.querySelectorAll('.nav-item').forEach(b => { items[b.dataset.module] = b; });
+  const favs = topFavMods(6).filter(m => items[m]);
+  const used = {};
+  const frag = document.createDocumentFragment();
+
+  // 搜索框保持在最顶
+  const searchWrap = nav.querySelector('.nav-search-wrap');
+  if (searchWrap) { searchWrap.remove(); frag.appendChild(searchWrap); }
+
+  function addGroup(label, mods, isFav) {
+    const shown = mods.filter(m => items[m] && !used[m]);
+    if (!shown.length) return;
+    const h = document.createElement('div');
+    h.className = 'nav-group-title' + (isFav ? ' nav-group-fav' : '');
+    h.textContent = label;
+    frag.appendChild(h);
+    shown.forEach(m => { used[m] = 1; frag.appendChild(items[m]); });
+  }
+
+  if (favs.length) addGroup('⭐ 常用', favs, true);
+  NAV_GROUPS.forEach(g => addGroup(g.label, g.mods, false));
+  // 兜底：任何未归类的板块
+  const leftovers = Object.keys(items).filter(m => !used[m]);
+  if (leftovers.length) addGroup('其它', leftovers, false);
+
+  nav.innerHTML = '';
+  nav.appendChild(frag);
+  bindNavSearch();
+}
+
+function bindNavSearch() {
+  const inp = document.getElementById('nav-search');
+  if (!inp) return;
+  inp.addEventListener('input', function () {
+    const q = this.value.trim().toLowerCase();
+    const nav = document.getElementById('sidebar-nav');
+    const groups = nav.querySelectorAll('.nav-group-title');
+    nav.querySelectorAll('.nav-item').forEach(item => {
+      const label = (item.querySelector('span') ? item.querySelector('span').textContent : '') || '';
+      const mod = item.dataset.module || '';
+      const hit = !q || label.toLowerCase().indexOf(q) > -1 || mod.toLowerCase().indexOf(q) > -1;
+      item.style.display = hit ? '' : 'none';
+      item.dataset.navhit = hit ? '1' : '0';
+    });
+    // 分组标题：组内全部隐藏时，标题也隐藏
+    groups.forEach(g => {
+      let any = false;
+      let sib = g.nextElementSibling;
+      while (sib && !sib.classList.contains('nav-group-title')) {
+        if (sib.classList.contains('nav-item') && sib.dataset.navhit === '1') { any = true; break; }
+        sib = sib.nextElementSibling;
+      }
+      g.style.display = (q && !any) ? 'none' : '';
+    });
+  });
+  // 回车清空
+  inp.addEventListener('keydown', function (e) { if (e.key === 'Escape') { this.value = ''; this.dispatchEvent(new Event('input')); } });
 }
 
 // ===== 各板块「更新时间 / 倒计时」徽标 =====
@@ -1478,7 +1598,6 @@ function renderCountryAdvantage() {
     return '<div class="adv-empty">资源与优势数据未加载</div>';
   }
   const today = (typeof advTodayItem === 'function') ? advTodayItem() : ADV_DAILY[0];
-  const updated = (typeof ADV_UPDATED !== 'undefined') ? ADV_UPDATED : '';
 
   const regions = [];
   WORLD_ADVANTAGES.forEach(w => { if (w.region && regions.indexOf(w.region) < 0) regions.push(w.region); });
@@ -1498,7 +1617,7 @@ function renderCountryAdvantage() {
         <div class="adv-today-h">
           <span class="adv-today-tag">📌 今日牌面</span>
           <span class="adv-today-tag2">${advEsc(today.tag)}</span>
-          <span class="adv-today-date">${advEsc(updated)} · 每日自动轮换</span>
+          <span class="adv-today-date">${new Date().toISOString().split('T')[0]} · 每日自动轮换</span>
         </div>
         <div class="adv-today-t">${advEsc(today.title)}</div>
         <p class="adv-today-p">${advEsc(today.text)}</p>
@@ -5208,7 +5327,7 @@ function renderFinanceTrend(el) {
               <div class="tc-row hor"><span class="tc-k"><i class="fas fa-binoculars"></i> 短中期判断</span><p>${fnEsc(t.horizon)}</p></div>
               <div class="tc-row act"><span class="tc-k"><i class="fas fa-user-check"></i> 我该怎么办</span><p>${fnEsc(t.action)}</p></div>
               <div class="tc-watch"><b><i class="fas fa-eye"></i> 要盯的信号</b><div>${t.watch.map(w => `<span>${fnEsc(w)}</span>`).join('')}</div></div>
-              <div class="tc-upd">更新 ${fnEsc(t.updated || '')} · 仅供参考，不构成投资建议</div>
+              <div class="tc-upd">方向性资料整理 · 仅供参考，不构成投资建议</div>
             </div>` : ''}
           </div>`;
         }).join('')}
@@ -8712,11 +8831,11 @@ function renderOverview(c) {
         <button class="ov-ci-btn" onclick="doCheckin()"><i class="fas fa-check"></i> 打卡</button>
       </div>
 
-      <div class="data-backup-bar">
+      <div class="data-backup-bar" id="data-backup-bar">
         <div class="db-info">
           <i class="fas fa-cloud-download-alt"></i>
           <div>
-            <div class="db-title">跨设备数据同步</div>
+            <div class="db-title">跨设备数据同步 <span class="db-status-pill" id="backup-status-text"></span></div>
             <div class="db-sub">手机与电脑数据各自独立。点「导出备份」保存全部记录，发到小米12X 后在手机端「导入备份」即可同步打卡 / 记账 / 学习习惯（需手动同步一次）。</div>
           </div>
         </div>
@@ -8811,6 +8930,7 @@ function renderOverview(c) {
     </div>
   `;
 
+  refreshBackupStatus();
   setTimeout(() => {
     renderOverviewTodayUsage(usageModKeys, todayUsageData);
     renderOverviewPeriod(currentOvPeriod);

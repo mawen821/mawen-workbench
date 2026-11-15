@@ -1,7 +1,7 @@
 // 马雯的工作台 · Service Worker（v8 · 离线可用 + 更新必达版）
 // 目标：手机只要成功加载过一次，之后云端休眠 / 电脑关机也能离线秒开；
 //       联网时后台静默更新，保证内容不断更；新版本部署后强制重新缓存，更新必达。
-const CACHE = 'mw-workbench-v35';
+const CACHE = 'mw-workbench-v36';
 
 // 应用外壳：全部需要离线打开的同源资源
 const CORE = [
@@ -9,8 +9,13 @@ const CORE = [
   './index.html',
   './manifest.json',
   './css/style.css',
-  './js/app.js?v=35',
+  './vendor/font-awesome/all.min.css',
+  './vendor/font-awesome/webfonts/fa-solid-900.woff2',
+  './vendor/font-awesome/webfonts/fa-regular-400.woff2',
+  './vendor/font-awesome/webfonts/fa-brands-400.woff2',
+  './js/app.js?v=36',
   './js/imgstore.js',
+  './js/data-english-shadow.js',
   './js/ai.js',
   './js/zimeiti.js',
   './js/chart.umd.min.js',
@@ -33,13 +38,12 @@ const CORE = [
   './js/data-english.js',
   './js/data-finance.js',
   './js/data-finance-trend.js',
-  './js/data-geography.js',
   './js/data-ledger.js',
   './js/data-misc.js',
   './js/data-news.js',
   './js/data-pet.js',
   './js/data-reading.js',
-  './js/data-shenlun.js?v=34',
+  './js/data-shenlun.js?v=36',
   './js/data-skill.js',
   './js/data-sport.js',
   './js/data-tenmin.js',
@@ -68,6 +72,7 @@ const CORE = [
   './assets/board-icons/beauty.svg',
   './assets/board-icons/pet.svg',
   './assets/board-icons/country.svg',
+  './assets/board-icons/shisanwu.svg',
   './assets/board-icons/travel.svg',
   './assets/board-icons/destiny.svg',
   './assets/board-icons/tarot.svg',
