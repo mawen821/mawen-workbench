@@ -10,6 +10,10 @@ on:
         description: '只跑某一模块 key（调试用，留空则按星期跑全部该跑的）'
         required: false
         default: ''
+      force_duplicate:
+        description: '当天已更新过也强制再跑一次（会重复追加，调试用，填 1 表示强制）'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -51,12 +55,14 @@ jobs:
 
       - name: 运行云端同步
         env:
-          # 密钥可选：配了就用实时生成，没配自动走内容包模式
+          # 密钥可选：配了就用实时生成（带自检），没配/失效自动走离线语料
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
           NEWS_LLM_API_KEY: ${{ secrets.NEWS_LLM_API_KEY }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
           LLM_MODEL: ${{ secrets.LLM_MODEL }}
+          LLM_EXTRA_JSON: ${{ secrets.LLM_EXTRA_JSON }}
           FORCE_MODULE: ${{ github.event.inputs.module }}
+          FORCE_DUPLICATE: ${{ github.event.inputs.force_duplicate }}
         run: |
           python scripts/cloud_sync.py
 

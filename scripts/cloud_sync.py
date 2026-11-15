@@ -16,6 +16,7 @@ cloud_sync.py — 马雯工作台「全量云端化」统一调度器（无状�
   LLM_API_KEY / NEWS_LLM_API_KEY   可选（配了则优先实时生成）
   LLM_BASE_URL / LLM_MODEL         可选
   FORCE_MODULE                     可选：只跑某一模块 key（调试用）
+  FORCE_DUPLICATE=1                可选：当天已跑过也强制再跑（会重复追加，仅调试）
   DRY_RUN=1                        可选：只改文件不 push
 """
 
@@ -34,7 +35,11 @@ except Exception:
     TZ = None
 
 import js_edit
-from llm_helper import call_llm_json as _real_call_llm_json, is_configured
+from llm_helper import (
+    call_llm_json as _real_call_llm_json,
+    ping as _llm_ping,
+    is_configured,
+)
 
 SYSTEM = (
     "你是马雯学习工作台的内容生成引擎。请严格按要求生成结构化数据，只输出 JSON，"
@@ -585,10 +590,13 @@ def validate_js(path):
     return True
 
 
-def git_push(files, today):
+def git_push(files, today, mod_keys=None):
     try:
         subprocess.run(["git", "add", *files], check=True, capture_output=True)
-        msg = f"ci: 云端自动更新 {today}"
+        tag = ""
+        if mod_keys:
+            tag = " [" + ",".join(sorted(set(mod_keys))) + "]"
+        msg = f"ci: 云端自动更新 {today}{tag}"
         r = subprocess.run(["git", "-c", "user.email=buddy@workbuddy.local",
                             "-c", "user.name=Buddy", "commit", "-m", msg],
                            capture_output=True, text=True)
@@ -611,6 +619,51 @@ def git_push(files, today):
 
 
 # ---------------------------------------------------------------------------
+# 幂等保护：同一天重复运行（手动触发 / 重跑）不会重复追加
+# ---------------------------------------------------------------------------
+def modules_done_today(today):
+    """从 git 提交历史判断今天已更新过哪些模块。
+    返回 {"ran": bool, "all": bool, "keys": set()}。
+    兼容旧格式提交（无 [模块列表]）→ 视为当天整体已跑过。"""
+    info = {"ran": False, "all": False, "keys": set()}
+    try:
+        r = subprocess.run(["git", "log", "-40", "--pretty=%s"],
+                           capture_output=True, text=True)
+        if r.returncode != 0:
+            return info
+    except Exception:
+        return info
+    marker = f"云端自动更新 {today}"
+    for line in r.stdout.splitlines():
+        if marker not in line:
+            continue
+        info["ran"] = True
+        m = re.search(r"\[([^\]]*)\]", line)
+        if not m:
+            info["all"] = True
+        else:
+            info["keys"].update(x.strip() for x in m.group(1).split(",") if x.strip())
+    return info
+
+
+# ---------------------------------------------------------------------------
+# 密钥连通性自检：配了 key 就发一个极小请求，确认 key / 地址 / 模型名都可用
+# ---------------------------------------------------------------------------
+def llm_selftest():
+    from llm_helper import _resolve_cfg
+    _, base_url, model = _resolve_cfg()
+    ok, detail = _llm_ping()
+    if not ok:
+        print(f"⚠️ 密钥自检未通过：{detail}")
+        print(f"   当前配置 → 模型={model} 地址={base_url}")
+        print("   本次起将自动改用离线语料兜底（照常更新，不会停更）。")
+        print("   请核对 Secrets 的 LLM_API_KEY / LLM_BASE_URL / LLM_MODEL（模型名必须是该平台的真实编码）。")
+        return False
+    print(f"✅ 密钥自检通过（{detail}）→ 模型={model} 地址={base_url}，实时生成模式可用。")
+    return True
+
+
+# ---------------------------------------------------------------------------
 # 主流程（无状态：完全由日期种子决定取哪一轮语料）
 # ---------------------------------------------------------------------------
 def main():
@@ -618,13 +671,24 @@ def main():
     force = os.environ.get("FORCE_MODULE")
     if is_configured():
         print("🤖 已配置 LLM key → 实时生成模式。")
+        llm_selftest()
     else:
         print("📚 未配置 LLM key → 语料轮换模式（纯云端、零依赖、永不中断）。")
+
+    done = modules_done_today(today)
+    if done["ran"] and not force:
+        if done["all"] and os.environ.get("FORCE_DUPLICATE") != "1":
+            print(f"⏭ 今天（{today}）的内容已更新过（提交历史里已有），本次跳过，避免重复追加。")
+            print("   如需强制重跑，把环境变量 FORCE_DUPLICATE 设为 1。")
+            return
+        if done["keys"]:
+            print(f"ℹ 今天已更新的模块：{', '.join(sorted(done['keys']))}")
 
     weekday = datetime.now(TZ).weekday() if TZ else date.today().weekday()
     if TZ is None:
         weekday = datetime.now().weekday()
     changed_files = []
+    changed_keys = []
 
     os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -634,6 +698,9 @@ def main():
                 continue
         else:
             if weekday not in mod["weekdays"]:
+                continue
+            if mod["key"] in done["keys"]:
+                print(f"· 跳过 {mod['key']}（今天已更新过，避免重复）")
                 continue
         items = corpus_items_for(mod["key"])
         if not items and not is_configured():
@@ -657,6 +724,7 @@ def main():
                     print(f"  ✗ {mod['key']} 语法校验未过，已回滚")
                     continue
                 changed_files.append(mod["file"])
+                changed_keys.append(mod["key"])
                 print(f"  ✓ {mod['key']} 已更新")
             else:
                 print(f"  · {mod['key']} 本轮无变更")
@@ -666,7 +734,7 @@ def main():
             _CORPUS_CTX["module"] = None
 
     if changed_files:
-        git_push(changed_files, today)
+        git_push(changed_files, today, changed_keys)
         print(f"完成：{len(changed_files)} 个文件更新")
     else:
         print("本轮无文件变更")

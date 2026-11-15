@@ -21,6 +21,32 @@ def _resolve_cfg():
     return api_key, base_url, model
 
 
+# 强制思考模式的模型：输出 token 里混着推理过程，需要额外留余量，否则正经回答会被截断
+_THINKING_PREFIXES = ("glm-5", "glm-4.7", "glm-4.6", "deepseek-reasoner", "o1", "o3")
+
+
+def _build_payload(model, messages, temperature, max_tokens):
+    budget = max_tokens
+    if model.lower().startswith(_THINKING_PREFIXES):
+        budget = min(max_tokens * 3, 16384)
+    payload = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": budget,
+    }
+    # 逃生口：某些平台需要额外参数（如 thinking / reasoning_effort），可用 JSON 透传
+    raw = os.environ.get("LLM_EXTRA_JSON") or ""
+    if raw.strip():
+        try:
+            extra = json.loads(raw)
+            if isinstance(extra, dict):
+                payload.update(extra)
+        except Exception:
+            pass
+    return payload
+
+
 def is_configured() -> bool:
     return bool(os.environ.get("LLM_API_KEY") or os.environ.get("NEWS_LLM_API_KEY"))
 
@@ -37,12 +63,7 @@ def call_llm(user_prompt: str, system_prompt: str = "", temperature: float = 0.7
         messages.append({"role": "system", "content": system_prompt})
     messages.append({"role": "user", "content": user_prompt})
 
-    payload = {
-        "model": model,
-        "messages": messages,
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-    }
+    payload = _build_payload(model, messages, temperature, max_tokens)
     url = base_url + "/chat/completions"
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(url, data=data, method="POST")
@@ -59,6 +80,29 @@ def call_llm(user_prompt: str, system_prompt: str = "", temperature: float = 0.7
         raise RuntimeError(f"LLM HTTP {e.code}: {detail}")
     except Exception as e:  # noqa: BLE001
         raise RuntimeError(f"LLM 调用失败: {e}")
+
+
+def ping(timeout: int = 45):
+    """发一个最小请求，只判断接口是否可用（不要求有文本输出，思考型模型也能过）。
+    返回 (ok: bool, detail: str)。"""
+    api_key, base_url, model = _resolve_cfg()
+    if not api_key:
+        return False, "未配置 LLM_API_KEY"
+    payload = {"model": model, "messages": [{"role": "user", "content": "ping"}],
+               "max_tokens": 16, "temperature": 0}
+    req = urllib.request.Request(base_url + "/chat/completions",
+                                 data=json.dumps(payload).encode("utf-8"), method="POST")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Authorization", f"Bearer {api_key}")
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            resp.read()
+            return True, f"HTTP {resp.status}"
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", "replace")[:300]
+        return False, f"HTTP {e.code}: {detail}"
+    except Exception as e:  # noqa: BLE001
+        return False, str(e)
 
 
 def call_llm_json(user_prompt: str, system_prompt: str = "", **kw) -> object:
