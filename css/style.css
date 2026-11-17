@@ -1493,6 +1493,9 @@ body {
 /* ============================================
    每日大事件板块
    ============================================ */
+.news-freshness { display: flex; align-items: center; gap: 8px; font-size: 12.5px; padding: 9px 14px; border-radius: 10px; margin-bottom: 16px; line-height: 1.5; }
+.news-freshness.fresh { background: #eaf7ee; color: #2e7d4f; border: 1px solid #bfe6cc; }
+.news-freshness.stale { background: #fff3e0; color: #a86400; border: 1px solid #ffd591; }
 .news-filters {
   display: flex;
   gap: 8px;
@@ -8146,3 +8149,20 @@ input:focus, textarea:focus, select:focus { border-color: var(--primary); outlin
   .fin-grad { flex-wrap:wrap; }
   .fg-btn { width:100%; justify-content:center; }
 }
+
+/* ===== 板块加载异常兜底卡片（单点故障隔离，不应让整页空白） ===== */
+.mod-error-card {
+  background: var(--bg-card, #fff);
+  border: 1px solid rgba(138,108,176,0.22);
+  border-radius: 14px;
+  padding: 22px 24px;
+  max-width: 640px;
+  line-height: 1.8;
+  color: var(--text-secondary, #4a4560);
+}
+.mod-error-card p { margin: 0 0 10px; }
+.mod-error-hint { font-size: 13px; color: var(--text-light, #8a8fa8); }
+.mod-error-btns { display: flex; gap: 10px; margin: 16px 0 6px; flex-wrap: wrap; }
+.mod-error-detail { margin-top: 12px; font-size: 12px; color: var(--text-light, #8a8fa8); }
+.mod-error-detail summary { cursor: pointer; }
+.mod-error-detail code { display: block; margin-top: 8px; padding: 8px 10px; background: rgba(0,0,0,0.04); border-radius: 8px; word-break: break-all; }

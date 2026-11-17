@@ -592,6 +592,16 @@ def validate_js(path):
 
 def git_push(files, today, mod_keys=None):
     try:
+        # 数据文件更新后，刷新 index.html / sw.js 里的数据版本戳（内容 hash），
+        # 让手机端 PWA 必然重新下载新内容，而不是一直吃旧缓存。失败也不阻断主流程。
+        try:
+            _ws = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            subprocess.run([sys.executable, os.path.join(_ws, "scripts", "stamp_data_versions.py")],
+                           capture_output=True, text=True, timeout=60,
+                           env={**os.environ, "NEWS_WS": _ws})
+        except Exception as _e:
+            print("  [stamp] 版本戳刷新跳过：", str(_e)[:120])
+        files = list(dict.fromkeys(list(files) + ["index.html", "sw.js"]))
         subprocess.run(["git", "add", *files], check=True, capture_output=True)
         tag = ""
         if mod_keys:

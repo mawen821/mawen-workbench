@@ -49,11 +49,14 @@ jobs:
           DATE=$(TZ=Asia/Shanghai date +%Y-%m-%d)
           python _gen_news_audio.py "$DATE" || echo "音频生成有部分失败，已忽略，不影响新闻文字更新"
 
+      - name: 刷新数据版本戳（让手机拿到新内容，不吃旧缓存）
+        run: python scripts/stamp_data_versions.py
+
       - name: 提交并推送（仅在确有变更时）
         run: |
           git config user.email "bot@workbuddy.local"
           git config user.name "WorkBuddy News Bot"
-          git add js/data-news.js audio/news
+          git add js/data-news.js audio/news index.html sw.js
           if git diff --cached --quiet; then
             echo "无变更，跳过提交"
           else

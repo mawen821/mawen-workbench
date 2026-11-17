@@ -36,6 +36,10 @@ import xml.etree.ElementTree as ET
 WS = os.environ.get("NEWS_WS", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 JS_PATH = os.path.join(WS, "js", "data-news.js")
 UA = "Mozilla/5.0 (compatible; WorkBuddyNewsBot/1.0)"
+FALLBACK_JSON = os.path.join(WS, "scripts", "corpus", "news_fallback.json")
+# 新闻数据最多保留的天数：防止 data-news.js 无限膨胀拖慢手机首屏。
+# 只裁 NEWS_DATA 里的旧日期块，不动函数与其它常量。
+KEEP_NEWS_DAYS = 14
 
 DEFAULT_FEEDS = [
     # 主源：HTTP 国内站点（GitHub Actions 上可达、稳定）
@@ -258,6 +262,46 @@ def make_entries(items, date_str, use_llm):
     return entries
 
 
+def fallback_entries(date_str, max_n=None):
+    """RSS 全部不可用时，用离线语料按天取模生成「每日精读」条目。
+
+    设计原则：这是断供兜底，绝不能伪装成当天真实新闻。每条明确标注
+    source 为「离线精选 · 每日精读」，且不编造链接、时间、来源。
+    按 date 距 2000-01-01 的天数取模，循环使用、永不耗尽、无需联网与 key。
+    """
+    try:
+        with open(FALLBACK_JSON, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        rounds = data.get("items") or []
+        if not rounds:
+            return []
+        d = datetime.date.fromisoformat(date_str)
+        ridx = (d - datetime.date(2000, 1, 1)).days % len(rounds)
+        cards = rounds[ridx]
+        if max_n:
+            cards = cards[:max_n]
+        out = []
+        title_prefix = "【每日精读】"
+        for i, card in enumerate(cards):
+            out.append({
+                "id": date_str.replace("-", "") + ("-fb%02d" % i),
+                "category": card.get("category", "society"),
+                "title": title_prefix + card.get("title", ""),
+                "summary": card.get("summary", ""),
+                "time": "07:00",
+                "source": "离线精选 · 网络暂不可用时的常读资料",
+                "detail": card.get("detail", ""),
+                "meaning": card.get("meaning", ""),
+                "expert": None,
+                "links": [],
+            })
+        return out
+    except Exception as ex:
+        # 兜底本身失败也不能拖垮流水线，返回空让上层安全跳过
+        print("  [fallback] 离线语料读取失败：%s" % str(ex)[:120])
+        return []
+
+
 def llm_enrich(items):
     """可选：用 OpenAI 兼容接口对真实标题做一次性批量展开。失败则返回原始条目。"""
     key = os.environ.get("LLM_API_KEY")
@@ -317,11 +361,69 @@ def entry_to_js(e):
     )
 
 
+def _trim_old_news(src, keep_days=KEEP_NEWS_DAYS):
+    """只保留 NEWS_DATA 里最近 keep_days 个日期块，防止文件无限膨胀。
+
+    依赖结构：每个块以行首 `  "YYYY-MM-DD": [` 开始，对象以行首 `};` 结束。
+    只操作 NEWS_DATA 区间内的文本，后面的函数/常量一律不碰。
+    若结构不符合预期（找不到块或闭合），原样返回，绝不冒险改写。
+    """
+    m = re.search(r"const NEWS_DATA = \{", src)
+    if not m:
+        return src
+    body_start = m.end()
+    # 对象闭合：NEWS_DATA 之后第一个行首 "};"
+    end_m = re.search(r"^\};", src[body_start:], re.M)
+    if not end_m:
+        return src
+    body_end = body_start + end_m.start()  # 指向 "};" 的 "}"
+    body = src[body_start:body_end]
+    keys = list(re.finditer(r'^  "(\d{4}-\d{2}-\d{2})": \[', body, re.M))
+    if len(keys) <= keep_days:
+        return src  # 未超限，无需裁剪
+    # 块是降序（最新在最前）。保留前 keep_days 个；每个块范围 = 起点 → 下一个起点
+    keep_until = keys[keep_days].start()  # 第 keep_days+1 个块的起点，即被删部分的开始
+    # 被删块带各自尾随的 "],\n"，需保证保留段末尾仍是合法收尾
+    kept = body[:keep_until].rstrip()
+    if kept.endswith(","):
+        kept = kept[:-1].rstrip()  # 去掉最后一个块后的逗号，允许对象结尾无尾逗号
+    new_body = kept + "\n"
+    new_src = src[:body_start] + new_body + src[body_end:]
+    removed = len(keys) - keep_days
+    print("  [trim] 裁剪 %d 个旧日期块，保留最近 %d 天" % (removed, keep_days))
+    return new_src
+
+
+def _validate_js(js_path):
+    """写盘前语法校验；无 node 时也用括号配平做最后一道保护。"""
+    import shutil
+    import subprocess
+    with open(js_path, "r", encoding="utf-8") as f:
+        text = f.read()
+    node = shutil.which("node")
+    if node:
+        r = subprocess.run([node, "--check", js_path], capture_output=True, text=True)
+        if r.returncode != 0:
+            print("  [validate] node --check 失败：%s" % r.stderr[-300:])
+            return False
+    # 无 node 或作为补充：粗粒度括号配平（忽略字符串内括号会有误判，仅在无 node 时启用）
+    if not node:
+        for op, cl in (("(", ")"), ("[", "]"), ("{", "}")):
+            if text.count(op) != text.count(cl):
+                print("  [validate] 括号不配平 %s%s，拒绝写入" % (op, cl))
+                return False
+    return True
+
+
 def insert_block(date_str, entries, js_path, dry_run=False):
     with open(js_path, "r", encoding="utf-8") as f:
-        src = f.read()
-    # 幂等：当天已存在则跳过
-    if '"%s"' % date_str in src:
+        orig_src = f.read()
+    src = orig_src
+    # 幂等：当天已存在则跳过（但要确认确实是 NEWS_DATA 里的日期键，而非正文里出现的日期字符串）
+    m = re.search(r"const NEWS_DATA = \{", src)
+    end_m = re.search(r"^\};", src[m.end():], re.M) if m else None
+    news_zone = src[m.end():m.end() + end_m.start()] if (m and end_m) else src
+    if re.search(r'^  "%s": \[' % re.escape(date_str), news_zone, re.M):
         print("  [skip] %s 已存在，跳过" % date_str)
         return False
     block = '  "%s": [\n%s\n  ],\n' % (date_str, ",\n".join(entry_to_js(e) for e in entries))
@@ -331,10 +433,40 @@ def insert_block(date_str, entries, js_path, dry_run=False):
     # 更新头部"最后更新"日期
     new_src = re.sub(r"最后更新：\d{4}-\d{2}-\d{2}[ \d:]*",
                      "最后更新：" + date_str + " " + beijing_now().strftime("%H:%M"), new_src, count=1)
+    # 裁剪旧日期块，防止无限膨胀
+    new_src = _trim_old_news(new_src)
     out = js_path + ".dryrun" if dry_run else js_path
-    with open(out, "w", encoding="utf-8") as f:
-        f.write(new_src)
-    return True
+    # 先写临时文件做语法校验，通过再替换正式文件；任何失败都回滚到原文
+    # 临时文件必须以 .js 结尾：node --check 会按扩展名判定模块格式，
+    # 用 .tmp/.dryrun.tmp 会触发 ERR_UNKNOWN_FILE_EXTENSION 而误报失败。
+    tmp = os.path.join(os.path.dirname(out), "_news_check.js")
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(new_src)
+        if not _validate_js(tmp):
+            print("  [validate] 校验未通过，回滚，不改动原文件")
+            with open(js_path, "w", encoding="utf-8") as f:
+                f.write(orig_src)
+            return False
+        if dry_run:
+            os.replace(tmp, out)
+        else:
+            os.replace(tmp, out)
+        return True
+    except Exception as ex:
+        print("  [validate] 写入异常，回滚：%s" % str(ex)[:120])
+        try:
+            with open(js_path, "w", encoding="utf-8") as f:
+                f.write(orig_src)
+        except Exception:
+            pass
+        return False
+    finally:
+        try:
+            if os.path.exists(tmp):
+                os.remove(tmp)
+        except Exception:
+            pass
 
 
 def main():
@@ -377,13 +509,21 @@ def main():
     print("[news] 去重后候选 %d 条" % len(collected))
 
     entries = make_entries(collected, date_str, use_llm)
+    is_fallback = False
     if not entries:
-        print("[news] 未抓到可用新闻，今日跳过（不写文件、不报错）")
+        # 关键：RSS 集体不可用时绝不停更 —— 降级到离线「每日精读」语料，
+        # 依然写入当天日期键，保证「每日大事件 / 听新闻」永远有内容。
+        print("[news] 未抓到可用新闻 → 启用离线每日精读兜底（零联网、零 key）")
+        entries = fallback_entries(date_str, max_n=8)
+        is_fallback = bool(entries)
+    if not entries:
+        print("[news] 离线语料也不可用，今日跳过（不写文件、不报错）")
         return 0
 
     ok = insert_block(date_str, entries, JS_PATH, dry_run=dry_run)
     if ok:
-        print("[news] 已写入 %d 条到 %s" % (len(entries), "dryrun" if dry_run else JS_PATH))
+        tag = "离线精读" if is_fallback else "实时新闻"
+        print("[news] 已写入 %d 条（%s）到 %s" % (len(entries), tag, "dryrun" if dry_run else JS_PATH))
     return 0
 
 

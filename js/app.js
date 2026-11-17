@@ -28,16 +28,74 @@ let reviewDayInit = false;
 // ===== 工具函数 =====
 function $(sel) { return document.querySelector(sel); }
 function $$(sel) { return document.querySelectorAll(sel); }
-function today() { return new Date().toISOString().split('T')[0]; }
+// 统一「日历日」语义：一律用本地时间（中国用户即北京时间），
+// 绝不用 toISOString(UTC)，否则凌晨 0-8 点会错记到前一天。
+function dateKey(d) {
+  const x = d ? new Date(d) : new Date();
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+}
+function today() { return dateKey(); }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
 
 function loadData(key, def) {
   try { return JSON.parse(localStorage.getItem('mw_' + key)) || def; }
   catch { return def; }
 }
+// 空间不足时只清理「统计/日志类」可再生成的缓存，
+// 绝不触碰打卡、复盘、记账、宠物、计划等个人记录。
+function tryFreeStorage() {
+  let freed = 0;
+  try {
+    const focusKeys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i) || '';
+      if (k.indexOf('mw_focus_') === 0) focusKeys.push(k);
+    }
+    focusKeys.sort();
+    for (let i = 0; i < Math.min(focusKeys.length - 1, 60); i++) {
+      localStorage.removeItem(focusKeys[i]); freed++;
+    }
+    [['activity', 800], ['eng_activity', 500], ['search_history', 30]].forEach(pair => {
+      try {
+        const raw = localStorage.getItem('mw_' + pair[0]);
+        if (!raw) return;
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length > pair[1]) {
+          localStorage.setItem('mw_' + pair[0], JSON.stringify(arr.slice(-pair[1])));
+          freed++;
+        }
+      } catch (_) {}
+    });
+    try {
+      const raw = localStorage.getItem('mw_usage');
+      if (raw) {
+        const u = JSON.parse(raw);
+        const days = Object.keys(u).sort();
+        if (days.length > 120) {
+          days.slice(0, days.length - 120).forEach(d => delete u[d]);
+          localStorage.setItem('mw_usage', JSON.stringify(u));
+          freed++;
+        }
+      }
+    } catch (_) {}
+  } catch (_) {}
+  return freed;
+}
 function saveData(key, val) {
-  try { localStorage.setItem('mw_' + key, JSON.stringify(val)); }
-  catch(e) { showToast('存储空间不足，请清理旧数据', 'error'); }
+  const k = 'mw_' + key;
+  try {
+    localStorage.setItem(k, JSON.stringify(val));
+  } catch (e) {
+    // 先腾出空间再写一次，避免"以为存上了、其实没落盘"
+    const freed = tryFreeStorage();
+    try {
+      localStorage.setItem(k, JSON.stringify(val));
+      if (freed) console.warn('[saveData] 空间不足，已清理旧缓存后写入成功', key);
+    } catch (e2) {
+      console.error('[saveData] 写入失败', key, e2);
+      showToast('这条记录没能保存：本地空间已满，请到总览导出备份后清理旧图片', 'error');
+    }
+  }
 }
 
 function showToast(msg, type = 'success') {
@@ -1037,20 +1095,31 @@ function checkAllDone(type, total) {
 
 // ===== 初始化 =====
 function init() {
-  updateDate();
-  updateStreak();
-  updateCheckinBadge();
-  bindNav();
-  setupNavEnhance();
-  startFocusTracking();
-  startUsageTracking();
-  renderModule('overview');
-  setInterval(tickUpdateBadges, 30000);
-  window.addEventListener('beforeunload', flushUsage);
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') flushUsage();
-    else lastModuleSwitch = Date.now();
-  });
+  // 每个初始化步骤单独保护：任何一步出问题都不影响后续步骤与首屏。
+  const steps = [
+    ['日期', updateDate], ['连续打卡', updateStreak], ['打卡徽标', updateCheckinBadge],
+    ['导航绑定', bindNav], ['导航增强', setupNavEnhance],
+    ['专注计时', startFocusTracking], ['用时统计', startUsageTracking],
+    ['首屏渲染', () => renderModule('overview')]
+  ];
+  steps.forEach(([name, fn]) => { try { fn(); } catch (e) { console.error('[init] ' + name + ' 失败', e); } });
+  try { setInterval(tickUpdateBadges, 30000); } catch (e) {}
+  try { window.addEventListener('beforeunload', flushUsage); } catch (e) {}
+  try {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flushUsage();
+      else lastModuleSwitch = Date.now();
+    });
+  } catch (e) {}
+  // 首屏兜底：若主内容区仍为空（极端情况），强制渲染一个可恢复的入口
+  try {
+    const c = document.getElementById('main-content');
+    if (c && !c.innerHTML.trim()) {
+      c.innerHTML = '<div class="module-content"><div class="module-header"><h1>正在载入…</h1></div>'
+        + '<div class="mod-error-card"><p>页面没有自动完成载入。</p>'
+        + '<div class="mod-error-btns"><button class="btn" onclick="location.reload()">重新载入</button></div></div></div>';
+    }
+  } catch (e) {}
 }
 
 function updateDate() {
@@ -1081,7 +1150,7 @@ function computeStreak() {
   let streak = 0;
   const d = new Date();
   while (true) {
-    const ds = d.toISOString().split('T')[0];
+    const ds = dateKey(d);
     const hasItems = checkins.some(c => c.date === ds && c.items.length > 0);
     const hasCount = (counts[ds] || 0) > 0;
     if (hasItems || hasCount) { streak++; d.setDate(d.getDate() - 1); } else break;
@@ -1139,6 +1208,16 @@ function bindNav() {
 }
 
 /* ===== 导航增强：分组 + 搜索 + 按使用频率自动置顶常用板块 ===== */
+// 板块中文名（用于异常提示等，避免暴露英文 key）
+const MOD_NAME = {
+  overview: '总览', checkin: '每日打卡', ledger: '记账', review: '每日复盘',
+  sport: '运动', english: '英语角', finance: '基金投资', news: '每日大事件',
+  book: '读书', 'zimeiti-pet': '宠物号运营', 'zimeiti-goods': '好物部',
+  ai: 'AI学习', common: '常识积累', shenlun: '申论政治', search: '智能搜索',
+  misc: '杂学开眼', skill: '学习技能', tenmin: '每天的10分钟',
+  beauty: '美妆穿搭', pet: '我的宠物', country: '国情与世界',
+  shisanwu: '十五五规划', destiny: '东方命理', tarot: '西方塔罗', travel: '旅行地图'
+};
 // 板块分组（group 顺序即展示顺序）
 const NAV_GROUPS = [
   { key: 'daily',  label: '📅 每日必用', mods: ['overview', 'checkin', 'review', 'ledger', 'sport'] },
@@ -1327,6 +1406,39 @@ function renderModule(mod) {
   charts = {};
   const container = $('#main-content');
   container.innerHTML = '';
+  // 单点异常隔离：任一板块渲染抛错，只在该处显示友好提示，
+  // 绝不让整个工作台停在空白页；其它板块与导航照常可用。
+  try {
+    renderModuleInner(mod, container);
+    injectUpdateBadge(container, mod);
+  } catch (err) {
+    console.error('[renderModule] 板块加载失败', mod, err);
+    container.innerHTML = renderModuleError(mod, err);
+  }
+}
+
+function renderModuleError(mod, err) {
+  const name = (MOD_NAME && MOD_NAME[mod]) || '这个板块';
+  const detail = (err && err.message) ? String(err.message).slice(0, 160) : '未知原因';
+  return `
+    <div class="module-content">
+      <div class="module-header"><div>
+        <h1><i class="fas fa-triangle-exclamation"></i> ${escapeHtml(name)}暂时打不开</h1>
+        <div class="subtitle">别担心，其它板块都能正常使用</div>
+      </div></div>
+      <div class="mod-error-card">
+        <p>这个板块在加载时遇到点问题，通常是内容还没准备好或临时的数据异常。</p>
+        <p class="mod-error-hint">可以点下方重试；若反复出现，切换一次其它板块再回来即可。</p>
+        <div class="mod-error-btns">
+          <button class="btn" onclick="renderModule('${jsLit(mod)}')"><i class="fas fa-rotate-right"></i> 重试</button>
+          <button class="btn" onclick="renderModule('overview')"><i class="fas fa-house"></i> 回总览</button>
+        </div>
+        <details class="mod-error-detail"><summary>技术信息</summary><code>${escapeHtml(detail)}</code></details>
+      </div>
+    </div>`;
+}
+
+function renderModuleInner(mod, container) {
   switch(mod) {
     case 'checkin': renderCheckin(container); break;
     case 'review': renderReview(container); break;
@@ -1354,7 +1466,6 @@ function renderModule(mod) {
     case 'ai': renderAi(container); break;
     case 'overview': renderOverview(container); break;
   }
-  injectUpdateBadge(container, mod);
 }
 
 /* ============================================
@@ -1617,7 +1728,7 @@ function renderCountryAdvantage() {
         <div class="adv-today-h">
           <span class="adv-today-tag">📌 今日牌面</span>
           <span class="adv-today-tag2">${advEsc(today.tag)}</span>
-          <span class="adv-today-date">${new Date().toISOString().split('T')[0]} · 每日自动轮换</span>
+          <span class="adv-today-date">${dateKey()} · 每日自动轮换</span>
         </div>
         <div class="adv-today-t">${advEsc(today.title)}</div>
         <p class="adv-today-p">${advEsc(today.text)}</p>
@@ -2406,7 +2517,7 @@ function deferTask(id) {
   const t = tasks.find(x => x.id === id);
   if (t) {
     const d = new Date(t.dueDate || today()); d.setDate(d.getDate() + 1);
-    t.dueDate = d.toISOString().split('T')[0];
+    t.dueDate = dateKey(d);
     t.completed = false;
     saveData('tasks', tasks);
     showToast('已延后到 ' + t.dueDate);
@@ -2446,7 +2557,7 @@ function renderCharts() {
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const ds = d.toISOString().split('T')[0];
+    const ds = dateKey(d);
     weekLabels.push(`${d.getMonth()+1}/${d.getDate()}`);
     const record = checkins.find(c => c.date === ds);
     weekData.push(record ? record.items.length : 0);
@@ -6380,6 +6491,21 @@ function renderNewsWatch() {
   </div>`;
 }
 
+/* 新闻数据新鲜度提示：明确告诉用户数据更新到哪天，避免被卡片上的旧日期误导 */
+function newsFreshnessBar() {
+  let keys = [];
+  try { keys = Object.keys(NEWS_DATA).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort().reverse(); } catch (e) {}
+  if (!keys.length) return '';
+  const latest = keys[0];
+  const isToday = latest === today();
+  const diff = Math.round((new Date(today()) - new Date(latest)) / 86400000);
+  const stale = diff >= 2;
+  const txt = isToday
+    ? '新闻数据已更新至今天（' + latest + '）'
+    : (stale ? '新闻数据停留在 ' + latest + '（' + diff + ' 天前）· 若手机联网后仍这样，请下拉刷新一次' : '新闻数据更新至 ' + latest);
+  return '<div class="news-freshness ' + (stale ? 'stale' : 'fresh') + '"><i class="fas ' + (stale ? 'fa-triangle-exclamation' : 'fa-circle-check') + '"></i> ' + txt + '</div>';
+}
+
 function renderNews(c) {
   const todayStr = today();
   const news = getNewsByDate(todayStr);
@@ -6393,6 +6519,8 @@ function renderNews(c) {
           <div class="subtitle">了解世界，洞察趋势 — ${new Date().toLocaleDateString('zh-CN', {year:'numeric',month:'long',day:'numeric'})}</div>
         </div>
       </div>
+
+      ${newsFreshnessBar()}
 
       ${currentNewsView==='listen' ? '' : `
       <div class="news-filters">
@@ -6494,7 +6622,7 @@ function newsListenStreak() {
   let streak = 0;
   const d = new Date();
   if (!set.has(todayStr())) d.setDate(d.getDate() - 1); // 今天未打卡则从昨天起算
-  while (set.has(d.toISOString().split('T')[0])) { streak++; d.setDate(d.getDate() - 1); }
+  while (set.has(dateKey(d))) { streak++; d.setDate(d.getDate() - 1); }
   return streak;
 }
 function newsListenMonthCount() {
@@ -6578,7 +6706,7 @@ function renderNewsListen() {
   const now = new Date();
   for (let i = 6; i >= 0; i--) {
     const dd = new Date(now); dd.setDate(now.getDate() - i);
-    const ds = dd.toISOString().split('T')[0];
+    const ds = dateKey(dd);
     dots += `<span class="ld-dot ${set.includes(ds) ? 'on' : ''}" title="${ds}"></span>`;
   }
   const checkinCard = `
@@ -8949,7 +9077,7 @@ function ovPeriodBuckets(period) {
   if (period === 'week') {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(); d.setDate(d.getDate() - i);
-      buckets.push({ label: `${d.getMonth()+1}/${d.getDate()}`, dates: [d.toISOString().split('T')[0]] });
+      buckets.push({ label: `${d.getMonth()+1}/${d.getDate()}`, dates: [dateKey(d)] });
     }
   } else if (period === 'month') {
     const y = now.getFullYear(), m = now.getMonth();
@@ -9266,7 +9394,7 @@ function renderSportStats(c) {
   const monthDur = records.filter(r => r.date.slice(0, 7) === now.toISOString().slice(0, 7)).reduce((s, r) => s + r.duration, 0);
   let streak = 0; const d = new Date();
   while (true) {
-    const ds = d.toISOString().split('T')[0];
+    const ds = dateKey(d);
     if (records.some(r => r.date === ds)) { streak++; d.setDate(d.getDate() - 1); } else break;
   }
   c.innerHTML = `
@@ -9290,7 +9418,7 @@ function renderSportCharts(records) {
   const labels = [], durArr = [], timesArr = [];
   for (let i = 6; i >= 0; i--) {
     const dt = new Date(); dt.setDate(dt.getDate() - i);
-    const ds = dt.toISOString().split('T')[0];
+    const ds = dateKey(dt);
     labels.push(`${dt.getMonth() + 1}/${dt.getDate()}`);
     const day = records.filter(r => r.date === ds);
     durArr.push(day.reduce((s, r) => s + r.duration, 0));
@@ -9327,9 +9455,23 @@ function skillPeriod() {
   return (loadData('skill_settings', { periodMonths: 1 }).periodMonths) || 1;
 }
 function skillById(id) { return SKILL_LIB[id] || null; }
+// 跨年可持续：语料只配到某年时，自动复用最近可用年份并按年差旋转顺序，
+// 既不锁死在同一套计划（看起来"再也不更新"），也不会因缺年份返回 undefined 崩溃。
+function skillPlanFor(year) {
+  if (typeof SKILL_PLAN === 'undefined') return [];
+  if (SKILL_PLAN[year]) return SKILL_PLAN[year];
+  const years = Object.keys(SKILL_PLAN).map(Number).sort((a, b) => a - b);
+  if (!years.length) return [];
+  const base = years[years.length - 1];
+  const plan = SKILL_PLAN[base] || [];
+  if (plan.length < 2) return plan;
+  const shift = Math.abs(year - base) % plan.length;
+  return shift ? plan.slice(shift).concat(plan.slice(0, shift)) : plan;
+}
 function skillIdForMonth(year, m) {
   const period = skillPeriod();
-  const plan = SKILL_PLAN[year] || SKILL_PLAN[2027];
+  const plan = skillPlanFor(year);
+  if (!plan.length) return null;
   const slot = Math.floor(m / period) % plan.length;
   return plan[slot];
 }
@@ -9517,7 +9659,7 @@ function renderSkillMap() {
   const year = new Date().getFullYear();
   const curMonth = new Date().getMonth();
   const autoId = skillIdForMonth(year, curMonth);
-  const plan = SKILL_PLAN[year] || SKILL_PLAN[2027];
+  const plan = skillPlanFor(year);
   const techCount = plan.filter(id => { const s = skillById(id); return s && s.category === '技术'; }).length;
   const interestCount = plan.length - techCount;
   let html = `<div class="skill-map-legend">
@@ -10733,7 +10875,18 @@ function addPetFood() {
 }
 
 // ===== 启动 =====
-document.addEventListener('DOMContentLoaded', init);
+// 全局错误兜底：只记录到控制台，不打扰使用；避免单个未捕获异常
+// 让整个页面永久停在空白或半死状态。板块级隔离已由 renderModule 负责。
+window.addEventListener('error', function (e) {
+  try { console.error('[全局异常]', e.message, e.filename, e.lineno); } catch (_) {}
+  return false;
+});
+window.addEventListener('unhandledrejection', function (e) {
+  try { console.error('[未处理的异步异常]', e.reason); } catch (_) {}
+});
+
+try { document.addEventListener('DOMContentLoaded', init); }
+catch (e) { console.error('[启动] 注册失败', e); }
 
 // 点击模态框背景关闭
 document.addEventListener('click', e => {

@@ -43,15 +43,31 @@ jobs:
           echo "语料文件数: $(ls scripts/corpus/*.json 2>/dev/null | wc -l)"
           python - <<'PY'
           import glob, json, os
-          files = sorted(glob.glob('scripts/corpus/*.json'))
-          assert len(files) == 12, f'语料数量异常: {len(files)}（应为 12）'
-          for f in files:
+          # 只校验 12 个「自动更新模块」必须在且非空；
+          # 允许存在额外的辅助语料（如 news_fallback.json 断供兜底），不因数量变化误报失败。
+          core = ['ai_learning','common','country','douyin','english_corner',
+                  'english_daily','fashion','finance_knowledge','fund_news',
+                  'hot_funds','misc','shenlun']
+          for m in core:
+              f = 'scripts/corpus/%s.json' % m
+              assert os.path.isfile(f), '缺少核心语料: %s' % f
               d = json.load(open(f, encoding='utf-8'))
               n = len(d.get('items', []))
-              assert n > 0, f'{f} 无可用轮次'
-              print(f"  {os.path.basename(f):24s} {n} 轮")
+              assert n > 0, '%s 无可用轮次' % f
+              print(f"  {m:24s} {n} 轮")
+          # 断供兜底语料可选但强烈建议存在：不存在时新闻断供会静默跳过
+          fb = 'scripts/corpus/news_fallback.json'
+          if os.path.isfile(fb):
+              d = json.load(open(fb, encoding='utf-8'))
+              assert len(d.get('items', [])) > 0, 'news_fallback 无可用轮次'
+              print(f"  news_fallback          {len(d['items'])} 轮（断供兜底）")
+          else:
+              print('::warning::缺少 news_fallback.json，新闻源全挂时无法兜底')
           print('语料自检通过：离线语料源可用，不依赖任何外部 API Key / 本地 agent / 人工。')
           PY
+
+      - name: 长期可持续性体检（只读，不阻断）
+        run: python scripts/health_check.py
 
       - name: 运行云端同步
         env:
